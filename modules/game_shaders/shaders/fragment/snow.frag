@@ -4,10 +4,10 @@ uniform sampler2D u_Tex1; // snow
 varying vec2 v_TexCoord;
 uniform vec2 u_WalkOffset;
 
-vec2 snowDirection = vec2(0.5, 1.0);
-float snowSpeed = 0.08;
-float snowPressure = 0.4;
-float snowZoom = 0.1;
+vec2 snowDirection = vec2(-0.5, 1.0);
+float snowSpeed = 0.06;
+float snowPressure = 1.0;
+float snowZoom = 0.15;
 
 void main(void)
 {

@@ -1,7 +1,19 @@
 local UI = nil
+
+Cyclopedia.Bosstiary = Cyclopedia.Bosstiary or {}
+
+-- Cleanup function to be called before tab switch
+function Cyclopedia.Bosstiary.cleanup()
+    UI = nil
+end
+
 function showBosstiary()
     UI = g_ui.loadUI("bosstiary", contentContainer)
     UI:show()
+
+    -- Clear any boss discovery highlight when bosstiary is opened
+    Cyclopedia.clearBosstiaryDiscoveryHighlight()
+
     g_game.requestBosstiaryInfo()
     UI.FilterBase.BaneIcon:setTooltip(
         "Bane\n\nFor unlocking a level, you will receive the following boss points:\nProwess: 5\nExpertise: 15\nMastery: 30")
@@ -88,8 +100,8 @@ function Cyclopedia.CreateBosstiaryCreature(data)
     }
 
     local function format(string)
-        if #string > 19 then
-            return string:sub(1, 16) .. "..."
+        if #string > 18 then
+            return string:sub(1, 15) .. "..."
         else
             return string
         end
@@ -176,6 +188,12 @@ function Cyclopedia.LoadBosstiaryCreatures(data)
     Cyclopedia.Bosstiary.Page = 1
     Cyclopedia.Bosstiary.TotalPages = math.ceil(#data / maxCategoriesPerPage)
 
+    -- Store kills data globally for use in boss slots
+    Cyclopedia.Bosstiary.KillsData = Cyclopedia.Bosstiary.KillsData or {}
+    for _, dataEntry in ipairs(data) do
+        Cyclopedia.Bosstiary.KillsData[dataEntry.raceId] = dataEntry.kills
+    end
+
     UI.PageValue:setText(string.format("%d / %d", Cyclopedia.Bosstiary.Page, Cyclopedia.Bosstiary.TotalPages))
 
     local page = 1
@@ -228,8 +246,43 @@ function Cyclopedia.LoadBosstiaryCreatures(data)
         end
     end
 
-    Cyclopedia.LoadBosstiaryCreature(Cyclopedia.Bosstiary.Page)
+    -- Check if we should navigate to a specific boss (from discovery notification)
+    local pendingBossId = Cyclopedia.pendingDiscoveryBossId
+    Cyclopedia.pendingDiscoveryBossId = nil -- Clear it immediately
+
+    if pendingBossId then
+        -- Find which page contains the discovered boss and navigate to it
+        Cyclopedia.navigateToBoss(pendingBossId, validCreatures)
+    else
+        Cyclopedia.LoadBosstiaryCreature(Cyclopedia.Bosstiary.Page)
+    end
+
     Cyclopedia.verifyBosstiaryButtons()
+end
+
+-- Navigates to a specific boss by its raceId
+-- Finds the page containing the boss and loads that page
+function Cyclopedia.navigateToBoss(bossRaceId, validCreatures)
+    if not bossRaceId or not validCreatures then
+        Cyclopedia.LoadBosstiaryCreature(Cyclopedia.Bosstiary.Page)
+        return
+    end
+
+    local maxCategoriesPerPage = 8
+
+    -- Find the boss in the sorted creature list
+    for i, creature in ipairs(validCreatures) do
+        if creature.raceId == bossRaceId then
+            -- Calculate which page this boss is on
+            local targetPage = math.ceil(i / maxCategoriesPerPage)
+            Cyclopedia.Bosstiary.Page = targetPage
+            Cyclopedia.LoadBosstiaryCreature(targetPage)
+            return
+        end
+    end
+
+    -- Boss not found, just load the first page
+    Cyclopedia.LoadBosstiaryCreature(Cyclopedia.Bosstiary.Page)
 end
 
 function Cyclopedia.LoadBosstiaryCreature(page)

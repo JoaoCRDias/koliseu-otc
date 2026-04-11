@@ -1,0 +1,816 @@
+ToolsPanel < Panel
+  anchors.fill: parent
+  Panel
+    id: toolsPanel
+    height: 310
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 18
+    Label
+      id: toolsTitle
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 1
+      !text: tr('Tools Helper')
+      font: verdana-11px-antialised
+      color: #AAAAAA
+      text-auto-resize: true
+    Panel
+      id: firstPanel
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: separator1.left
+      anchors.bottom: parent.bottom
+      margin: 5 5 5 5
+      Label
+        anchors.top: parent.top
+        anchors.left: parent.left
+        !text: tr('Mana Training')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+      UIButton
+        id: spellTrainingButton0
+        size: 34 34
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 7
+        margin-left: 2
+        image-source: /images/game/actionbar/actionbarslot
+        !tooltip: tr('Click to select a Spell')
+      CheckBox
+        id: enableTraining0
+        width: 60
+        anchors.top: prev.top
+        anchors.left: spellTrainingButton0.right
+        !text: tr('Enable')
+        margin-left: 5
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+        @onCheckChange: modules.game_helper.onEnableTraining(self:getId(), self:isChecked())
+
+      ComboBox
+        id: spellTrainingPercent0
+        size: 67 20
+        anchors.top: prev.bottom
+        anchors.left: spellTrainingButton0.right
+        margin-top: 2
+        margin-left: 5
+        color: #dfdfdf
+        @onOptionChange: updateTrainingPercent('spellTrainingButton0', self:getCurrentOption().text:match("%d+"))
+        @onSetup: |
+          for i = 10, 100, 10 do
+            self:addOption(i .. "%")
+          end
+          self:setCurrentOption("100%")
+      UIWidget
+        size: 12 12
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 5
+        margin-top: 4
+        image-source: /images/skin/show-gui-help-grey
+        !tooltip: tr('Cast a spell when your mana reaches the defined percentage to avoid regeneration waste.')
+      HorizontalSeparator
+        id: separator
+        anchors.top: spellTrainingButton0.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 5
+
+      Label
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Auto Haste')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 5
+      UIButton
+        id: hasteButton0
+        size: 34 34
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 7
+        margin-left: 2
+        image-source: /images/game/actionbar/actionbarslot
+        !tooltip: tr('Click to select a Spell')
+      CheckBox
+        id: enableHaste0
+        width: 60
+        anchors.top: prev.top
+        anchors.left: hasteButton0.right
+        !text: tr('Enable')
+        margin-left: 5
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: toggleAutoHaste(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+      CheckBox
+        id: castOnPz
+        width: 70
+        anchors.top: prev.bottom
+        anchors.left: hasteButton0.right
+        !text: tr('PZ Cast')
+        margin-left: 5
+        margin-top: 5
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: toggleAutoHastePz(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+
+      Label
+        anchors.top: castOnPz.bottom
+        anchors.left: parent.left
+        !text: tr('Exeta Res')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 14
+      UIButton
+        id: exetaResButton0
+        size: 34 34
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 2
+        margin-left: 2
+        image-source: /images/game/actionbar/actionbarslot
+        !tooltip: tr('Click to select Exeta Res spell')
+      TextEdit
+        id: exetaResMinCreatures
+        size: 45 20
+        anchors.top: prev.top
+        anchors.left: exetaResButton0.right
+        margin-left: 6
+        text: 1
+        text-align: center
+        @onTextChange: modules.game_helper.tools.setExetaResMinCreatures(self:getText())
+      Label
+        anchors.verticalCenter: exetaResMinCreatures.verticalCenter
+        anchors.left: exetaResMinCreatures.right
+        margin-left: 4
+        !text: tr('creatures')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+      CheckBox
+        id: enableExetaRes
+        width: 60
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 8
+        !text: tr('Enable')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleExetaRes(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+      UIWidget
+        size: 12 12
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 4
+        margin-top: 2
+        image-source: /images/skin/show-gui-help-grey
+        !tooltip: tr('Cast when there are at least X creatures around. Respects spell cooldown.')
+
+      Label
+        anchors.top: enableExetaRes.bottom
+        anchors.left: parent.left
+        !text: tr('Auto Amp Res')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 24
+      UIButton
+        id: ampResButton0
+        size: 34 34
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 2
+        margin-left: 2
+        image-source: /images/game/actionbar/actionbarslot
+        !tooltip: tr('Knight: Chivalrous Challenge. Paladin: Divine Dazzle.')
+      TextEdit
+        id: ampResMinCreatures
+        size: 45 20
+        anchors.top: prev.top
+        anchors.left: ampResButton0.right
+        margin-left: 6
+        text: 1
+        text-align: center
+        @onTextChange: modules.game_helper.tools.setAmpResMinCreatures(self:getText())
+      Label
+        anchors.verticalCenter: ampResMinCreatures.verticalCenter
+        anchors.left: ampResMinCreatures.right
+        margin-left: 4
+        !text: tr('creatures')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+      CheckBox
+        id: enableAmpRes
+        width: 60
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 8
+        !text: tr('Enable')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleAmpRes(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+      UIWidget
+        size: 12 12
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 4
+        margin-top: 2
+        image-source: /images/skin/show-gui-help-grey
+        !tooltip: tr('8 sqm around. Cooldown 10s. Knight: Chivalrous Challenge (exeta amp res). Paladin: Divine Dazzle (exana amp res).')
+
+      Label
+        anchors.top: enableAmpRes.bottom
+        anchors.left: parent.left
+        !text: tr('Auto Utito')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 24
+      UIButton
+        id: utitoButton0
+        size: 34 34
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 2
+        margin-left: 2
+        image-source: /images/game/actionbar/actionbarslot
+        !tooltip: tr('Click to select a Spell')
+      CheckBox
+        id: enableUtito0
+        width: 60
+        anchors.top: prev.top
+        anchors.left: utitoButton0.right
+        !text: tr('Enable')
+        margin-left: 5
+        margin-top: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: toggleAutoUtito(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+      CheckBox
+        id: castOnPzUtito
+        width: 65
+        anchors.top: prev.bottom
+        anchors.left: utitoButton0.right
+        !text: tr('PZ Cast')
+        margin-left: 5
+        margin-top: 4
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: toggleAutoUtitoPz(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+
+    VerticalSeparator
+      id: separator1
+      anchors.top: toolsTitle.bottom
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.bottom: parent.bottom
+      margin-top: 5
+      margin-bottom: 5
+    Panel
+      id: secondPanel
+      anchors.top: toolsTitle.bottom
+      anchors.left: prev.right
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin: 5 5 5 5
+      
+      // HorizontalSeparator
+      //   id: separator
+      //   anchors.top: hasteButton0.bottom
+      //   anchors.left: parent.left
+      //   anchors.right: parent.right
+      //   margin-top: 5
+      Label
+        id: toolsLabel2
+        anchors.top: parent.top
+        anchors.left: parent.left
+        !text: tr('Others Tools')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 5
+      UIWidget
+        size: 12 12
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 5
+        margin-top: 2
+        image-source: /images/skin/show-gui-help-grey
+        !tooltip: tr('Some other useful tools to make your gameplay easier.')
+
+      CheckBox
+        id: autoTrainingCheck
+        width: 110
+        anchors.top: toolsLabel2.bottom
+        anchors.left: parent.left
+        !text: tr('Exercise Training')
+        margin-top: 7
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: toggleExerciseTraining(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+
+      CheckBox
+        id: changeGold
+        width: 110
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Change Gold')
+        margin-top: 7
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+        @onCheckChange: toogleChangeGold(self:isChecked())
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('The gold exchange will only work if the gold container is open.')
+
+      CheckBox
+        id: eatFood
+        width: 110
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Auto Eat Food')
+        margin-top: 7
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: toggleAutoEat(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+
+      CheckBox
+        id: smartFollow
+        width: 55
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Follow')
+        margin-top: 7
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: toggleSmartFollow(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('Smart Follow: re-follows the target across different floors.')
+      Button
+        id: setKeyFollowButton
+        size: 41 15
+        anchors.verticalCenter: smartFollow.verticalCenter
+        anchors.left: smartFollow.right
+        margin-left: 2
+        !text: tr('Set Key')
+        @onClick: manageHotkeys("Enable/Disable Follow")
+
+      Label
+        id: alarmsLabel
+        anchors.top: setKeyFollowButton.bottom
+        anchors.left: parent.left
+        !text: tr('Alarms')
+        margin-top: 7
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+      UIButton
+        id: alarmSettingsButton
+        size: 20 20
+        anchors.verticalCenter: alarmsLabel.verticalCenter
+        anchors.left: alarmsLabel.right
+        margin-left: 5
+        image-source: /images/options/button_options
+        image-clip: 0 0 20 20
+        !tooltip: tr('Alarm Settings')
+        @onClick: modules.game_helper.alarmSettings.open()
+        $pressed:
+          image-clip: 20 0 20 20
+
+      CheckBox
+        id: autoBless
+        width: 110
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Auto Bless')
+        margin-top: 7
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleAutoBless(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('Automatically sends !bless command on login.')
+
+      CheckBox
+        id: antiAfk
+        width: 110
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Anti AFK')
+        margin-top: 7
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleAntiAfk(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('Every 10 minutes the character will turn to avoid AFK.')
+
+      CheckBox
+        id: advertisingChannel
+        width: 140
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Advertising channel')
+        margin-top: 7
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleAdvertisingChannel(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('Sends the message to Advertising channel every 10 minutes. Open the channel first.')
+      TextEdit
+        id: advertisingChannelText
+        height: 20
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 3
+        margin-left: 2
+        @onTextChange: modules.game_helper.tools.setAdvertisingChannelText(self:getText())
+        placeholder: tr('Message to send')
+
+      Label
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Item Timer')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 8
+      UIButton
+        id: itemTimerButton0
+        size: 34 34
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 2
+        margin-left: 2
+        image-source: /images/game/actionbar/actionbarslot
+        !tooltip: tr('Click to select item to use on timer')
+        Label
+          id: itemTimerCountdown0
+          anchors.fill: parent
+          font: verdana-11px-antialised
+          color: #ffffff
+          text-align: center
+          background-color: #00000088 
+      TextEdit
+        id: itemTimerInterval0
+        size: 45 20
+        anchors.top: prev.top
+        anchors.left: itemTimerButton0.right
+        margin-left: 6
+        text: 60
+        text-align: center
+        @onTextChange: modules.game_helper.tools.setItemTimerInterval(0, self:getText())
+      Label
+        anchors.verticalCenter: itemTimerInterval0.verticalCenter
+        anchors.left: itemTimerInterval0.right
+        margin-left: 4
+        !text: tr('sec')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+      CheckBox
+        id: enableItemTimer0
+        width: 60
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 8
+        !text: tr('Enable')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleItemTimer(0, self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+      UIButton
+        id: itemTimerButton1
+        size: 34 34
+        anchors.top: itemTimerButton0.bottom
+        anchors.left: parent.left
+        margin-top: 6
+        margin-left: 2
+        image-source: /images/game/actionbar/actionbarslot
+        !tooltip: tr('Click to select item to use on timer')
+        Label
+          id: itemTimerCountdown1
+          anchors.fill: parent
+          font: verdana-11px-antialised
+          color: #ffffff
+          text-align: center
+          background-color: #00000088
+      TextEdit
+        id: itemTimerInterval1
+        size: 45 20
+        anchors.top: prev.top
+        anchors.left: itemTimerButton1.right
+        margin-left: 6
+        text: 60
+        text-align: center
+        @onTextChange: modules.game_helper.tools.setItemTimerInterval(1, self:getText())
+      Label
+        anchors.verticalCenter: itemTimerInterval1.verticalCenter
+        anchors.left: itemTimerInterval1.right
+        margin-left: 4
+        !text: tr('sec')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+      CheckBox
+        id: enableItemTimer1
+        width: 60
+        anchors.top: prev.top
+        anchors.left: prev.right
+        margin-left: 8
+        !text: tr('Enable')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleItemTimer(1, self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+
+  // Third Panel - Paladin Only (Quiver Refill)
+  Panel
+    id: paladinPanel
+    height: 135
+    anchors.top: toolsPanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 18
+    visible: false
+    Label
+      id: paladinTitle
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 1
+      !text: tr('Quiver Refill')
+      font: verdana-11px-antialised
+      color: #AAAAAA
+      text-auto-resize: true
+    UIWidget
+      id: quiverHelpIcon
+      size: 12 12
+      anchors.top: parent.top
+      anchors.right: parent.right
+      margin-top: 3
+      margin-right: 8
+      image-source: /images/skin/show-gui-help-grey
+      !tooltip: tr('Automatically equip ammunition when quiver count\nis below minimum until refill value is reached.')
+    Panel
+      id: paladinContent
+      anchors.top: paladinTitle.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin: 8 8 8 8
+      UIButton
+        id: quiverAmmoItem
+        size: 34 34
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 2
+        image-source: /images/game/actionbar/actionbarslot
+        @onClick: modules.game_helper.tools.assignQuiverAmmo(self)
+        !tooltip: tr('Click to select ammunition item')
+      Label
+        id: minLabel
+        anchors.top: parent.top
+        anchors.left: quiverAmmoItem.right
+        margin-left: 8
+        margin-top: 2
+        !text: tr('Min:')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+      TextEdit
+        id: quiverMinValue
+        size: 45 20
+        anchors.top: parent.top
+        anchors.left: minLabel.right
+        margin-left: 5
+        margin-top: 0
+        text: 50
+        text-align: center
+      Label
+        id: refillLabel
+        anchors.top: parent.top
+        anchors.left: quiverMinValue.right
+        margin-left: 10
+        margin-top: 2
+        !text: tr('Refill:')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+      TextEdit
+        id: quiverRefillValue
+        size: 45 20
+        anchors.top: parent.top
+        anchors.left: refillLabel.right
+        margin-left: 5
+        margin-top: 0
+        text: 100
+        text-align: center
+      CheckBox
+        id: enableQuiverRefill
+        width: 100
+        anchors.top: quiverAmmoItem.bottom
+        anchors.left: parent.left
+        !text: tr('Enable')
+        margin-top: 8
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleQuiverRefill(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+
+  // Fourth Panel - Sorcerer/Druid Only (Magic Shield)
+  Panel
+    id: magePanel
+    height: 135
+    anchors.top: toolsPanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 18
+    visible: false
+    Label
+      id: mageTitle
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 1
+      !text: tr('Magic Shield')
+      font: verdana-11px-antialised
+      color: #AAAAAA
+      text-auto-resize: true
+    UIWidget
+      id: mageHelpIcon
+      size: 12 12
+      anchors.top: parent.top
+      anchors.right: parent.right
+      margin-top: 3
+      margin-right: 8
+      image-source: /images/skin/show-gui-help-grey
+      !tooltip: tr('Automatically cast utamo vita when HP is low.\nExana vita when HP is high, or use\nmagic shield potion when utamo vita is on cooldown.')
+    Panel
+      id: mageContent
+      anchors.top: mageTitle.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin: 8 8 8 8
+
+      // Utamo Vita Row
+      CheckBox
+        id: enableUtamoVita
+        width: 110
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 3
+        !text: tr('Utamo Vita HP <')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleUtamoVita(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+      TextEdit
+        id: utamoHpPercent
+        size: 40 18
+        anchors.verticalCenter: enableUtamoVita.verticalCenter
+        anchors.left: enableUtamoVita.right
+        margin-left: 5
+        text: 80
+        text-align: center
+      Label
+        id: utamoPercentLabel
+        anchors.verticalCenter: utamoHpPercent.verticalCenter
+        anchors.left: utamoHpPercent.right
+        margin-left: 3
+        text: %
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+
+      // Exana Vita Row
+      CheckBox
+        id: enableExanaVita
+        width: 110
+        anchors.top: enableUtamoVita.bottom
+        anchors.left: parent.left
+        margin-top: 8
+        !text: tr('Exana Vita HP >')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleExanaVita(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+      TextEdit
+        id: exanaHpPercent
+        size: 40 18
+        anchors.verticalCenter: enableExanaVita.verticalCenter
+        anchors.left: enableExanaVita.right
+        margin-left: 5
+        text: 90
+        text-align: center
+      Label
+        id: exanaPercentLabel
+        anchors.verticalCenter: exanaHpPercent.verticalCenter
+        anchors.left: exanaHpPercent.right
+        margin-left: 3
+        text: %
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+
+      // Magic Shield Potion Row
+      CheckBox
+        id: enableMagicShieldPotion
+        width: 210
+        anchors.top: enableExanaVita.bottom
+        anchors.left: parent.left
+        margin-top: 8
+        !text: tr('Use Magic Potion if Support on CD')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        @onCheckChange: modules.game_helper.tools.toggleMagicShieldPotion(self:isChecked())
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+      UIWidget
+        id: potionHelpIcon
+        size: 12 12
+        anchors.top: enableExanaVita.bottom
+        anchors.left: enableMagicShieldPotion.right
+        margin-left: 5
+        margin-top: 9
+        image-source: /images/skin/show-gui-help-grey
+        !tooltip: tr('Uses Magic Shield Potion (ID 35563) when support group\nis on cooldown and HP is below the configured threshold.')

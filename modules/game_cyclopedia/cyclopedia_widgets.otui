@@ -1,5 +1,5 @@
 HouseIcon < UIWidget
-  //image-source: /game_cyclopedia/images/house-owner-icon
+  //image-source: /images/game/cyclopedia/house/own-house
   margin-left: 1
 HouseBidArea < UIWidget
   height: 100
@@ -355,14 +355,16 @@ SelectBossBossSlots < UICheckBox
     id: Sprite
     size: 64 64
     anchors.right: parent.right
-    anchors.bottom: parent.bottom
-    margin-bottom: 10
-    margin-right: 5
+    anchors.top: parent.top
+    margin-top: 35
+    margin-right: 10
     phantom: true
   UIWidget
     id: TypeIcon
-    anchors.right: Sprite.left
-    anchors.top: Sprite.top
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-top: 25
+    margin-right: 70
     image-source: images/boss/icon_bane
 SlotBossSlots < UIWidget
   size: 222 360
@@ -431,10 +433,10 @@ SlotBossSlots < UIWidget
       anchors.top: SearchEdit.top
       margin-top: 1
       margin-right: 1
-      image-source: /images/ui/button-clear-18x18-up
+      image-source: /images/ui/buttons/button-clear-18x18-up
       @onClick: modules.game_cyclopedia.Cyclopedia.SelectBossSearchText("", true, self)
       $pressed:
-        image-source: /images/ui/button-clear-18x18-down
+        image-source: /images/ui/buttons/button-clear-18x18-down
     Button
       id: SelectButton
       size: 43 20
@@ -538,21 +540,37 @@ BossSlotProgress < UIWidget
     size: 42 14
   UIWidget
     id: ProgressBack
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.bottom: parent.bottom
-    margin-bottom: 21
-    margin-right: 7
-    margin-left: 7
-    height: 13
-    image-border: 10
+    anchors.left: ProgressBorder1.left
+    anchors.bottom: ProgressBorder1.bottom
+    height: 12
+    margin: 1
     phantom: true
+    image-source: /game_cyclopedia/images/bestiary/fill
+  UIWidget
+    id: ProgressBack33
+    anchors.left: ProgressBorder2.left
+    anchors.bottom: ProgressBorder2.bottom
+    height: 12
+    margin: 1
+    phantom: true
+    image-source: /game_cyclopedia/images/bestiary/fill
+  UIWidget
+    id: ProgressBack55
+    anchors.left: ProgressBorder3.left
+    anchors.bottom: ProgressBorder3.bottom
+    height: 12
+    margin-bottom: 1
+    phantom: true
+    image-source: /game_cyclopedia/images/bestiary/fill
   UIWidget
     id: fill
-    anchors.fill: ProgressBack
-    image-source: /game_cyclopedia/images/boss/fill
-    margin-top: 1
+    anchors.left: ProgressBorder1.left
+    anchors.bottom: ProgressBorder1.bottom
+    height: 12
+    margin: 1
     phantom: true
+    image-source: /game_cyclopedia/images/boss/fill
+    visible: false
   UIWidget
     anchors.left: ProgressBorder1.right
     anchors.top: ProgressBorder1.top
@@ -903,6 +921,7 @@ BosstiaryItem < UIWidget
     anchors.left: ProgressBorder1.left
     anchors.bottom: ProgressBorder2.bottom
     height: 12
+    margin: 1
     phantom: true
     image-source: /game_cyclopedia/images/bestiary/fill
   UIWidget
@@ -910,13 +929,15 @@ BosstiaryItem < UIWidget
     anchors.left: ProgressBorder2.left
     anchors.bottom: ProgressBorder2.bottom
     height: 12
+    margin: 1
     phantom: true
     image-source: /game_cyclopedia/images/bestiary/fill
   UIWidget
     id: ProgressBack55
     anchors.left: ProgressBorder3.left
-    anchors.bottom: ProgressBorder2.bottom
+    anchors.bottom: ProgressBorder3.bottom
     height: 12
+    margin-bottom: 1
     phantom: true
     image-source: /game_cyclopedia/images/bestiary/fill
   UIWidget
@@ -1183,9 +1204,11 @@ RuneSlot < InventoryItemCyclopedia
   id: slot18
 
   &position: {x=65535, y=18, z=0}
-  
+
+ 
+
 TrackerButton < Panel
-  height: 34
+  height: 40
   margin-bottom: 5
   phantom: false
   border-width: 1
@@ -1198,87 +1221,92 @@ TrackerButton < Panel
   UICreature
     id: creature
     size: 16 16
-    anchors.left: parent.left
     anchors.top: parent.top
+    anchors.left: parent.left
     phantom: true
-
-  UIWidget
-    id: spacer
-    width: 3
-    anchors.left: creature.right
-    anchors.top: creature.top
+    animate: true
 
   Label
     id: label
-    anchors.left: spacer.right
-    anchors.top: creature.top
-    text-auto-resize: true
-    color: #888888
+    anchors.top: parent.top
+    anchors.left: creature.right
     margin-left: 2
+    margin-top: 1
+    !text: tr('Monster Name')
+    text-auto-resize: true
+
+  UIWidget
+    id: hourglassIcon
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-right: 4
+    margin-bottom: 2
+    size: 10 15
+    image-source: /images/game/cyclopedia/bosstiary/hourglass
+    image-smooth: true
+    phantom: false
+    visible: false
+
+  UIWidget
+    id: bgFirst
+    anchors.top: label.bottom
+    anchors.left: parent.left
+    margin-top: 2
+    size: 47 15
+    image-source: /images/game/cyclopedia/bestiary/bestiary-progress-bg
+    phantom: true
+  UIWidget
+    id: killsBar2
+    anchors.top: bgFirst.top
+    anchors.left: bgFirst.left
+    margin-top: 1
+    margin-left: 1
+    size: 0 13
+    phantom: true
+
+  UIWidget
+    id: bgSecond
+    anchors.top: bgFirst.top
+    anchors.left: bgFirst.right
+    margin-left: 1
+    size: 47 15
+    image-source: /images/game/cyclopedia/bestiary/bestiary-progress-bg
+    phantom: true
+  UIWidget
+    id: ProgressBack33
+    anchors.top: bgSecond.top
+    anchors.left: bgSecond.left
+    margin-top: 1
+    margin-left: 1
+    size: 0 13
+    phantom: true
+
+  UIWidget
+    id: bgThird
+    anchors.top: bgFirst.top
+    anchors.left: bgSecond.right
+    margin-left: 1
+    size: 47 15
+    image-source: /images/game/cyclopedia/bestiary/bestiary-progress-bg
+    phantom: true
+  UIWidget
+    id: ProgressBack55
+    anchors.top: bgThird.top
+    anchors.left: bgThird.left
+    margin-top: 1
+    margin-left: 1
+    size: 0 13
+    phantom: true
 
   Label
     id: kills
-    anchors.right: parent.right
-    anchors.top: creature.top
-    text-align: right
+    font: verdana-11px-antialised
+    color: #c0c0c0
     text-auto-resize: true
-    color: #888888
-    margin-left: 2
-
-  LifeProgressBar
-    id: killsBar
-    height: 8
-    anchors.left: spacer.right
-    anchors.right: parent.right
-    anchors.top: label.bottom
-    margin-top: 2
-    phantom: true
-    visible: false
-    
-  ProgressBackground
-    id: ProgressBorder2
-    anchors.left: spacer.right
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.top: creature.bottom
-    margin-top: 2
-    size: 54 15
-  ProgressBackground
-    id: ProgressBorder1
-    anchors.right: ProgressBorder2.left
-    anchors.top: creature.bottom
-    margin-right: 2
-    margin-top: 2
-    size: 54 15
-  ProgressBackground
-    id: ProgressBorder3
-    anchors.left: ProgressBorder2.right
-    anchors.top: creature.bottom
-    margin-top: 2
-    margin-left: 2
-    size: 54 15
-  UIWidget
-    id: killsBar2
-    anchors.left: ProgressBorder1.left
-    anchors.top: creature.bottom
-    height: 12
-    phantom: true
-    margin-top: 3
-
-  UIWidget
-    id: ProgressBack33
-    anchors.left: ProgressBorder2.left
-    anchors.top: creature.bottom
-    height: 12
-    phantom: true
-    margin-top: 3
-
-  UIWidget
-    id: ProgressBack55
-    anchors.left: ProgressBorder3.left
-    anchors.top: creature.bottom
-    height: 12
-    phantom: true
-    margin-top: 3
+    !text: tr('0/0')
+    anchors.top: bgFirst.top
+    anchors.horizontalCenter: bgSecond.horizontalCenter
+    margin-top: 1
 
 
 BestiaryTracker < MiniWindow
@@ -1340,7 +1368,7 @@ bestiaryTrackerMenu < PopupMenu
     !text: tr('sort by remaining kills')
 
   HorizontalSeparator
-
+    
   ImbuementTrackerMenuOption
     id: sortByAscending
     !text: tr('sort by ascending')
@@ -1395,7 +1423,7 @@ RowStore2 < UIWidget
     margin-left:22
     text-align: center
 
-  StoreFlatPanel
+  UIWidget
     id: lblPrice
     size: 104 20
     anchors.bottom: parent.bottom
@@ -1403,7 +1431,8 @@ RowStore2 < UIWidget
     margin: 0 5 5 0
     text-align: center
     text-offset: 15 0
-    image-color: #1111118c
+    image-source: /images/ui/test/button-verydarkgrey-down
+    image-border: 3
     icon: /images/ui/tibiaCoin
     icon-align: right
     icon-offset: -2 0

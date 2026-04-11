@@ -301,3 +301,12 @@ end
 function LoadedPlayer:setVocation(vocationId)
   self.playerVocation = vocationId
 end
+
+function LocalPlayer:hasCondition(condition) return bit.band(self:getStates(), condition) > 0 end
+
+function LocalPlayer:isInProtectionZone() return self:hasCondition(PlayerStates.Pz) end
+
+isInProtectionZone = function()
+  local localPlayer = g_game.getLocalPlayer()
+  return localPlayer and localPlayer:hasCondition(PlayerStates.Pz) or false
+end

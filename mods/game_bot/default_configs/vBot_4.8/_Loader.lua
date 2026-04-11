@@ -51,7 +51,8 @@ local luaFiles = {
   "npc_talk",
   "xeno_menu",
   "hold_target",
-  "cavebot_control_panel"
+  "cavebot_control_panel",
+  "auto_explore"
 }
 
 for i, file in ipairs(luaFiles) do

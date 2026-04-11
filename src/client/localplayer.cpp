@@ -124,7 +124,7 @@ bool LocalPlayer::retryAutoWalk()
         return false;
     }
 
-    g_game.stop();
+    g_game.stop(m_autoWalkCancelFollowOnSend);
 
     if (m_autoWalkRetries <= 3) {
         if (m_autoWalkContinueEvent)
@@ -165,7 +165,7 @@ void LocalPlayer::cancelWalk(const Otc::Direction direction)
     callLuaField("onCancelWalk", direction);
 }
 
-bool LocalPlayer::autoWalk(const Position& destination, const bool retry)
+bool LocalPlayer::autoWalk(const Position& destination, const bool retry, const bool cancelFollowBeforeWalk)
 {
     // reset state
     m_autoWalkDestination = {};
@@ -174,8 +174,10 @@ bool LocalPlayer::autoWalk(const Position& destination, const bool retry)
         m_autoWalkContinueEvent->cancel();
     m_autoWalkContinueEvent = nullptr;
 
-    if (!retry)
+    if (!retry) {
         m_autoWalkRetries = 0;
+        m_autoWalkCancelFollowOnSend = cancelFollowBeforeWalk;
+    }
 
     if (destination == m_position)
         return true;
@@ -209,7 +211,7 @@ bool LocalPlayer::autoWalk(const Position& destination, const bool retry)
             self->m_lastAutoWalkPosition = result->destination;
         }
 
-        g_game.autoWalk(result->path, result->start);
+        g_game.autoWalk(result->path, result->start, self->m_autoWalkCancelFollowOnSend);
     });
 
     if (!retry)
@@ -225,6 +227,7 @@ void LocalPlayer::stopAutoWalk()
     m_autoWalkDestination = {};
     m_lastAutoWalkPosition = {};
     m_knownCompletePath = false;
+    m_autoWalkCancelFollowOnSend = true;
 
     if (m_autoWalkContinueEvent)
         m_autoWalkContinueEvent->cancel();
@@ -247,7 +250,7 @@ void LocalPlayer::onPositionChange(const Position& newPos, const Position& oldPo
     if (newPos == m_autoWalkDestination)
         stopAutoWalk();
     else if (m_autoWalkDestination.isValid() && newPos == m_lastAutoWalkPosition)
-        autoWalk(m_autoWalkDestination);
+        autoWalk(m_autoWalkDestination, false, m_autoWalkCancelFollowOnSend);
 
     m_serverWalk = false;
 }

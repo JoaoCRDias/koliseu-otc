@@ -1,5 +1,6 @@
 -- to-do
 -- change to ItemsDatabase.setTier(UIitem) to UIitem:setTier()
+-- move this to "\modules\gamelib\ui\uiitem.lua" or "\modules\game_interface\widgets\uiitem.lua" why are 2 ?
 ItemsDatabase = {}
 
 ItemsDatabase.rarityColors = {
@@ -21,12 +22,11 @@ local function getColorForValue(value)
         return "green"
     elseif value >= 50 then
         return "grey"
-    else
-        return "white"
     end
+    return nil
 end
 
-local function clipfunction(value)
+local function getClipForValue(value)
     if value >= 1000000 then
         return "128 0 32 32"
     elseif value >= 100000 then
@@ -38,53 +38,7 @@ local function clipfunction(value)
     elseif value >= 50 then
         return "0 0 32 32"
     end
-    return ""
-end
-
-function ItemsDatabase.getClipAndImagePath(item)
-    if not item then
-        return nil, nil, nil
-    end
-
-    local frameOption = modules.client_options.getOption('framesRarity')
-    if frameOption == "none" then
-        return nil, nil, nil
-    end
-    local imagePath = '/images/ui/item'
-    local clip = nil
-
-    if type(item) == "number" then
-        item = g_things.getThingType(item, ThingCategoryItem)
-    end
-
-    if not item then
-        return nil, nil, nil
-    end
-
-    if item then
-        local price = type(item) == "number" and item or (item and item:getMeanPrice()) or 0
-        local itemRarity = getColorForValue(price)
-        if itemRarity then
-            clip = clipfunction(price)
-            if clip ~= "" then
-                if frameOption == "frames" then
-                    imagePath = "/images/ui/rarity_frames"
-                elseif frameOption == "corners" then
-                    imagePath = "/images/ui/containerslot-coloredges"
-                end
-            else
-                clip = nil
-            end
-        end
-    end
-
-    local clipObject = nil
-    if clip then
-        local x, y, w, h = clip:match("(%d+) (%d+) (%d+) (%d+)")
-        clipObject = { x = tonumber(x), y = tonumber(y), width = tonumber(w), height = tonumber(h) }
-    end
-
-    return clip, imagePath, clipObject
+    return nil
 end
 
 function ItemsDatabase.setRarityItem(widget, item, style)
@@ -92,16 +46,69 @@ function ItemsDatabase.setRarityItem(widget, item, style)
         return
     end
 
-    local clip, imagePath = ItemsDatabase.getClipAndImagePath(item)
-
-    if not imagePath then
+    -- Check if widget supports rarity overlay (UIItem)
+    if not widget.setRaritySource then
         return
     end
 
-    widget:setImageClip(clip)
-    widget:setImageSource(imagePath)
+    local frameOption = modules.client_options.getOption('framesRarity')
+    if frameOption == "none" then
+        widget:clearRarity()
+        return
+    end
+
+    if item then
+        local price = type(item) == "number" and item or (item and item:getMeanPrice()) or 0
+        local clip = getClipForValue(price)
+
+        if clip then
+            local imagePath
+            if frameOption == "frames" then
+                imagePath = "/images/ui/rarity_frames"
+            elseif frameOption == "corners" then
+                imagePath = "/images/ui/containerslot-coloredges"
+            end
+
+            if imagePath then
+                widget:setRaritySource(imagePath)
+                widget:setRarityClip(clip)
+            else
+                widget:clearRarity()
+            end
+        else
+            widget:clearRarity()
+        end
+    else
+        widget:clearRarity()
+    end
+
     if style then
         widget:setStyle(style)
+    end
+end
+
+function ItemsDatabase.clearRarityItem(widget)
+    if not widget then
+        return
+    end
+
+    -- Clear rarity overlay
+    if widget.clearRarity then
+        widget:clearRarity()
+    end
+
+    -- Clear tier widget
+    if widget.tier then
+        widget.tier:setVisible(false)
+        widget.tier:setImageClip(nil)
+    end
+
+    -- Clear charges and duration
+    if widget.charges then
+        widget.charges:setText("")
+    end
+    if widget.duration then
+        widget.duration:setText("")
     end
 end
 
@@ -109,43 +116,67 @@ function ItemsDatabase.getColorForRarity(rarity)
     return ItemsDatabase.rarityColors[rarity] or TextColors.white
 end
 
-function ItemsDatabase.setColorLootMessage(text)
-    local function coloringLootName(match)
-        local id, itemName = match:match("(%d+)|(.+)")
-        if not id or not itemName then
-            -- If pattern doesn't match itemId|itemName format, return the original match with braces
-            return "{" .. match .. "}"
-        end
+function ItemsDatabase.setColorLootMessage(text, baseColor)
+    baseColor = baseColor or TextColors.green
 
-        local itemId = tonumber(id)
-        if not itemId then
-            return itemName or match
-        end
-
-        local thingType = g_things.getThingType(itemId, ThingCategoryItem)
-        if not thingType then
-            return itemName
-        end
-
-        local itemInfo = thingType:getMeanPrice()
-        if itemInfo then
-            local color = ItemsDatabase.getColorForRarity(getColorForValue(itemInfo))
-            return "{" .. itemName .. ", " .. color .. "}"
-        else
-            return itemName
+    local highlightLoot = true
+    if modules and modules.client_options and modules.client_options.getOption then
+        local ok, value = pcall(modules.client_options.getOption, 'lootHighlight')
+        if ok and value == false then
+            highlightLoot = false
         end
     end
-    return text:gsub("{(.-)}", coloringLootName)
-end
 
-function ItemsDatabase.getTierClip(tier)
-    local xOffset = (math.min(math.max(tier, 1), 10) - 1) * 9
-    return {
-        x = xOffset,
-        y = 0,
-        width = 10,
-        height = 9
-    }
+    -- Build fully colored text where every part has explicit color
+    local coloredText = ''
+    local searchPos = 1
+
+    while true do
+        local braceStart, braceEnd, match = string.find(text, '{([^}]+)}', searchPos)
+        if not braceStart then
+            -- Add remaining text with base color
+            local remaining = string.sub(text, searchPos)
+            if #remaining > 0 then
+                coloredText = coloredText .. '{' .. remaining .. ', ' .. baseColor .. '}'
+            end
+            break
+        end
+
+        -- Add text before this item with base color
+        local beforeItem = string.sub(text, searchPos, braceStart - 1)
+        if #beforeItem > 0 then
+            coloredText = coloredText .. '{' .. beforeItem .. ', ' .. baseColor .. '}'
+        end
+
+        -- Parse the item: format is "itemId|itemName"
+        local id, itemName = match:match("(%d+)|(.+)")
+        if id and itemName then
+            local itemId = tonumber(id)
+            local itemColor = baseColor
+
+            if highlightLoot and itemId then
+                local thingType = g_things.getThingType(itemId, ThingCategoryItem)
+                if thingType then
+                    local itemInfo = thingType:getMeanPrice()
+                    if itemInfo then
+                        local rarity = getColorForValue(itemInfo)
+                        if rarity then
+                            itemColor = ItemsDatabase.getColorForRarity(rarity)
+                        end
+                    end
+                end
+            end
+
+            coloredText = coloredText .. '{' .. itemName .. ', ' .. itemColor .. '}'
+        else
+            -- No itemId|itemName format, just use the match as-is with base color
+            coloredText = coloredText .. '{' .. match .. ', ' .. baseColor .. '}'
+        end
+
+        searchPos = braceEnd + 1
+    end
+
+    return coloredText
 end
 
 function ItemsDatabase.setTier(widget, item, isSmall)
@@ -210,6 +241,7 @@ function ItemsDatabase.setCharges(widget, item, style)
     end
 end
 
+
 function ItemsDatabase.setDuration(widget, item, style)
     if not g_game.getFeature(GameThingClock) or not widget then
         return
@@ -217,7 +249,16 @@ function ItemsDatabase.setDuration(widget, item, style)
 
     if item and item:getDurationTime() > 0 then
         local durationTimeLeft = item:getDurationTime()
-        widget.duration:setText(string.format("%dm%02d", durationTimeLeft / 60, durationTimeLeft % 60))
+        local hours = math.floor(durationTimeLeft / 3600)
+        local minutes = math.floor((durationTimeLeft % 3600) / 60)
+        local seconds = math.floor(durationTimeLeft % 60)
+        if hours > 0 then
+            widget.duration:setText(string.format("%dh%02d", hours, minutes))
+        elseif minutes > 0 then
+            widget.duration:setText(string.format("%dm", minutes))
+        else
+            widget.duration:setText(string.format("%ds", seconds))
+        end
     else
         widget.duration:setText("")
     end

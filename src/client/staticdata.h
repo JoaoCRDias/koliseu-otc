@@ -179,6 +179,18 @@ struct BossCooldownData
         : bossRaceId(raceId), cooldownTime(cooldown) {}
 };
 
+/// Consumable / misc timer row for game_analyser (server opcode GameServerActiveTimers).
+struct ActiveTimerEntry
+{
+    uint8_t category = 0;
+    /// 0 = string key (ImageMapping), 1 = item client id (u16)
+    uint8_t keyType = 0;
+    std::string keyString;
+    uint16_t keyItemId = 0;
+    std::string value;
+    uint32_t remaining = 0;
+};
+
 struct PartyMemberData
 {
     uint32_t memberID;

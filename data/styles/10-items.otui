@@ -12,17 +12,22 @@ Item < UIItem
   Label
     id: duration
     anchors.bottom: parent.bottom
-    anchors.left: parent.left
+    anchors.right: parent.right
     phantom: true
-    font: "verdana-11px-rounded"
+    text-auto-resize: true
+    font: verdana-11px-rounded
+    margin-right: 0
+    margin-bottom: : -2
 
   Label
     id: charges
-    anchors.top: parent.top
-    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
     phantom: true
     text-auto-resize: true
-    font: "verdana-11px-rounded"
+    font: verdana-11px-rounded
+    margin-right: 0
+    margin-bottom: : -2
 
   UIWidget
     id: tier
@@ -207,19 +212,25 @@ MainInventoryItem < UIWidget
     font: verdana-11px-rounded
     border-color: white
     color: white
-	
+
     Label
       id: duration
       anchors.bottom: parent.bottom
-      anchors.left: parent.left
+      anchors.right: parent.right
       phantom: true
+      font: verdana-11px-rounded
+      text-auto-resize: true
+      margin-right: 0
+      margin-bottom: : -2
     Label
       id: charges
-      anchors.top: parent.top
-      anchors.left: parent.left
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
       phantom: true
       text-auto-resize: true
-      font: "verdana-11px-rounded"
+      font: verdana-11px-rounded
+      margin-right: 0
+      margin-bottom: : -2
 
     UIWidget
       id: tier

@@ -53,6 +53,14 @@ public:
     void setShader(std::string_view name) override;
     bool hasShader() override;
 
+    // Rarity overlay system
+    void setRaritySource(const std::string_view source);
+    void setRarityClip(const Rect& clipRect);
+    void clearRarity();
+
+private:
+    void drawRarityImage(const Rect& screenCoords);
+
 protected:
     void onStyleApply(std::string_view styleName, const OTMLNodePtr& styleNode) override;
 
@@ -64,4 +72,9 @@ protected:
     bool m_itemVisible{ true };
     bool m_alwaysShowCount{ true };
     uint8_t m_flipDirection{ 0 }; // 0 = none, 1 = horizontal, 2 = vertical
+
+    // Rarity overlay
+    std::string m_raritySource;
+    TexturePtr m_rarityTexture;
+    Rect m_rarityClipRect;
 };

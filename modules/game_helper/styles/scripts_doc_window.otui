@@ -1,0 +1,54 @@
+ScriptsDocWindow < NewHeadlessWindow
+  id: scriptsDocWindow
+  anchors.horizontalCenter: parent.horizontalCenter
+  anchors.verticalCenter: parent.verticalCenter
+  size: 720 560
+  @onEscape: modules.game_helper.scripts.closeDocWindow()
+  Panel
+    id: docContent
+    anchors.fill: parent
+    margin: 10
+    Label
+      id: docTitle
+      anchors.top: parent.top
+      anchors.left: parent.left
+      !text: tr('Script Library - Documentation')
+      font: verdana-11px-antialised
+      color: #AAAAAA
+      text-auto-resize: true
+    MultilineTextEdit
+      id: docText
+      anchors.top: docTitle.bottom
+      anchors.left: parent.left
+      anchors.right: docScrollBar.left
+      anchors.bottom: docButtons.top
+      margin-top: 8
+      margin-bottom: 8
+      margin-right: 4
+      font: verdana-11px-antialised
+      color: #dfdfdf
+      text-wrap: true
+      vertical-scrollbar: docScrollBar
+    VerticalScrollBar
+      id: docScrollBar
+      anchors.top: docTitle.bottom
+      anchors.right: parent.right
+      anchors.bottom: docButtons.top
+      margin-top: 8
+      margin-bottom: 8
+      step: 16
+      pixels-scroll: true
+    Panel
+      id: docButtons
+      height: 28
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+    Button
+      id: closeDocButton
+      anchors.verticalCenter: docButtons.verticalCenter
+      anchors.horizontalCenter: parent.horizontalCenter
+      size: 70 22
+      !text: tr('Close')
+      font: verdana-11px-antialised
+      @onClick: modules.game_helper.scripts.closeDocWindow()

@@ -238,10 +238,10 @@ UIWidget
     anchors.top: SearchEdit.top
     margin-top: 1
     margin-right: 1
-    image-source: /images/ui/button-clear-18x18-up
+    image-source: /images/ui/buttons/button-clear-18x18-up
     @onClick: modules.game_cyclopedia.Cyclopedia.BosstiarySearchText("", true)
     $pressed:
-      image-source: /images/ui/button-clear-18x18-down
+      image-source: /images/ui/buttons/button-clear-18x18-down
   UIWidget
     id: PageValue
     anchors.horizontalCenter: parent.horizontalCenter

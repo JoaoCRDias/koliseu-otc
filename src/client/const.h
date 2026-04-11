@@ -468,7 +468,7 @@ namespace Otc
         GameMagicEffectU16 = 16,
         GamePlayerMarket = 17,
         GameSpritesU32 = 18,
-        // 19 unused
+        GameProficiency = 19, // game proficiency apenas para 1510+
         GameOfflineTrainingTime = 20,
         GamePurseSlot = 21,
         GameFormatCreatureName = 22,
@@ -579,6 +579,7 @@ namespace Otc
         GameCreaturePaperdoll = 128,
         GameMultiSpr = 129,
         GameVocationMonk = 130,
+        GameCreatureGroupType = 131, // byte extra após vocation em AddCreature (servidores RadBR / Balrog)
         LastGameFeature
     };
 
@@ -710,6 +711,9 @@ namespace Otc
         RESOURE_COIN_TRANSFERRABLE = 91,
         RESOURE_COIN_AUCTION = 92,
         RESOURE_COIN_TOURNAMENT = 93,
+        RESOURCE_BOUNTY_TASK_POINTS = 94,
+        RESOURCE_BOUNTY_REROLL_POINTS = 95,
+        RESOURCE_SOULSEAL_POINTS = 96,
     };
 
     enum ExperienceRate_t : uint8_t
@@ -870,15 +874,7 @@ namespace Otc
         OPEN_SEARCH = 5,
     };
 
-    enum WeaponProficiency_t : uint8_t
-    {
-        WEAPON_PROFICIENCY_ITEM_INFO = 0,
-        WEAPON_PROFICIENCY_LIST_INFO = 1,
-        WEAPON_PROFICIENCY_RESET_PERKS = 2,
-        WEAPON_PROFICIENCY_APPLY_PERKS = 3
-    };
-
-    enum Imbuement_Window_t : uint8_t
+   enum Imbuement_Window_t : uint8_t
     {
         IMBUEMENT_WINDOW_CHOICE = 0,
         IMBUEMENT_WINDOW_SELECT_ITEM = 1,
@@ -1137,6 +1133,7 @@ enum ThingFlagAttr :uint64_t
     ThingFlagAttrFloorChange = static_cast<uint64_t>(1) << 48,
     ThingFlagAttrDualWield = static_cast<uint64_t>(1) << 49,
     ThingFlagAttrSkillWheelGem = static_cast<uint64_t>(1) << 50,
+    ThingFlagAttrProficiency = static_cast<uint64_t>(1) << 51,
 };
 
 enum STACK_PRIORITY : uint8_t

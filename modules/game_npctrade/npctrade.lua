@@ -40,6 +40,123 @@ selectedItem = nil
 
 cancelNextRelease = nil
 
+-- Quick sell / sell-all whitelist (Balrog v3: persisted as sellBlacklist in npcTradeData.json)
+local ITEM_LOOT_POUCH_ID = 23721
+sellAllWhitelist = { ITEM_LOOT_POUCH_ID }
+
+local function ensureCharacterDataDir(player)
+    pcall(function()
+        g_resources.makeDir("/characterdata")
+    end)
+    pcall(function()
+        g_resources.makeDir("/characterdata/" .. player:getId())
+    end)
+end
+
+function saveNpcTradeData()
+    local player = g_game.getLocalPlayer()
+    if not player then
+        return
+    end
+    ensureCharacterDataDir(player)
+    local file = "/characterdata/" .. player:getId() .. "/npcTradeData.json"
+    local data = { sellBlacklist = sellAllWhitelist }
+    local status, result = pcall(function()
+        return json.encode(data, 2)
+    end)
+    if not status then
+        return g_logger.error("Error while saving npcTradeData. Details: " .. tostring(result))
+    end
+    local writeStatus, writeError = pcall(function()
+        return g_resources.writeFileContents(file, result)
+    end)
+    if not writeStatus then
+        return g_logger.error("Could not save npcTradeData: " .. tostring(writeError))
+    end
+end
+
+function loadNpcTradeData()
+    local player = g_game.getLocalPlayer()
+    if not player then
+        return
+    end
+    local basePath = "/characterdata/" .. player:getId() .. "/"
+    local newFile = basePath .. "npcTradeData.json"
+    if g_resources.fileExists(newFile) then
+        local status, result = pcall(function()
+            return json.decode(g_resources.readFileContents(newFile))
+        end)
+        if not status then
+            return g_logger.error("Error while reading npcTradeData. Details: " .. tostring(result))
+        end
+        if type(result) ~= "table" then
+            g_logger.error("Invalid npcTradeData: expected table, got " .. type(result))
+            return
+        end
+        sellAllWhitelist = result.sellBlacklist or { ITEM_LOOT_POUCH_ID }
+        return
+    end
+    local oldWhitelistFile = basePath .. "sellAllWhitelist.json"
+    if g_resources.fileExists(oldWhitelistFile) then
+        local status, result = pcall(function()
+            return json.decode(g_resources.readFileContents(oldWhitelistFile))
+        end)
+        if status and type(result) == "table" then
+            sellAllWhitelist = result
+        end
+    end
+end
+
+function inWhiteList(clientId)
+    if not clientId then
+        clientId = 0
+    end
+    if not sellAllWhitelist then
+        return false
+    end
+    return table.contains(sellAllWhitelist, clientId)
+end
+
+function addToWhitelist(clientId)
+    if type(clientId) ~= "number" then
+        return
+    end
+    if table.contains(sellAllWhitelist, clientId) then
+        return
+    end
+    table.insert(sellAllWhitelist, clientId)
+    saveNpcTradeData()
+end
+
+function removeItemInList(clientId)
+    if type(clientId) ~= "number" then
+        return
+    end
+    if not table.contains(sellAllWhitelist, clientId) then
+        return
+    end
+    for k, v in pairs(sellAllWhitelist) do
+        if v == clientId then
+            table.remove(sellAllWhitelist, k)
+            break
+        end
+    end
+    saveNpcTradeData()
+end
+
+local function onNpcTradeGameStart()
+    loadNpcTradeData()
+end
+
+local function onNpcTradeGameEnd()
+    saveNpcTradeData()
+end
+
+local function onNpcTradeGameEndAndHide()
+    onNpcTradeGameEnd()
+    hide()
+end
+
 function init()
     npcWindow = g_ui.displayUI('npctrade')
     npcWindow:setVisible(false)
@@ -80,7 +197,8 @@ function init()
     end
 
     connect(g_game, {
-        onGameEnd = hide,
+        onGameStart = onNpcTradeGameStart,
+        onGameEnd = onNpcTradeGameEndAndHide,
         onOpenNpcTrade = onOpenNpcTrade,
         onCloseNpcTrade = onCloseNpcTrade,
         onPlayerGoods = onPlayerGoods
@@ -91,6 +209,10 @@ function init()
         onInventoryChange = onInventoryChange
     })
 
+    if g_game.isOnline() then
+        loadNpcTradeData()
+    end
+
     initialized = true
 end
 
@@ -99,7 +221,8 @@ function terminate()
     npcWindow:destroy()
 
     disconnect(g_game, {
-        onGameEnd = hide,
+        onGameStart = onNpcTradeGameStart,
+        onGameEnd = onNpcTradeGameEndAndHide,
         onOpenNpcTrade = onOpenNpcTrade,
         onCloseNpcTrade = onCloseNpcTrade,
         onPlayerGoods = onPlayerGoods

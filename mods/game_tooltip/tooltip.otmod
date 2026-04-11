@@ -1,0 +1,9 @@
+Module  
+  name: game_tooltip  
+  description: Display item information for player  
+  author: Sherrat Module Client/Clyfe Server  
+  website:       
+  sandboxed: true  
+  scripts: [ tooltip ]  
+  @onLoad: init()  
+  @onUnload: terminate()

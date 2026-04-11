@@ -119,6 +119,13 @@ public:
 
     void onPositionChange(const Position& /*newPos*/, const Position& /*oldPos*/) override { updatePatterns(); }
 
+    uint32_t getContainerItemCount() const { return m_containerItemCount; }
+    void setContainerItemCount(uint32_t count) { m_containerItemCount = count; }
+
+    bool isDepot() const;
+    uint16_t getDepotId() const;
+    void setDepotId(uint16_t depotId);
+
 #ifdef FRAMEWORK_EDITOR
     std::string getName();
     static ItemPtr createFromOtb(int id);
@@ -126,9 +133,6 @@ public:
     void setOtbId(uint16_t id);
     void unserializeItem(const BinaryTreePtr& in);
     void serializeItem(const OutputBinaryTreePtr& out);
-
-    void setDepotId(uint16_t depotId) { m_attribs.set(ATTR_DEPOT_ID, depotId); }
-    uint16_t getDepotId() { return m_attribs.get<uint16_t>(ATTR_DEPOT_ID, 0); }
 
     void setDoorId(uint8_t doorId) { m_attribs.set(ATTR_HOUSEDOORID, doorId); }
     uint8_t getDoorId() { return m_attribs.get<uint8_t >(ATTR_HOUSEDOORID, 0); }
@@ -147,7 +151,6 @@ public:
     void setTeleportDestination(const Position& pos) { m_attribs.set(ATTR_TELE_DEST, pos); }
 
     bool isHouseDoor() { return m_attribs.has(ATTR_HOUSEDOORID); }
-    bool isDepot() { return m_attribs.has(ATTR_DEPOT_ID); }
     bool isContainer() const override { return m_attribs.has(ATTR_CONTAINER_ITEMS) || Thing::isContainer(); }
     bool isDoor() { return m_attribs.has(ATTR_HOUSEDOORID); }
     bool isTeleport() { return m_attribs.has(ATTR_TELE_DEST); }
@@ -166,6 +169,7 @@ private:
     void internalDraw(int animationPhase, const Point& dest, const Color& color, bool drawThings, bool replaceColorShader, LightView* lightView = nullptr);
 
     uint16_t m_countOrSubType{ 0 };
+    uint32_t m_containerItemCount{ 0 };
     uint32_t m_durationTime{ 0 };
     uint32_t m_charges{ 0 };
     uint8_t m_tier{ 0 };

@@ -1,18 +1,110 @@
+HouseData < UIWidget
+  height: 56
+  image-source: /images/ui/miniwindow
+  image-border: 4
+  focusable: false
+  UIWidget
+    id: main
+    anchors.fill: parent
+    focusable: true
+    text-align: top
+    text-offset: 0 8
+    font: verdana-11px-rounded
+    color: #c0c0c0
+    UIWidget
+      id: imageOwnHouse
+      anchors.top: parent.top
+      anchors.right: parent.right
+      margin-top: 8
+      margin-right: 3
+      size: 12 12
+      image-source: /images/game/cyclopedia/house/own-house
+      visible: false
+    Label
+      id: sizeText
+      !text: tr('Size:')
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-left: 5
+      margin-top: 23
+      color: #909090
+      font: verdana-11px-rounded
+    Label
+      id: sizeValueText
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 3
+      color: #c0c0c0
+      font: verdana-11px-rounded
+    Label
+      id: maxBedsText
+      !text: tr('Max. Beds:')
+      anchors.left: sizeValueText.right
+      anchors.top: sizeText.top
+      margin-left: 15
+      color: #909090
+      font: verdana-11px-rounded
+    Label
+      id: maxBedsValueText
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 3
+      color: #c0c0c0
+      font: verdana-11px-rounded
+    Label
+      id: rentText
+      !text: tr('Rent:')
+      anchors.left: maxBedsValueText.right
+      anchors.top: sizeText.top
+      margin-left: 15
+      color: #909090
+      font: verdana-11px-rounded
+    Label
+      id: rentValueText
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 3
+      color: #c0c0c0
+      font: verdana-11px-rounded
+    UIWidget
+      id: rentGoldIcon
+      anchors.left: prev.right
+      anchors.verticalCenter: prev.verticalCenter
+      margin-left: 2
+      image-source: /game_cyclopedia/images/icon_gold
+    Label
+      id: statusText
+      !text: tr('Status:')
+      anchors.left: parent.left
+      anchors.top: sizeText.bottom
+      margin-left: 5
+      margin-top: 3
+      color: #909090
+      font: verdana-11px-rounded
+    Label
+      id: statusValueText
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 3
+      color: #c0c0c0
+      font: verdana-11px-rounded
+    @onClick: modules.game_cyclopedia.Cyclopedia.House.onSelectHouse(self)
+
 UIWidget
   id: Cat5
   anchors.fill: parent
   visible: false
   UIWidget
-    id: TopBase
+    id: checkboxBackground
     anchors.top: parent.top
     anchors.left: parent.left
     anchors.right: parent.right
-    image-source: /images/ui/2pixel_up_frame_borderimage
-    image-border: 5
     height: 52
     margin-top: 5
+    image-source: /images/ui/2pixel_up_frame_borderimage
+    image-border: 5
     ComboBox
-      id: StatesOption
+      id: allStates
       size: 214 20
       color: #C0C0C0
       anchors.horizontalCenter: parent.horizontalCenter
@@ -20,1407 +112,578 @@ UIWidget
       margin-top: 7
       text-align: center
     ComboBox
-      id: CityOption
+      id: ownHouses
       size: 215 20
       color: #C0C0C0
-      anchors.right: StatesOption.left
-      anchors.top: StatesOption.top
+      anchors.right: allStates.left
+      anchors.top: allStates.top
       margin-right: 5
       text-align: center
     ComboBox
-      id: SortOption
+      id: sortName
       size: 215 20
       color: #C0C0C0
-      anchors.left: StatesOption.right
-      anchors.top: StatesOption.top
+      anchors.left: allStates.right
+      anchors.top: allStates.top
       margin-left: 5
       text-align: center
     CheckBoxCircle
-      id: GuildhallsCheck
+      id: checkGuildhalls
       anchors.bottom: parent.bottom
       anchors.left: parent.horizontalCenter
       margin-bottom: 5
       margin-left: 20
-      image-source: /images/ui/checkboxcircle
       text-offset: 15 0
       !text: tr('Guildhalls')
-      size: 12 12
-      font: Verdana Bold-11px
+      font: verdana-11px-rounded
       color: #C0C0C0
-      text-auto-resize: true
-      @onClick: modules.game_cyclopedia.Cyclopedia.houseFilter(self)
+      size: 90 12
+      @onClick: modules.game_cyclopedia.Cyclopedia.House.toggleHouseChecked(true)
     CheckBoxCircle
-      id: HousesCheck
-      anchors.bottom: GuildhallsCheck.bottom
-      anchors.right: GuildhallsCheck.left
+      id: checkHouses
+      anchors.bottom: checkGuildhalls.bottom
+      anchors.right: checkGuildhalls.left
       margin-right: 20
-      image-source: /images/ui/checkboxcircle
       text-offset: 15 0
       !text: tr('Houses and Flats')
-      size: 12 12
-      font: Verdana Bold-11px
+      font: verdana-11px-rounded
       color: #C0C0C0
-      text-auto-resize: true
-      @onClick: modules.game_cyclopedia.Cyclopedia.houseFilter(self)
+      size: 120 12
+      @onClick: modules.game_cyclopedia.Cyclopedia.House.toggleHouseChecked(false)
+
   UIWidget
-    id: LateralBase
+    id: mapViewBackground
     size: 250 358
-    anchors.top: TopBase.bottom
+    anchors.top: checkboxBackground.bottom
     anchors.left: parent.left
-    image-source: /images/ui/2pixel_up_frame_borderimage
-    image-border: 5
     margin-top: 8
     margin-bottom: 8
+    image-source: /images/ui/2pixel_up_frame_borderimage
+    image-border: 5
     UIWidget
-    //MapRose
-      id: MapBorder
-      anchors.top: parent.top
-      anchors.right: parent.right
-      //image-source: /game_cyclopedia/images/map_borders/automap-rose-idle
-      margin-right: 10
-      margin-top: 50
-      visible: false
-    UIWidget
-      id: LayerIndicator
-      anchors.right: MapBorder.right
-      anchors.top: MapBorder.bottom
-      margin-top: 5
-      margin-right: 5
-      size: 14 67
-      //image-source: /game_cyclopedia/images/map_layers
-      image-rect: 0 0 14 67
-      image-clip: 112 0 14 67
-      visible: false
-    VerticalSeparator
-      id: LayerLine
-      anchors.top: LayerIndicator.top
-      anchors.bottom: LayerIndicator.bottom
-      anchors.left: LayerIndicator.right
-      margin-left: 5
-      visible: false
-    VerticalScrollBar
-      id: LayerScrollbar
-      anchors.top: LayerIndicator.top
-      anchors.bottom: LayerIndicator.bottom
-      anchors.left: LayerIndicator.right
-      margin-left: -1
-      margin-top: -16
-      margin-bottom: -16
-      step: 1
-      minimum: 1
-      maximum: 300
-      image-source: none
-      visible: false
-    UIWidget
-      id: MapViewbase
-      size: 188 212
+      id: minimapContainer
       anchors.top: parent.top
       anchors.left: parent.left
-      margin-top: 8
-      margin-left: 8
-      margin-right: 5
+      anchors.right: parent.right
+      margin: 8
+      height: 180
       image-source: /images/ui/panel_flat
-      image-border: 10
-      UIWidget
-        id: reload
-        anchors.centerIn: parent
-        image-source: /game_cyclopedia/images/icon-refresh
-        opacity: 1.0
-        visible: false
-        $pressed:
-          opacity: 0.5
-      UIWidget
-        id: noHouse
+      image-border: 4
+      UIMinimap
+        id: minimap
         anchors.fill: parent
-        margin: 1
-        background-color: black
+        margin: 2
+        min-zoom: 0
+        max-zoom: 6
+        visible: false
+      UIWidget
+        id: noSelectedBackground
+        anchors.fill: parent
+        margin: 2
+        background-color: #000000
         Label
+          id: noSelected
           !text: tr('No house selected')
           color: #C0C0C0
-          text-auto-resize: true
           anchors.centerIn: parent
-      UIWidget
-        id: houseImage
-        anchors.fill: parent
-        margin: 1
-        visible: false
-    UIWidget
-      id: ZoomOutButton
-      anchors.left: MapBorder.left
-      anchors.top: MapBorder.bottom
-      margin-left: 3
-      margin-top: 11
-      //image-source: /game_cyclopedia/images/button_zoommin
-      visible: false
-      $pressed:
-        //image-source: /game_cyclopedia/images/button_zoommin_pressed
-    UIWidget
-      id: ZoomInButton
-      anchors.left: ZoomOutButton.left
-      anchors.top: ZoomOutButton.bottom
-      margin-top: 2
-      //image-source: /game_cyclopedia/images/button_zoomout
-      visible: false
-      $pressed:
-        //image-source: /game_cyclopedia/images/button_zoomout_pressed
-    UIWidget
-      id: MapButton
-      anchors.left: ZoomInButton.left
-      anchors.top: ZoomInButton.bottom
-      margin-top: 2
-      //image-source: /game_cyclopedia/images/button_cyclopediamap
-      visible: false
-      $pressed:
-        //image-source: /game_cyclopedia/images/button_cyclopediamap_pressed
-    Label
-      id: AuctionLabel
-      anchors.left: MapViewbase.left
-      anchors.top: MapViewbase.bottom
-      margin-top: 5
-      !text: tr('Auction')
-      color: #F7F7F7
-      text-auto-resize: true
-    Label
-      id: AuctionText
-      color: #C0C0C0
-      anchors.left: MapViewbase.left
-      anchors.top: AuctionLabel.bottom
-      margin-top: 3
-      !text: tr('There is no bid so far.\nBe the first to bid on this house.')
-      text-auto-resize: true
-    Label
-      id: subAuctionLabel
-      anchors.left: MapViewbase.left
-      anchors.top: AuctionText.bottom
-      margin-top: 5
-      !text: tr('Pending Transfer')
-      color: #F7F7F7
-      text-auto-resize: true
-      visible: false
-    Label
-      id: subAuctionText
-      color: #C0C0C0
-      anchors.left: MapViewbase.left
-      anchors.top: subAuctionLabel.bottom
-      margin-top: 3
-      text-auto-resize: true
-      visible: false
-    Label
-      id: highestBid
-      size: 100 15
-      text-align: right
-      color: #C0C0C0
-      anchors.right: parent.right
-      anchors.bottom: AuctionText.bottom
-      margin-right: 57
-      margin-top: 3
-      visible: false
-    UIWidget
-      id: highestBidGold
-      anchors.left: highestBid.right
-      anchors.verticalCenter: highestBid.verticalCenter
-      margin-left: 5
-      image-source: /game_cyclopedia/images/icon_gold
-      visible: false
-    Label
-      id: yourLimitLabel
-      !text: tr('Your Limit:')
-      color: #909090
-      anchors.left: AuctionText.left
-      anchors.top: AuctionText.bottom
-      margin-left: 15
-      visible: false
-    Label
-      id: yourLimitBid
-      size: 100 15
-      text-align: right
-      color: #C0C0C0
-      anchors.right: highestBid.right
-      anchors.top: highestBid.bottom
-      visible: false
-    UIWidget
-      id: yourLimitBidGold
-      anchors.left: yourLimitBid.right
-      anchors.verticalCenter: yourLimitBid.verticalCenter
-      margin-left: 5
-      image-source: /game_cyclopedia/images/icon_gold
-      visible: false
-    Label
-      id: transferLabel
-      !text: tr('Price:')
-      color: #909090
-      anchors.left: subAuctionText.left
-      anchors.top: subAuctionText.bottom
-      margin-left: 64
-      visible: false
-    Label
-      id: transferValue
-      text-auto-resize: true
-      color: #C0C0C0
-      anchors.left: transferLabel.right
-      anchors.top: transferLabel.top
-      visible: false
-      margin-left: 5
-    UIWidget
-      id: transferGold
-      anchors.left: transferValue.right
-      anchors.verticalCenter: transferValue.verticalCenter
-      margin-left: 5
-      image-source: /game_cyclopedia/images/icon_gold
-      visible: false
+          font: verdana-11px-rounded
     Panel
-      id: icons
-      height: 12
-      anchors.verticalCenter: AuctionLabel.verticalCenter
-      anchors.left: AuctionLabel.right
+      id: panelTextsRents
+      anchors.top: minimapContainer.bottom
+      anchors.left: parent.left
       anchors.right: parent.right
-      margin-left: 5
-      margin-right: 5
-      layout:
-        type: horizontalBox
-        align-right: true
-        flow: true
-    UIWidget
-      id: description
-      //image-source: /game_cyclopedia/images/house-description
-      anchors.top: icons.top
-      anchors.left: icons.left
-      visible: false
-  UIWidget
-    id: bidArea
-    !text: tr('Place Your Bid')
-    text-align: top
-    text-offset: 0 1
-    color: #909090
-    size: 413 358
-    anchors.top: LateralBase.top
-    anchors.left: LateralBase.right
-    //image-source: /images/ui/widget-borderimage
-    image-border: 15
-    margin-left: 5
-    visible: false
-    padding: 15
-    Button
-      id: cancel
-      size: 43 20
-      !text: tr('Cancel')
-      color: #C0C0C0
       anchors.bottom: parent.bottom
-      anchors.right: parent.right
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Button
-      id: bid
-      size: 64 20
-      !text: tr('Bid')
-      color: #C0C0C0
-      anchors.top: cancel.top
-      anchors.right: cancel.left
-      margin-right: 7
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Label
-      !text: tr('House Information')
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-top: 10
-      color: #F7F7F7
-    Label
-      !text: tr('Name:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: name
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Size:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: name.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: size
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Max. Beds:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: size.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: beds
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Rent:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: beds.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: rent
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Auction Information')
-      anchors.top: prev.bottom
-      anchors.left: parent.left
       margin-top: 5
-      color: #F7F7F7
+      margin-left: 8
+      margin-right: 8
+      Label
+        id: noBidHouseHeader
+        !text: tr('Auction')
+        anchors.top: parent.top
+        anchors.left: parent.left
+        color: #F7F7F7
+        font: verdana-11px-rounded
+        visible: false
+      Label
+        id: noBidHouseText
+        !text: tr('There is no bid so far.\nBe the first to bid on this house.')
+        anchors.top: noBidHouseHeader.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        color: #C0C0C0
+        font: verdana-11px-rounded
+        visible: false
+      Panel
+        id: bidInfo
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 80
+        visible: false
+        Label
+          id: auctionLabel
+          !text: tr('Auction')
+          anchors.top: parent.top
+          anchors.left: parent.left
+          color: #F7F7F7
+          font: verdana-11px-rounded
+        Label
+          id: bidderLabel
+          !text: tr('Highest Bidder:')
+          anchors.top: auctionLabel.bottom
+          anchors.left: parent.left
+          margin-top: 3
+          color: #909090
+          font: verdana-11px-rounded
+        Label
+          id: bidderName
+          anchors.top: bidderLabel.top
+          anchors.left: bidderLabel.right
+          margin-left: 3
+          color: #C0C0C0
+          font: verdana-11px-rounded
+        Label
+          id: endLabel
+          !text: tr('End Time:')
+          anchors.top: bidderLabel.bottom
+          anchors.left: parent.left
+          margin-top: 2
+          color: #909090
+          font: verdana-11px-rounded
+        Label
+          id: endValue
+          anchors.top: endLabel.top
+          anchors.left: endLabel.right
+          margin-left: 3
+          color: #C0C0C0
+          font: verdana-11px-rounded
+        Label
+          id: highestBidLabel
+          !text: tr('Highest Bid:')
+          anchors.top: endLabel.bottom
+          anchors.left: parent.left
+          margin-top: 2
+          color: #909090
+          font: verdana-11px-rounded
+        Label
+          id: highestBidValue
+          anchors.top: highestBidLabel.top
+          anchors.left: highestBidLabel.right
+          margin-left: 3
+          color: #C0C0C0
+          font: verdana-11px-rounded
+        UIWidget
+          id: highestBidGold
+          anchors.left: highestBidValue.right
+          anchors.verticalCenter: highestBidValue.verticalCenter
+          margin-left: 3
+          image-source: /game_cyclopedia/images/icon_gold
+        Label
+          id: yourLimitLabel
+          !text: tr('Your Bid Limit:')
+          anchors.top: highestBidLabel.bottom
+          anchors.left: parent.left
+          margin-top: 2
+          color: #909090
+          font: verdana-11px-rounded
+          visible: false
+        Label
+          id: yourLimitValue
+          anchors.top: yourLimitLabel.top
+          anchors.left: yourLimitLabel.right
+          margin-left: 3
+          color: #C0C0C0
+          font: verdana-11px-rounded
+          visible: false
+        UIWidget
+          id: yourLimitGold
+          anchors.left: yourLimitValue.right
+          anchors.verticalCenter: yourLimitValue.verticalCenter
+          margin-left: 3
+          image-source: /game_cyclopedia/images/icon_gold
+          visible: false
+      Panel
+        id: rental
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 80
+        visible: false
+        UIWidget
+          id: imageOwnHouseRental
+          anchors.top: parent.top
+          anchors.right: parent.right
+          margin-top: 0
+          margin-right: 0
+          size: 12 12
+          image-source: /images/game/cyclopedia/house/own-house
+          visible: false
+        Label
+          id: rentalLabel
+          !text: tr('Rental Details')
+          anchors.top: parent.top
+          anchors.left: parent.left
+          color: #F7F7F7
+          font: verdana-11px-rounded
+        Label
+          id: tenantLabel
+          !text: tr('Tenant:')
+          anchors.top: rentalLabel.bottom
+          anchors.left: parent.left
+          margin-top: 3
+          color: #909090
+          font: verdana-11px-rounded
+        Label
+          id: tenantValue
+          anchors.top: tenantLabel.top
+          anchors.left: tenantLabel.right
+          margin-left: 3
+          color: #C0C0C0
+          font: verdana-11px-rounded
+        Label
+          id: paidLabel
+          !text: tr('Paid Until:')
+          anchors.top: tenantLabel.bottom
+          anchors.left: parent.left
+          margin-top: 2
+          color: #909090
+          font: verdana-11px-rounded
+        Label
+          id: paidValue
+          anchors.top: paidLabel.top
+          anchors.left: paidLabel.right
+          margin-left: 3
+          color: #C0C0C0
+          font: verdana-11px-rounded
+        Button
+          id: moveButton
+          !text: tr('Move Out')
+          size: 64 20
+          anchors.bottom: parent.bottom
+          anchors.right: parent.right
+          margin-bottom: 5
+          visible: false
+        Button
+          id: transferButton
+          !text: tr('Transfer')
+          size: 64 20
+          anchors.bottom: parent.bottom
+          anchors.right: moveButton.left
+          margin-right: 5
+          margin-bottom: 5
+          visible: false
+      Button
+        id: bidButton
+        !text: tr('Bid')
+        size: 64 20
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        margin-bottom: 5
+        visible: false
+        @onClick: modules.game_cyclopedia.Cyclopedia.House.onBidButton(self)
+
   UIWidget
-    id: moveOutArea
-    !text: tr('Select Move Date')
-    text-align: top
-    text-offset: 0 1
-    color: #909090
-    size: 413 358
-    anchors.top: LateralBase.top
-    anchors.left: LateralBase.right
-    image-source: /images/ui/widget-borderimage
-    image-border: 15
+    id: selectedBackground
+    anchors.top: mapViewBackground.top
+    anchors.left: mapViewBackground.right
+    anchors.right: parent.right
+    anchors.bottom: mapViewBackground.bottom
     margin-left: 5
-    visible: false
-    padding: 15
-    Button
-      id: cancel
-      size: 43 20
-      !text: tr('Cancel')
-      color: #C0C0C0
-      anchors.bottom: parent.bottom
-      anchors.right: parent.right
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Button
-      id: move
-      size: 64 20
-      !text: tr('Move Out')
-      color: #C0C0C0
-      anchors.top: cancel.top
-      anchors.right: cancel.left
-      margin-right: 7
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Label
-      !text: tr('House Information')
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-top: 10
-      color: #F7F7F7
-    Label
-      !text: tr('Name:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: name
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Size:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: name.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: size
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Max. Beds:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: size.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: beds
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Rent:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: beds.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: rent
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Move Information')
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 5
-      color: #F7F7F7
-    Label
-      !text: tr('Paid until:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: paid
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Move Date:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: paid.bottom
-      anchors.left: parent.left
-      margin-top: 8
-    ComboBox
-      id: year
-      size: 70 20
-      color: #C0C0C0
-      anchors.left: prev.right
-      anchors.top: prev.top
-      margin-left: 5
-      text-offset: 15 1
-      margin-top: -3
-    Label
-      !text: tr('-')
-      color: #C0C0C0
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 3
-      margin-top: 2
-    ComboBox
-      id: month
-      size: 51 20
-      color: #C0C0C0
-      text-offset: 20 1
-      anchors.left: prev.right
-      anchors.top: year.top
-      margin-left: 5
-    Label
-      !text: tr('-')
-      color: #C0C0C0
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 3
-      margin-top: 2
-    ComboBox
-      id: day
-      size: 50 20
-      color: #C0C0C0
-      text-offset: 15 1
-      anchors.left: prev.right
-      anchors.top: year.top
-      margin-left: 5
-    UIWidget
-      id: error
-      !tooltip: tr('Select a date in the future!')
-      anchors.left: prev.right
-      anchors.verticalCenter: month.verticalCenter
-      //image-source: /game_cyclopedia/images/icon-info-error
-      margin-left: 5
-      visible: false
-    UIWidget
-      !tooltip: tr('You will move out at the daily server save of the selected day.')
-      anchors.right: parent.right
-      anchors.verticalCenter: month.verticalCenter
-      //image-source: /images/icons/show_gui_help_grey
-    Label
-      !text: tr('All items you have left in the house will be automatically\nsent to your inbox.')
-      text-auto-resize: true
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 10
-      color: #C0C0C0
-  UIWidget
-    id: transferArea
-    !text: tr('Configure House Transfer')
-    text-align: top
-    text-offset: 0 1
-    color: #909090
-    size: 413 358
-    anchors.top: LateralBase.top
-    anchors.left: LateralBase.right
-    image-source: /images/ui/widget-borderimage
-    image-border: 15
-    margin-left: 5
-    visible: false
-    padding: 15
-    Button
-      id: cancel
-      size: 43 20
-      !text: tr('Cancel')
-      color: #C0C0C0
-      anchors.bottom: parent.bottom
-      anchors.right: parent.right
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Button
-      id: transfer
-      size: 64 20
-      !text: tr('Transfer')
-      color: #C0C0C0
-      anchors.top: cancel.top
-      anchors.right: cancel.left
-      margin-right: 7
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Label
-      !text: tr('House Information')
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-top: 10
-      color: #F7F7F7
-    Label
-      !text: tr('Name:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: name
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Size:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: name.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: size
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Max. Beds:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: size.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: beds
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Rent:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: beds.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: rent
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Transfer Information')
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 5
-      color: #F7F7F7
-    Label
-      !text: tr('Paid until:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: paid
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Transfer Date:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: paid.bottom
-      anchors.left: parent.left
-      margin-top: 8
-    ComboBox
-      id: year
-      size: 70 20
-      color: #C0C0C0
-      anchors.left: prev.right
-      anchors.top: prev.top
-      margin-left: 5
-      text-offset: 15 1
-      margin-top: -3
-    Label
-      !text: tr('-')
-      color: #C0C0C0
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 3
-      margin-top: 2
-    ComboBox
-      id: month
-      size: 51 20
-      color: #C0C0C0
-      text-offset: 20 1
-      anchors.left: prev.right
-      anchors.top: year.top
-      margin-left: 5
-    Label
-      !text: tr('-')
-      color: #C0C0C0
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 3
-      margin-top: 2
-    ComboBox
-      id: day
-      size: 50 20
-      color: #C0C0C0
-      text-offset: 15 1
-      anchors.left: prev.right
-      anchors.top: year.top
-      margin-left: 5
-    UIWidget
-      id: error
-      !tooltip: tr('Select a date in the future!')
-      anchors.left: prev.right
-      anchors.verticalCenter: month.verticalCenter
-      //image-source: /game_cyclopedia/images/icon-info-error
-      margin-left: 5
-      visible: false
-    UIWidget
-      !tooltip: tr('You will move out at the daily server save of the selected day.')
-      anchors.right: parent.right
-      anchors.verticalCenter: month.verticalCenter
-      image-source: /images/icons/show_gui_help_grey
-    Label
-      !text: tr('New Owner:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: year.bottom
-      anchors.left: parent.left
-      margin-top: 3
-    TextEdit
-      id: owner
-      size: 193 16
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 5
-      padding-top: 1
-      placeholder: Name of new owner
-      placeholder-color: #6E706F
-    UIWidget
-      id: errorName
-      !tooltip: tr('Field must be completed.')
-      anchors.left: prev.right
-      anchors.verticalCenter: owner.verticalCenter
-      // image-source: /game_cyclopedia/images/icon-info-error
-      margin-left: 5
-      visible: false
-    UIWidget
-      !tooltip: tr('Note that the new owner has to accept the transfer.')
-      anchors.right: parent.right
-      anchors.verticalCenter: owner.verticalCenter
-      image-source: /images/icons/show_gui_help_grey
-    Label
-      !text: tr('Transfer Price:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: owner.bottom
-      anchors.left: parent.left
-      margin-top: 3
-    TextEdit
-      id: price
-      size: 100 16
-      text-align: right
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 5
-      padding-top: 1
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      margin-left: 5
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Please remeber to take your personal belongings out of\nthe house before you move out. Items remaining in the\nhouse become the property of the new owner after the transfer.\nThe only exception are items which have been purchased\nin the Store. They will be sent yo your inbox.')
-      text-auto-resize: true
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 10
-      color: #C0C0C0
-  UIWidget
-    id: cancelHouseTransferArea
-    !text: tr('Cancel House Transfer')
-    text-align: top
-    text-offset: 0 1
-    color: #909090
-    size: 413 358
-    anchors.top: LateralBase.top
-    anchors.left: LateralBase.right
-    image-source: /images/ui/widget-borderimage
-    image-border: 15
-    margin-left: 5
-    visible: false
-    padding: 15
-    Button
-      id: cancel
-      size: 43 20
-      !text: tr('Cancel')
-      color: #C0C0C0
-      anchors.bottom: parent.bottom
-      anchors.right: parent.right
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Button
-      id: transfer
-      size: 86 20
-      !text: tr('Cancel Transfer')
-      color: #C0C0C0
-      anchors.top: cancel.top
-      anchors.right: cancel.left
-      margin-right: 7
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Label
-      !text: tr('House Information')
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-top: 10
-      color: #F7F7F7
-    Label
-      !text: tr('Name:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: name
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Size:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: name.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: size
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Max. Beds:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: size.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: beds
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Rent:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: beds.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: rent
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Transfer Information')
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 5
-      color: #F7F7F7
-    Label
-      !text: tr('Paid until:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: paid
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('New Owner:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: owner
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Transfer Date:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: transferDate
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Price:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: transferPrice
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      margin-left: 5
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('If you want to keep this house. click on "Cancel Transfer".')
-      text-auto-resize: true
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 10
-      color: #C0C0C0
-  UIWidget
-    id: acceptTransferHouse
-    !text: tr('Accept House Transfer')
-    text-align: top
-    text-offset: 0 1
-    color: #909090
-    size: 413 358
-    anchors.top: LateralBase.top
-    anchors.left: LateralBase.right
-    image-source: /images/ui/widget-borderimage
-    image-border: 15
-    margin-left: 5
-    visible: false
-    padding: 15
-    Button
-      id: cancel
-      size: 43 20
-      !text: tr('Cancel')
-      color: #C0C0C0
-      anchors.bottom: parent.bottom
-      anchors.right: parent.right
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Button
-      id: transfer
-      size: 86 20
-      !text: tr('Accept Transfer')
-      color: #C0C0C0
-      anchors.top: cancel.top
-      anchors.right: cancel.left
-      margin-right: 7
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Label
-      !text: tr('House Information')
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-top: 10
-      color: #F7F7F7
-    Label
-      !text: tr('Name:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: name
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Size:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: name.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: size
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Max. Beds:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: size.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: beds
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Rent:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: beds.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: rent
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Transfer Information')
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 5
-      color: #F7F7F7
-    Label
-      !text: tr('Paid until:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: paid
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('New Owner:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: owner
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Transfer Date:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: transferDate
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Price:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: transferPrice
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      margin-left: 5
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Make sure to have enough gold in your bank account to\npay the costs for this house transfer and the next rent.\nRemember to edit the door rights as only the guest list\nwill be reset after the transfer!')
-      text-auto-resize: true
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 10
-      color: #C0C0C0
-  UIWidget
-    id: rejectTransferHouse
-    !text: tr('Reject House Transfer')
-    text-align: top
-    text-offset: 0 1
-    color: #909090
-    size: 413 358
-    anchors.top: LateralBase.top
-    anchors.left: LateralBase.right
-    image-source: /images/ui/widget-borderimage
-    image-border: 15
-    margin-left: 5
-    visible: false
-    padding: 15
-    Button
-      id: cancel
-      size: 43 20
-      !text: tr('Cancel')
-      color: #C0C0C0
-      anchors.bottom: parent.bottom
-      anchors.right: parent.right
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Button
-      id: transfer
-      size: 86 20
-      !text: tr('Reject Transfer')
-      color: #C0C0C0
-      anchors.top: cancel.top
-      anchors.right: cancel.left
-      margin-right: 7
-      //font: verdana-bold-8px-antialiased
-      text-offset: 0 -1
-      change-cursor-image: false
-    Label
-      !text: tr('House Information')
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-top: 10
-      color: #F7F7F7
-    Label
-      !text: tr('Name:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: name
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Size:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: name.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: size
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Max. Beds:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: size.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: beds
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Rent:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: beds.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: rent
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Transfer Information')
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 5
-      color: #F7F7F7
-    Label
-      !text: tr('Paid until:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: paid
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('New Owner:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: owner
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Transfer Date:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: transferDate
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    Label
-      !text: tr('Price:')
-      color: #909090
-      text-align: right
-      size: 90 15
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 2
-    Label
-      id: transferPrice
-      color: #C0C0C0
-      text-auto-resize: true
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 8
-    UIWidget
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-top: 3
-      margin-left: 5
-      image-source: /game_cyclopedia/images/icon_gold
-    Label
-      !text: tr('Reject the transfer if you do not want the house\ntransferred to you.')
-      text-auto-resize: true
-      anchors.top: prev.bottom
-      anchors.left: parent.left
-      margin-top: 10
-      color: #C0C0C0
-  UIWidget
-    id: ListBase
-    size: 413 358
-    anchors.top: LateralBase.top
-    anchors.left: LateralBase.right
-    image-source: /images/ui/panel_flat
-    image-border: 10
-    margin-left: 5
+    image-source: /images/ui/panel-1-pixel
+    image-border: 4
     UIScrollArea
-      id: AuctionList
-      vertical-scrollbar: AuctionListScrollbar
+      id: panelHouse
+      vertical-scrollbar: panelHouseScrollbar
       anchors.fill: parent
       margin-right: 13
-      padding-left: 3
-      padding-top: 3
-      padding-bottom: 2
+      padding: 3
       layout:
-        type: grid
-        cell-size: 391 56
-        cell-spacing: 5
-        flow: true
+        type: verticalBox
+        spacing: 3
     VerticalScrollBar
-      id: AuctionListScrollbar
+      id: panelHouseScrollbar
       anchors.top: parent.top
       anchors.right: parent.right
       anchors.bottom: parent.bottom
       margin-right: 3
       margin-top: 3
       margin-bottom: 3
-      step: 80
+      step: 56
       pixel-scroll: true
+
+  UIWidget
+    id: bidHouseWindow
+    anchors.top: mapViewBackground.top
+    anchors.left: mapViewBackground.right
+    anchors.right: parent.right
+    anchors.bottom: mapViewBackground.bottom
+    margin-left: 5
+    image-source: /images/ui/panel_flat
+    image-border: 4
+    visible: false
+
+    Label
+      id: titleLabel
+      !text: tr('Place Your Bid')
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 10
+      margin-left: 10
+      color: #F7F7F7
+      font: verdana-11px-rounded
+
+    Label
+      id: houseInfoLabel
+      !text: tr('House Information')
+      anchors.top: titleLabel.bottom
+      anchors.left: parent.left
+      margin-top: 10
+      margin-left: 10
+      color: #F7F7F7
+      font: verdana-11px-rounded
+
+    Label
+      id: nameLabel
+      !text: tr('Name:')
+      anchors.top: houseInfoLabel.bottom
+      anchors.left: parent.left
+      margin-top: 5
+      margin-left: 10
+      color: #909090
+      font: verdana-11px-rounded
+    Label
+      id: nameValue
+      anchors.top: nameLabel.top
+      anchors.left: nameLabel.right
+      margin-left: 5
+      color: #C0C0C0
+      font: verdana-11px-rounded
+
+    Label
+      id: sizeLabel
+      !text: tr('Size:')
+      anchors.top: nameLabel.bottom
+      anchors.left: parent.left
+      margin-top: 2
+      margin-left: 10
+      color: #909090
+      font: verdana-11px-rounded
+    Label
+      id: sizeValue
+      anchors.top: sizeLabel.top
+      anchors.left: sizeLabel.right
+      margin-left: 5
+      color: #C0C0C0
+      font: verdana-11px-rounded
+
+    Label
+      id: bedsLabel
+      !text: tr('Max. Beds:')
+      anchors.top: sizeLabel.bottom
+      anchors.left: parent.left
+      margin-top: 2
+      margin-left: 10
+      color: #909090
+      font: verdana-11px-rounded
+    Label
+      id: bedsValue
+      anchors.top: bedsLabel.top
+      anchors.left: bedsLabel.right
+      margin-left: 5
+      color: #C0C0C0
+      font: verdana-11px-rounded
+
+    Label
+      id: rentLabel
+      !text: tr('Rent:')
+      anchors.top: bedsLabel.bottom
+      anchors.left: parent.left
+      margin-top: 2
+      margin-left: 10
+      color: #909090
+      font: verdana-11px-rounded
+    Label
+      id: rentValue
+      anchors.top: rentLabel.top
+      anchors.left: rentLabel.right
+      margin-left: 5
+      color: #C0C0C0
+      font: verdana-11px-rounded
+    UIWidget
+      id: rentGoldIcon
+      anchors.left: rentValue.right
+      anchors.verticalCenter: rentValue.verticalCenter
+      margin-left: 2
+      image-source: /game_cyclopedia/images/icon_gold
+
+    Label
+      id: auctionInfoLabel
+      !text: tr('Auction Information')
+      anchors.top: rentLabel.bottom
+      anchors.left: parent.left
+      margin-top: 10
+      margin-left: 10
+      color: #F7F7F7
+      font: verdana-11px-rounded
+
+    Panel
+      id: thereFar
+      anchors.top: auctionInfoLabel.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 30
+      margin-top: 5
+      margin-left: 10
+      visible: false
+      Label
+        id: noBidText
+        !text: tr('There is no bid so far.\nBe the first to bid on this house.')
+        anchors.top: parent.top
+        anchors.left: parent.left
+        color: #C0C0C0
+        font: verdana-11px-rounded
+
+    Panel
+      id: currentAuction
+      anchors.top: auctionInfoLabel.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 60
+      margin-top: 5
+      margin-left: 10
+      visible: false
+      Label
+        id: highestBidderLabel
+        !text: tr('Highest Bidder:')
+        anchors.top: parent.top
+        anchors.left: parent.left
+        color: #909090
+        font: verdana-11px-rounded
+      Label
+        id: highestBidder
+        anchors.top: highestBidderLabel.top
+        anchors.left: highestBidderLabel.right
+        margin-left: 5
+        color: #C0C0C0
+        font: verdana-11px-rounded
+      Label
+        id: endTimeLabel
+        !text: tr('End Time:')
+        anchors.top: highestBidderLabel.bottom
+        anchors.left: parent.left
+        margin-top: 2
+        color: #909090
+        font: verdana-11px-rounded
+      Label
+        id: endTime
+        anchors.top: endTimeLabel.top
+        anchors.left: endTimeLabel.right
+        margin-left: 5
+        color: #C0C0C0
+        font: verdana-11px-rounded
+      Label
+        id: highestBidLabel
+        !text: tr('Highest Bid:')
+        anchors.top: endTimeLabel.bottom
+        anchors.left: parent.left
+        margin-top: 2
+        color: #909090
+        font: verdana-11px-rounded
+      Label
+        id: highestBid
+        anchors.top: highestBidLabel.top
+        anchors.left: highestBidLabel.right
+        margin-left: 5
+        color: #C0C0C0
+        font: verdana-11px-rounded
+      UIWidget
+        id: highestBidGold
+        anchors.left: highestBid.right
+        anchors.verticalCenter: highestBid.verticalCenter
+        margin-left: 2
+        image-source: /game_cyclopedia/images/icon_gold
+      Label
+        id: yourLimitLabel
+        !text: tr('Your Bid Limit:')
+        anchors.top: highestBidLabel.bottom
+        anchors.left: parent.left
+        margin-top: 2
+        color: #909090
+        font: verdana-11px-rounded
+        visible: false
+      Label
+        id: yourLimitValue
+        anchors.top: yourLimitLabel.top
+        anchors.left: yourLimitLabel.right
+        margin-left: 5
+        color: #C0C0C0
+        font: verdana-11px-rounded
+        visible: false
+      UIWidget
+        id: yourLimitGold
+        anchors.left: yourLimitValue.right
+        anchors.verticalCenter: yourLimitValue.verticalCenter
+        margin-left: 2
+        image-source: /game_cyclopedia/images/icon_gold
+        visible: false
+
+    Label
+      id: limitText
+      !text: tr('Your Bid Limit:')
+      anchors.bottom: limitBox.top
+      anchors.left: parent.left
+      margin-left: 10
+      margin-bottom: 5
+      color: #909090
+      font: verdana-11px-rounded
+
+    TextEdit
+      id: limitBox
+      size: 150 20
+      anchors.bottom: infoOrange.top
+      anchors.left: parent.left
+      margin-left: 10
+      margin-bottom: 10
+      color: #C0C0C0
+      font: verdana-11px-rounded
+      @onTextChange: modules.game_cyclopedia.Cyclopedia.House.onBidChangeValue(self)
+
+    UIWidget
+      id: infoOrange
+      size: 9 9
+      anchors.bottom: cancelBid.top
+      anchors.left: parent.left
+      margin-left: 10
+      margin-bottom: 10
+      image-source: /images/skin/show-gui-help-orange
+      visible: false
+
+    UIWidget
+      id: infoRed
+      size: 9 9
+      anchors.bottom: cancelBid.top
+      anchors.left: infoOrange.right
+      margin-left: 5
+      margin-bottom: 10
+      image-source: /images/skin/show-gui-help-red
+      visible: false
+
+    Button
+      id: cancelBid
+      !text: tr('Cancel')
+      size: 64 20
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      margin-bottom: 10
+      margin-right: 10
+      @onClick: modules.game_cyclopedia.Cyclopedia.House.onCancelBidWindow()
+
+    Button
+      id: confirmBid
+      !text: tr('Bid')
+      size: 64 20
+      anchors.bottom: parent.bottom
+      anchors.right: cancelBid.left
+      margin-right: 5
+      margin-bottom: 10
+      @onClick: modules.game_cyclopedia.Cyclopedia.House.onPlaceBid(self)

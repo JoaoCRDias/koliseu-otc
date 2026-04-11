@@ -13,6 +13,10 @@ local CreatureButtonColors = {
     onFollowed = {
         notHovered = '#00FF00',
         hovered = '#88FF88'
+    },
+    onFiendish = {
+        notHovered = '#EE8413',
+        hovered = '#FFB347'
     }
 }
 
@@ -49,6 +53,7 @@ function UICreatureButton.create()
     button.isHovered = false
     button.isTarget = false
     button.isFollowed = false
+    button.isFiendish = false
     return button
 end
 
@@ -96,18 +101,21 @@ function UICreatureButton:update()
         color = CreatureButtonColors.onTargeted
     elseif self.isFollowed then
         color = CreatureButtonColors.onFollowed
+    elseif self.isFiendish then
+        color = CreatureButtonColors.onFiendish
     end
-    color = self.isHovered and color.hovered or color.notHovered
+    local labelColor = self.isHovered and color.hovered or color.notHovered
+    local stateColor = self.isHovered and color.hovered or color.notHovered
 
     if self.isHovered or self.isTarget or self.isFollowed then
-        self.creature:showStaticSquare(color)
+        self.creature:showStaticSquare(stateColor)
         self:getChildById('creature'):setBorderWidth(1)
-        self:getChildById('creature'):setBorderColor(color)
-        self:getChildById('label'):setColor(color)
+        self:getChildById('creature'):setBorderColor(stateColor)
+        self:getChildById('label'):setColor(labelColor)
     else
         self.creature:hideStaticSquare()
         self:getChildById('creature'):setBorderWidth(0)
-        self:getChildById('label'):setColor(color)
+        self:getChildById('label'):setColor(labelColor)
     end
 end
 
@@ -170,7 +178,14 @@ function UICreatureButton:setLifeBarPercent(percent)
     lifeBarWidget:setBackgroundColor(color)
 end
 
+function UICreatureButton:setManaBarPercent(percent)
+    local manaBarWidget = self:getChildById('manaBar')
+    if not manaBarWidget then return end
+    manaBarWidget:setPercent(percent)
+end
+
 function UICreatureButton:updateIcons(icons)
+    self.isFiendish = false
     if not self.creature or not icons or #icons == 0 then
         return
     end
@@ -178,24 +193,30 @@ function UICreatureButton:updateIcons(icons)
         return
     end
     for index, iconData in pairs(icons) do
-        if index > 3 then
-            break
+        local iconId = iconData[1]
+        local category = iconData[2]
+        if category == 1 and iconId == MonsterIconFiendish then
+            self.isFiendish = true
         end
-        local iconId = iconData[1] -- uint8_t icon
-        -- local category = iconData[2] -- uint8_t category  
-        -- local count = iconData[3] -- uint16_t count
-        local widget = self:getChildById('iconsMonsterSlot' .. index)
-        if widget then
-            widget:setImageSource("/images/game/creatureicons/monsterIcons")
-            widget:setImageClip(torect((iconId - 1) * 11 .. ' 0 11 11'))
+        if index <= 3 then
+            local widget = self:getChildById('iconsMonsterSlot' .. index)
+            if widget then
+                local imagePath = getIconsImagePath(category)
+                if imagePath then
+                    widget:setImageSource(imagePath)
+                    widget:setImageClip(torect((iconId - 1) * 11 .. ' 0 11 11'))
+                end
+            end
         end
     end
+    self:update()
 end
 
 function UICreatureButton:resetState()
     self.isHovered = false
     self.isTarget = false
     self.isFollowed = false
+    self.isFiendish = false
     if self.creature then
         self.creature:hideStaticSquare()
     end

@@ -236,7 +236,7 @@ MainWindow
     !text: tr('Close')
     //font: verdana-bold-8px-antialiased
     text-offset: 0 -1
-    color: #C0C0C0
+    color: #ffffff
     @onClick: toggle()
   Button
     id: BackButton
@@ -247,7 +247,7 @@ MainWindow
     !text: tr('Back')
     //font: verdana-bold-8px-antialiased
     text-offset: 0 -1
-    color: #C0C0C0
+    color: #ffffff
     enabled: false
     @onClick: toggleBack()
   HorizontalSeparator
@@ -326,12 +326,47 @@ MainWindow
       color: #BDBDBD
   Button
     id: BestiaryTrackerButton
-    size: 90 20
     anchors.bottom: parent.bottom
     anchors.left: prev.right
     margin-left: 5
-    !text: tr('Bestiary Tracker')
-    font: small-9px
+    size: 86 20
+    image-source: images/ui/bestiary-tracker-button
+    image-clip: 0 0 86 20
+    image-border: 1
+    opacity: 1.0
     @onClick: modules.game_cyclopedia.Cyclopedia.toggleBestiaryTracker()
-    text-offset: 0 -1
-    color: #C0C0C0
+    visible: false
+
+    $hover !disabled:
+      image-clip: 0 0 86 20
+
+    $pressed:
+      image-clip: 0 20 86 20
+      text-offset: 1 1
+
+    $on:
+      image-clip: 0 20 86 20
+      text-offset: 1 1
+
+    $checked:
+      image-clip: 0 20 86 20
+      text-offset: 1 1
+
+    $disabled:
+      color: #c0c0c0
+      opacity: 0.8
+      change-cursor-image: false
+
+  CheckBox
+    id: aimTargetBox
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    margin-left: 5
+    width: 100
+    !text: tr('Aim Target')
+    font: verdana-11px-antialised
+    change-cursor-image: false
+    color: #c0c0c0
+    text-offset: 13 0
+    visible: false
+    @onCheckChange: modules.game_cyclopedia.MagicalArchive.onAimTargetChange(self)

@@ -1677,7 +1677,19 @@ function onTalk(name, level, mode, message, channelId, creaturePos)
         channelId = violationsChannelId
     end
 
-    if (mode == MessageModes.Say or mode == MessageModes.Whisper or mode == MessageModes.Yell or mode == MessageModes.Spell or
+    local allowStaticText = true
+    if mode == MessageModes.Spell then
+        if modules.client_options.getOption('showMessages') == false then
+            allowStaticText = false
+        elseif name == g_game.getCharacterName() then
+            allowStaticText = (modules.client_options.getOption('showSpells') ~= false)
+        else
+            allowStaticText = (modules.client_options.getOption('showSpells') ~= false) and
+                (modules.client_options.getOption('spellsOthers') ~= false)
+        end
+    end
+
+    if allowStaticText and (mode == MessageModes.Say or mode == MessageModes.Whisper or mode == MessageModes.Yell or mode == MessageModes.Spell or
         mode == MessageModes.MonsterSay or mode == MessageModes.MonsterYell or mode == MessageModes.NpcFrom or mode ==
         MessageModes.BarkLow or mode == MessageModes.BarkLoud or mode == MessageModes.NpcFromStartBlock) and creaturePos then
         local staticText = StaticText.create()

@@ -20,7 +20,9 @@ local analyserWindows = {
   xpButton = 'styles/xp',
   dropButton = 'styles/droptracker',
   partyButton = 'styles/partyhunt',
-  bossButton = 'styles/boss'
+  bossButton = 'styles/boss',
+  miscButton = 'styles/misc',
+  timersButton = 'styles/timers'
 }
 
 -- Utility function to get combat name from effect ID
@@ -124,6 +126,8 @@ function init()
   dropButton = analyserMiniWindow:recursiveGetChildById("dropButton")
   partyButton = analyserMiniWindow:recursiveGetChildById("partyButton")
   bossButton = analyserMiniWindow:recursiveGetChildById("bossButton")
+  miscButton = analyserMiniWindow:recursiveGetChildById("miscButton")
+  timersButton = analyserMiniWindow:recursiveGetChildById("timersButton")
 
   for id, style in pairs(analyserWindows) do
     openedWindows[id] = g_ui.loadUI(style)
@@ -163,6 +167,11 @@ function init()
   BossCooldown:create()
   BossCooldown:updateWindow()
 
+  MiscAnalyzer:create()
+  MiscAnalyzer:updateWindow()
+
+  TimersAnalyser:create()
+
   connect(g_game, {
     onGameStart = onlineAnalyser,
     onGameEnd = offlineAnalyser,
@@ -173,12 +182,18 @@ function init()
     onPartyAnalyzer = onPartyAnalyzer,
     onBossCooldown = onBossCooldown,
     onUpdateExperience = onUpdateExperience,
+    onCharmActivated = onCharmActivated,
+    onImbuementActivated = onImbuementActivated,
+    onSpecialSkillActivated = onSpecialSkillActivated,
+    onBountyTalismanActivated = onBountyTalismanActivated,
+    onUpdateActiveTimers = onUpdateActiveTimers,
   })
 
   connect(LocalPlayer, {
     onExperienceChange = onExperienceChange,
     onLevelChange = onLevelChange,
-    onPartyMembersChange = onPartyMembersChange
+    onPartyMembersChange = onPartyMembersChange,
+    onStoreExpBoostTimeChange = onStoreExpBoostTimeChangeTimers
   })
 
   connect(Creature, {
@@ -224,11 +239,17 @@ function terminate()
     onPartyAnalyzer = onPartyAnalyzer,
     onBossCooldown = onBossCooldown,
     onUpdateExperience = onUpdateExperience,
+    onCharmActivated = onCharmActivated,
+    onImbuementActivated = onImbuementActivated,
+    onSpecialSkillActivated = onSpecialSkillActivated,
+    onBountyTalismanActivated = onBountyTalismanActivated,
+    onUpdateActiveTimers = onUpdateActiveTimers,
   })
   disconnect(LocalPlayer, {
     onExperienceChange = onExperienceChange,
     onLevelChange = onLevelChange,
-    onPartyMembersChange = onPartyMembersChange
+    onPartyMembersChange = onPartyMembersChange,
+    onStoreExpBoostTimeChange = onStoreExpBoostTimeChangeTimers
   })
 
   disconnect(Creature, {
@@ -287,6 +308,13 @@ function startNewSession(login)
   PartyHuntAnalyser:updateWindow(true, true)
   PartyHuntAnalyser:startEvent()
 
+  MiscAnalyzer:reset()
+  MiscAnalyzer:updateWindow(true)
+
+  if login ~= nil then
+    TimersAnalyser:reset()
+  end
+
   ControllerAnalyser:startEvent()
 end
 
@@ -295,6 +323,12 @@ function onlineAnalyser()
   startNewSession(true)
 
   loadGainAndWastConfigJson()
+
+  scheduleEvent(function()
+    if g_game.isOnline() and g_game.requestActiveTimers then
+      g_game.requestActiveTimers()
+    end
+  end, 500)
 end
 
 function offlineAnalyser()
@@ -343,7 +377,7 @@ function hide()
 end
 
 function onOpen()
-  analyserMiniWindow:setHeight(237)
+  analyserMiniWindow:setHeight(283)
   analyserMiniWindow.isOpen = true
 end
 
@@ -363,7 +397,7 @@ function toggleAnalysers(buttonId)
   if widget:isVisible() then
     widget:close()
     widget.isOpen = false
-    buttonWidget:setOn(false)
+    if buttonWidget then buttonWidget:setOn(false) end
     if buttonId == 'bossButton' then
       toggleBossCDFocus(false)
     end
@@ -396,7 +430,7 @@ function toggleAnalysers(buttonId)
     end
     
     widget:getParent():moveChildToIndex(widget, #widget:getParent():getChildren())
-    buttonWidget:setOn(true)
+    if buttonWidget then buttonWidget:setOn(true) end
   end
 end
 
@@ -573,6 +607,30 @@ function onBossCooldown(cooldown)
   BossCooldown:setupCooldown(cooldown)
 end
 
+function onCharmActivated(charmId)
+  MiscAnalyzer:onCharmActivated(charmId)
+end
+
+function onImbuementActivated(imbuementId, amount)
+  MiscAnalyzer:onImbuementActivated(imbuementId, amount)
+end
+
+function onSpecialSkillActivated(skillId)
+  MiscAnalyzer:onSpecialSkillActivated(skillId)
+end
+
+function onBountyTalismanActivated(statType, amount)
+  MiscAnalyzer:onBountyTalismanActivated(statType, amount)
+end
+
+function onUpdateActiveTimers(timers)
+  TimersAnalyser:onUpdateActiveTimers(timers)
+end
+
+function onStoreExpBoostTimeChangeTimers(localPlayer, newTime, oldTime)
+  TimersAnalyser:onStoreExpBoostTimeChange(newTime)
+end
+
 function onCloseMiniWindow(self)
   self.isOpen = false
 end
@@ -594,8 +652,8 @@ function moveAnalyser(panel, height, minimzed)
     analyserMiniWindow:minimize()
   else
     -- Hardcoded height
-    if height < 237 then
-      height = 237
+    if height < 283 then
+      height = 283
     end
 
     analyserMiniWindow:maximize()
@@ -603,6 +661,49 @@ function moveAnalyser(panel, height, minimzed)
   end
 
   return analyserMiniWindow
+end
+
+-- Mapeia botão do seletor -> tipo salvo em sidebars.json
+function getAnalyserType(buttonId)
+  local buttonToType = {
+    huntingButton = 'huntingSessionAnalyser',
+    lootButton = 'lootAnalyser',
+    supplyButton = 'wasteAnalyser',
+    impactButton = 'impactAnalyser',
+    damageButton = 'damageInputAnalyser',
+    xpButton = 'xpAnalyser',
+    dropButton = 'lootTracker',
+    partyButton = 'partyHuntAnalyser',
+    bossButton = 'bossCooldowns',
+    miscButton = 'miscAnalyzer',
+    timersButton = 'timersAnalyser'
+  }
+  return buttonToType[buttonId]
+end
+
+function getOpenAnalysers()
+  local result = {}
+  for buttonId, widget in pairs(openedWindows) do
+    local isVisible = widget and widget:isVisible()
+    local isOpen = widget and widget.isOpen
+    local parent = widget and widget:getParent()
+    if widget and (isVisible or isOpen) and parent then
+      local widgetType = getAnalyserType(buttonId)
+      if widgetType then
+        local childIndex = parent:getChildIndex(widget) or 0
+        table.insert(result, {
+          type = widgetType,
+          widget = widget,
+          height = widget:getHeight(),
+          minimized = widget.minimized or false,
+          parentId = parent:getId(),
+          childIndex = childIndex
+        })
+      end
+    end
+  end
+  table.sort(result, function(a, b) return a.childIndex < b.childIndex end)
+  return result
 end
 
 function moveChildAnalyser(type, panel, height, minimzed)
@@ -615,7 +716,9 @@ function moveChildAnalyser(type, panel, height, minimzed)
     ['lootAnalyser'] = 'lootButton',
     ['partyHuntAnalyser'] = 'partyButton',
     ['wasteAnalyser'] = 'supplyButton',
-    ['xpAnalyser'] = 'xpButton'
+    ['xpAnalyser'] = 'xpButton',
+    ['miscAnalyzer'] = 'miscButton',
+    ['timersAnalyser'] = 'timersButton'
   }
 
   local widget = openedWindows[window[type]]

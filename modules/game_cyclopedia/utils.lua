@@ -657,10 +657,24 @@ function Cyclopedia.formatSaleData(data)
 end
 
 function Cyclopedia.compareItems(item1, item2)
-    local marketData1 = item1:getMarketData()
-    local marketData2 = item2:getMarketData()
+    local name1 = Cyclopedia.getItemName(item1)
+    local name2 = Cyclopedia.getItemName(item2)
 
-    return marketData1.name:lower() < marketData2.name:lower()
+    return name1:lower() < name2:lower()
+end
+
+-- Helper function to get item name with fallback
+function Cyclopedia.getItemName(data)
+    local marketData = data:getMarketData()
+    if marketData and marketData.name and marketData.name ~= "" then
+        return marketData.name
+    end
+    -- Fallback to ThingType name
+    local name = data:getName()
+    if name and name ~= "" then
+        return name
+    end
+    return "Unknown Item"
 end
 
 function Cyclopedia.hasHandedFilter(categoryId)

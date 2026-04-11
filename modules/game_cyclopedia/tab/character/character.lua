@@ -1,6 +1,14 @@
 local characterPanel = nil
 local UI = nil
 
+Cyclopedia.Character = Cyclopedia.Character or {}
+
+-- Cleanup function to be called before tab switch
+function Cyclopedia.Character.cleanup()
+    characterPanel = nil
+    UI = nil
+end
+
 local function close(parent)
     if table.empty(parent.subCategories) then
         return

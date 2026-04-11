@@ -1,0 +1,10 @@
+Module
+  name: game_party_list
+  description: Game PartyList
+  author: Christianlb
+  sandboxed: true
+  autoload: true
+  dependencies: [ game_interface, game_battle ]
+  scripts: [ partyClass, partyList ]
+  @onLoad: init()
+  @onUnload: terminate()

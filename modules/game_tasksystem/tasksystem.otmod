@@ -1,0 +1,8 @@
+Module
+  name: game_tasksystem
+  description: Task Board - Bounty Tasks, Weekly Tasks e Hunting Task Shop
+  author: Baiak Project
+  sandboxed: true
+  scripts: [ tasksystem ]
+  @onLoad: init()
+  @onUnload: terminate()

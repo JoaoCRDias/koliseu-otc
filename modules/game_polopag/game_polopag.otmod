@@ -1,0 +1,11 @@
+Module
+  name: game_polopag
+  description: Buy Tibia Coins via Polopag
+  author: Antigravity
+  website: https://github.com/edubart/otclient
+  sandboxed: true
+  autoload: true
+  scripts: [ polopag ]
+  @onLoad: init()
+  @onUnload: terminate()
+ 

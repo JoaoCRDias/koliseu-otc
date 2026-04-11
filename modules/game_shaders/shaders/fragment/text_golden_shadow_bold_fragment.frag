@@ -1,47 +1,36 @@
 // Fragment Shader (GLSL 1.20)
-// Text Outline with multi-sample anti-aliasing for smooth borders
-uniform sampler2D u_Tex0;
-uniform vec4 u_Color;
-varying vec2 v_TexCoord;
+uniform sampler2D u_Tex0;      // Textura contendo as letras ou objetos
+uniform vec4 u_Color;          // Cor personalizada para o conteúdo das letras
+varying vec2 v_TexCoord;       // Coordenadas de textura
 
 void main() {
     vec4 baseColor = texture2D(u_Tex0, v_TexCoord);
-    
-    // If this pixel is part of the text, render it normally
+    vec2 texelSize = vec2(1.0 / 512.0, 1.0 / 512.0);  // Ajuste para a resolução da sua textura
+
+    float alphaLeft = texture2D(u_Tex0, v_TexCoord + vec2(-texelSize.x * 2.0, 0.0)).a;
+    float alphaRight = texture2D(u_Tex0, v_TexCoord + vec2(texelSize.x * 2.0, 0.0)).a;
+    float alphaUp = texture2D(u_Tex0, v_TexCoord + vec2(0.0, texelSize.y * 2.0)).a;
+    float alphaDown = texture2D(u_Tex0, v_TexCoord + vec2(0.0, -texelSize.y * 2.0)).a;
+
+    float alphaLeftFar = texture2D(u_Tex0, v_TexCoord + vec2(-texelSize.x * 4.0, 0.0)).a;
+    float alphaRightFar = texture2D(u_Tex0, v_TexCoord + vec2(texelSize.x * 4.0, 0.0)).a;
+    float alphaUpFar = texture2D(u_Tex0, v_TexCoord + vec2(0.0, texelSize.y * 4.0)).a;
+    float alphaDownFar = texture2D(u_Tex0, v_TexCoord + vec2(0.0, -texelSize.y * 4.0)).a;
+
     if (baseColor.a > 0.1) {
+        // Aplica a cor da textura multiplicada por u_Color (somente no RGB)
+        // Preserva o alpha da textura original (baseColor.a)
         gl_FragColor = vec4(baseColor.rgb * u_Color.rgb, baseColor.a);
-        return;
-    }
-    
-    // Calculate texel size dynamically based on texture
-    vec2 texelSize = vec2(1.0 / 512.0, 1.0 / 512.0);
-    
-    // Multi-layer sampling for smoother outline
-    float outline = 0.0;
-    float samples = 0.0;
-    
-    // Inner ring (0.7 pixels) - stronger weight
-    for (float angle = 0.0; angle < 6.28318; angle += 0.785398) { // 8 samples at 45Â° intervals
-        vec2 offset = vec2(cos(angle), sin(angle)) * 0.7;
-        outline += texture2D(u_Tex0, v_TexCoord + offset * texelSize).a * 1.5;
-        samples += 1.5;
-    }
-    
-    // Outer ring (1.2 pixels) - softer weight for anti-aliasing
-    for (float angle = 0.0; angle < 6.28318; angle += 0.785398) { // 8 samples
-        vec2 offset = vec2(cos(angle), sin(angle)) * 1.2;
-        outline += texture2D(u_Tex0, v_TexCoord + offset * texelSize).a * 0.8;
-        samples += 0.8;
-    }
-    
-    outline = min(outline / samples, 1.0);
-    
-    if (outline > 0.05) {
-        // Gold outline color #ee8413 with smooth alpha blending
-        vec3 outlineColor = vec3(0.933, 0.518, 0.075);
-        float alpha = smoothstep(0.05, 0.4, outline);
-        gl_FragColor = vec4(outlineColor, alpha * 0.95);
     } else {
-        discard;
+        bool isBorder = (alphaLeft > 0.1 || alphaRight > 0.1 || alphaUp > 0.1 || alphaDown > 0.1);
+        bool isSmoothBorder = (alphaLeftFar > 0.1 || alphaRightFar > 0.1 || alphaUpFar > 0.1 || alphaDownFar > 0.1);
+
+        if (isBorder) {
+            gl_FragColor = vec4(0.933, 0.518, 0.075, 1.0);  // Cor #ee8413 (bordas próximas)
+        } else if (isSmoothBorder) {
+            gl_FragColor = vec4(0.933, 0.518, 0.075, 0.5);  // Cor #ee8413 com opacidade reduzida (bordas suaves)
+        } else {
+            discard;
+        }
     }
 }

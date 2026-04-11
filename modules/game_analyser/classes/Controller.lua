@@ -37,8 +37,11 @@ function ControllerAnalyser:startEvent()
 		DropTrackerAnalyser.session = os.time()
 	end
     if PartyHuntAnalyser then
-		PartyHuntAnalyser.session = os.time()
-	end
+        PartyHuntAnalyser.session = os.time()
+    end
+    if MiscAnalyzer then
+        MiscAnalyzer.session = os.time()
+    end
 
 	if ControllerAnalyser.eventGraph then ControllerAnalyser.eventGraph:cancel() end
 	if ControllerAnalyser.event250 then ControllerAnalyser.event250:cancel() end
@@ -76,6 +79,9 @@ function ControllerAnalyser:startEvent()
             end
             if SupplyAnalyser then
                 SupplyAnalyser:checkSupplyHour()
+            end
+            if MiscAnalyzer then
+                MiscAnalyzer:updateWindow()
             end
         end
 	end, 1000)

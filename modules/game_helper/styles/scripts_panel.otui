@@ -1,0 +1,298 @@
+ScriptsPanel < Panel
+  anchors.fill: parent
+  Panel
+    id: scriptsPanel
+    height: 280
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 18
+    Panel
+      id: headerRow
+      height: 26
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 2
+      margin-left: 8
+      margin-right: 8
+      Label
+        id: scriptsTitle
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: -5
+        !text: tr('Scripts')
+        font: verdana-11px-antialised
+        color: #AAAAAA
+        text-auto-resize: true
+      Button
+        id: newScriptButton
+        anchors.verticalCenter: parent.verticalCenter
+        margin-top: 18
+        anchors.right: parent.right
+        size: 80 22
+        !text: tr('New Script')
+        font: verdana-11px-antialised
+        image-source: /images/ui/buttons-blue
+        @onClick: modules.game_helper.scripts.openEditor()
+    VerticalSeparator
+      id: scriptsSeparator
+      anchors.top: headerRow.bottom
+      anchors.left: parent.left
+      anchors.bottom: parent.bottom
+      margin-top: 4
+      margin-bottom: 5
+      margin-left: 115
+    Panel
+      id: savedSection
+      anchors.top: headerRow.bottom
+      anchors.left: parent.left
+      anchors.right: scriptsSeparator.left
+      anchors.bottom: parent.bottom
+      margin-top: 6
+      margin-left: 5
+      margin-right: 3
+      margin-bottom: 5
+      Label
+        id: savedLabel
+        height: 18
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 8
+        !text: tr('Saved Scripts')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        text-align: left
+      TextList
+        id: savedScriptsList
+        anchors.top: savedLabel.bottom
+        anchors.left: parent.left
+        anchors.right: savedScriptsScrollBar.left
+        anchors.bottom: savedButtonsPanel.top
+        margin-top: 4
+        margin-bottom: 4
+        margin-right: 4
+        vertical-scrollbar: savedScriptsScrollBar
+      VerticalScrollBar
+        id: savedScriptsScrollBar
+        width: 12
+        anchors.top: savedLabel.bottom
+        anchors.right: parent.right
+        anchors.bottom: savedButtonsPanel.top
+        margin-top: 4
+        margin-bottom: 4
+        step: 14
+        padding: 0 1
+      Panel
+        id: savedButtonsPanel
+        height: 26
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        Button
+          id: runSavedScriptButton
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: parent.left
+          margin-left: -1
+          size: 60 20
+          !text: tr('Run')
+          font: verdana-11px-antialised
+          @onClick: modules.game_helper.scripts.runSavedScript()
+        Button
+          id: editSavedScriptButton
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: runSavedScriptButton.right
+          margin-left: 4
+          size: 45 20
+          !text: tr('Edit')
+          font: verdana-11px-antialised
+          @onClick: modules.game_helper.scripts.editSavedScript()
+        Button
+          id: deleteSavedScriptButton
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: editSavedScriptButton.right
+          margin-left: 4
+          size: 55 20
+          !text: tr('Delete')
+          font: verdana-11px-antialised
+          @onClick: modules.game_helper.scripts.deleteSavedScript()
+    Panel
+      id: activeSection
+      anchors.top: headerRow.bottom
+      anchors.left: scriptsSeparator.right
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 6
+      margin-left: 4
+      margin-right: 4
+      margin-bottom: 5
+      Label
+        id: activeLabel
+        height: 18
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        !text: tr('Active Scripts')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        text-align: center
+      TextList
+        id: activeScriptsList
+        anchors.top: activeLabel.bottom
+        anchors.left: parent.left
+        anchors.right: activeScriptsScrollBar.left
+        anchors.bottom: activeButtonsPanel.top
+        margin-top: 4
+        margin-bottom: 4
+        margin-right: 4
+        vertical-scrollbar: activeScriptsScrollBar
+      VerticalScrollBar
+        id: activeScriptsScrollBar
+        width: 12
+        anchors.top: activeLabel.bottom
+        anchors.right: parent.right
+        anchors.bottom: activeButtonsPanel.top
+        margin-top: 4
+        margin-bottom: 4
+        step: 14
+        padding: 0 1
+      Panel
+        id: activeButtonsPanel
+        height: 26
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        Button
+          id: saveActiveScriptButton
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.horizontalCenter: parent.horizontalCenter
+          margin-left: -115
+          size: 55 20
+          !text: tr('Save')
+          font: verdana-11px-antialised
+          image-source: /images/ui/buttons-blue
+          @onClick: modules.game_helper.scripts.saveActiveScript()
+        Button
+          id: editActiveScriptButton
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: saveActiveScriptButton.right
+          margin-left: 4
+          size: 45 20
+          !text: tr('Edit')
+          font: verdana-11px-antialised
+          @onClick: modules.game_helper.scripts.editActiveScript()
+        Button
+          id: startActiveScriptButton
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: editActiveScriptButton.right
+          margin-left: 4
+          size: 45 20
+          !text: tr('Start')
+          font: verdana-11px-antialised
+          image-source: /images/ui/buttons-blue
+          @onClick: modules.game_helper.scripts.startActiveScript()
+        Button
+          id: stopActiveScriptButton
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: startActiveScriptButton.right
+          margin-left: 4
+          size: 50 20
+          !text: tr('Stop')
+          font: verdana-11px-antialised
+          @onClick: modules.game_helper.scripts.stopActiveScript()
+        Button
+          id: removeActiveScriptButton
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: stopActiveScriptButton.right
+          margin-left: 4
+          size: 60 20
+          !text: tr('Remove')
+          font: verdana-11px-antialised
+          @onClick: modules.game_helper.scripts.removeActiveScript()
+  Panel
+    id: examplesSection
+    height: 125
+    anchors.top: scriptsPanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 4
+    margin-left: 5
+    margin-right: 5
+    margin-bottom: 5
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 18
+    Label
+      id: examplesLabel
+      height: 18
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 2
+      margin-left: 8
+      !text: tr('Script Examples')
+      font: verdana-11px-antialised
+      color: #dfdfdf
+      text-auto-resize: true
+      text-align: left
+    TextList
+      id: examplesList
+      anchors.top: examplesLabel.bottom
+      anchors.left: parent.left
+      anchors.right: examplesScrollBar.left
+      anchors.bottom: examplesButtonsPanel.top
+      margin-top: 4
+      margin-bottom: 4
+      margin-right: -1
+      vertical-scrollbar: examplesScrollBar
+    VerticalScrollBar
+      id: examplesScrollBar
+      width: 12
+      anchors.top: examplesLabel.bottom
+      anchors.right: parent.right
+      anchors.bottom: examplesButtonsPanel.top
+      margin-top: 4
+      margin-bottom: 4
+      step: 14
+      padding: 0 1
+    Panel
+      id: examplesButtonsPanel
+      height: 26
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      Button
+        id: examplesDocButton
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.right: examplesImportButton.left
+        margin-right: 10
+        margin-top: -2
+        size: 90 20
+        !text: tr('Documentation')
+        font: verdana-11px-antialised
+        image-source: /images/ui/buttons-blue
+        @onClick: modules.game_helper.scripts.openDocWindow()
+      Button
+        id: examplesImportButton
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-left: -20
+        margin-top: -2
+        size: 70 20
+        !text: tr('Import')
+        font: verdana-11px-antialised
+        image-source: /images/ui/buttons-blue
+        @onClick: modules.game_helper.scripts.importExampleScript()
+      Button
+        id: setKeyStopAllScriptsButton
+        !text: tr('Set Key')
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: examplesImportButton.right
+        margin-left: 8
+        margin-top: -2
+        size: 55 20
+        font: verdana-11px-antialised
+        @onClick: manageHotkeys("Stop all scripts")

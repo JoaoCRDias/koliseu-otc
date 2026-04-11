@@ -1,0 +1,9 @@
+Module
+  name: game_prey_hunting
+  description: Prey Hunting Display
+  author: R1ck && Christianlb
+  sandboxed: true
+  scripts: [ hunting ]
+  dependencies: [ game_prey ]
+  @onLoad: init()
+  @onUnload: terminate()

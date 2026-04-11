@@ -36,7 +36,7 @@ UIWidget
         anchors.left: parent.left
         anchors.top: parent.top
         image-border: 5
-        image-source: /game_cyclopedia/images/boss/fill
+        image-source: /images/game/cyclopedia/bestiary/progress
       Label
         id: Value
         anchors.centerIn: parent

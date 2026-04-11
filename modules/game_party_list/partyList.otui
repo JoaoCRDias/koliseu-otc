@@ -1,0 +1,275 @@
+PartyIcon < UICheckBox
+  size: 20 20
+  image-color: white
+  image-rect: 0 0 20 20
+  tooltip-delayed: true
+
+  $hover !disabled:
+    color: #c0c0c0
+
+  $!checked:
+    image-clip: 0 0 20 20
+
+  $hover !checked:
+    image-clip: 0 40 20 20
+
+  $checked:
+    image-clip: 0 20 20 20
+
+  $hover checked:
+    image-clip: 0 60 20 20
+
+  $disabled:
+    image-color: #ffffff88
+
+PartyPlayers < PartyIcon
+  image-source: /images/game/battle/battlelist_players
+
+PartyDruids < PartyIcon
+  image-source: /images/game/battle/battlelist_druid
+
+PartyKnights < PartyIcon
+  image-source: /images/game/battle/battlelist_knight
+
+PartySorcerers < PartyIcon
+  image-source: /images/game/battle/battlelist_sorcerer
+
+PartyPaladins < PartyIcon
+  image-source: /images/game/battle/battlelist_paladin
+
+PartyMonks < PartyIcon
+  image-source: /images/game/battle/battlelist_monk
+
+PartySummons < PartyIcon
+  image-source: /images/game/battle/battlelist_summon
+
+ManaProgressBar < UIProgressBar
+  height: 5
+  background-color: blue
+  border: 1px black
+
+PartyCreatureButton < UICreatureButton
+  height: 26
+  margin-bottom: 5
+
+  UICreature
+    id: creature
+    size: 20 20
+    anchors.left: parent.left
+    anchors.top: parent.top
+    phantom: true
+
+  UIWidget
+    id: spacer
+    width: 5
+    anchors.left: creature.right
+    anchors.top: creature.top
+    phantom: true
+
+  UIWidget
+    id: skull
+    height: 11
+    anchors.left: spacer.right
+    anchors.top: spacer.top
+    phantom: true
+
+  UIWidget
+    id: emblem
+    height: 11
+    anchors.left: skull.right
+    anchors.top: creature.top
+    phantom: true
+
+  Label
+    id: label
+    anchors.left: emblem.right
+    anchors.top: creature.top
+    color: #c0c0c0
+    margin-left: 2
+    phantom: true
+    text-auto-resize: true
+
+  UIWidget
+    id: shield
+    height: 11
+    anchors.left: label.right
+    anchors.top: creature.top
+    margin-left: 2
+    phantom: true
+
+  UIWidget
+    id: iconsMonsterSlot1
+    height: 11
+    width: 11
+    anchors.right: parent.right
+    anchors.top: label.top
+    margin-top: 2
+    phantom: true
+
+  UIWidget
+    id: iconsMonsterSlot2
+    height: 11
+    width: 11
+    anchors.right: prev.left
+    anchors.top: label.top
+    margin-right: 2
+    margin-top: 2
+    phantom: true
+
+  UIWidget
+    id: iconsMonsterSlot3
+    height: 11
+    width: 11
+    anchors.right: prev.left
+    anchors.top: label.top
+    margin-right: 2
+    margin-top: 2
+    phantom: true
+
+  LifeProgressBar
+    id: lifeBar
+    height: 5
+    anchors.left: spacer.right
+    anchors.right: parent.right
+    anchors.top: label.bottom
+    margin-top: 2
+    phantom: true
+
+  ManaProgressBar
+    id: manaBar
+    height: 5
+    anchors.left: spacer.right
+    anchors.right: parent.right
+    anchors.top: lifeBar.bottom
+    margin-top: 2
+    margin-left: 2
+    margin-right: 2
+    phantom: true
+
+PartyListWindow < MiniWindow
+  id: partyWindow
+  &type: 'partyList'
+  height: 166
+  &save: true
+  &autoOpen: false
+  @onOpen: modules.game_party_list.onMiniWindowOpen()
+  @onClose: modules.game_party_list.onMiniWindowClose()
+  @onFilter: modules.game_party_list.toggleFilterPanel(self)
+  @onBattleExtra: filterPopUp()
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    image-source: /images/icons/icon-battlelist-party-widget
+    image-rect: 0 0 12 12
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #ffffffe7
+    !text: tr('Party List')
+
+  Panel
+    id: filterPanel
+    margin-top: 19
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    height: 22
+    width: 154
+    layout:
+      type: grid
+      flow: true
+      cell-spacing: 2
+      num-columns: 7
+      cell-size: 20 20
+      fit-children: false
+
+    PartyPlayers
+      id: showPlayers
+      !tooltip: tr('Hide players')
+      @onCheckChange: modules.game_party_list.PartyClass:checkCreatures();
+
+    PartyKnights
+      id: showKnights
+      !tooltip: tr('Hide knights')
+      @onCheckChange: modules.game_party_list.PartyClass:checkCreatures();
+
+    PartyPaladins
+      id: showPaladins
+      !tooltip: tr('Hide paladins')
+      @onCheckChange: modules.game_party_list.PartyClass:checkCreatures();
+
+    PartyDruids
+      id: showDruids
+      !tooltip: tr('Hide druids')
+      @onCheckChange: modules.game_party_list.PartyClass:checkCreatures();
+
+    PartySorcerers
+      id: showSorcerers
+      !tooltip: tr('Hide sorcerers')
+      @onCheckChange: modules.game_party_list.PartyClass:checkCreatures();
+
+    PartyMonks
+      id: showMonks
+      !tooltip: tr('Hide monks')
+      @onCheckChange: modules.game_party_list.PartyClass:checkCreatures();
+
+    PartySummons
+      id: showSummons
+      !tooltip: tr('Hide summons')
+      @onCheckChange: modules.game_party_list.PartyClass:checkCreatures();
+
+  HorizontalSeparator
+    id: separator
+    anchors.top: filterPanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-right: 3
+    margin-top: 4
+    height: 2
+    color: #cccccc
+
+  MiniWindowContents
+    id: contentsPanel
+    anchors.top: prev.bottom
+    margin-top: 6
+
+    Panel
+      id: partyPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-top: 5
+      padding-right: 5
+      layout:
+        type: verticalBox
+        fit-children: true
+
+  UIWidget
+    id: miniborder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    image-source: /images/ui/miniborder
+    size: 14 14
+    margin-left: 2
+    margin-bottom: 2
+  ResizeBorder
+    id: bottomResizeBorder
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 3
+    minimum: 104
+    margin-left: 3
+    margin-right: 3

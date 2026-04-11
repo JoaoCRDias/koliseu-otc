@@ -84,26 +84,38 @@ function renderItems()
     end
     resetItems()
     radioItemSet = UIRadioGroup.create()
-    local searchFilter = searchEdit:getText()
+    local searchFilter = (searchEdit and searchEdit:getText() or ''):lower()
     for itemId, amount in pairs(stashItems) do
         local thingType = g_things.getThingType(itemId, 0)
-        if thingType then
-            local itemName = thingType:getName()
-            if not itemName or itemName:lower():find(searchFilter) then
-                local item = Item.create(itemId)
-                item:setCount(amount)
-                local itemBox = g_ui.createWidget('StashItemBox', itemsPanel)
-                itemBox:getChildById('item'):setItem(item)
-                radioItemSet:addWidget(itemBox)
-                if itemName then
-                    itemBox:setTooltip(itemName)
+        local itemName = thingType and thingType:getName() or nil
+        local itemNameLower = itemName and itemName:lower() or nil
+        local matchesSearch = (searchFilter == '') or (itemNameLower and itemNameLower:find(searchFilter, 1, true))
+
+        if matchesSearch then
+            local itemBox = g_ui.createWidget('StashItemBox', itemsPanel)
+            local itemWidget = itemBox:getChildById('item')
+            itemWidget:setItemId(itemId)
+            itemWidget:setItemCount(amount)
+            local amountLabel = itemBox:getChildById('amount')
+            if amountLabel then
+                amountLabel:setVisible(amount > 1)
+                if amount > 1 then
+                    amountLabel:setText(tostring(amount))
                 else
-                    itemBox:setTooltip("Loading...")
+                    amountLabel:setText('')
                 end
-                g_mouse.bindPress(itemBox, function()
-                    prepareWithdraw(itemId, amount)
-                end, MouseLeftButton)
             end
+            radioItemSet:addWidget(itemBox)
+
+            if itemName and itemName ~= '' then
+                itemBox:setTooltip(itemName)
+            else
+                itemBox:setTooltip("Loading...")
+            end
+
+            g_mouse.bindPress(itemBox, function()
+                prepareWithdraw(itemId, amount)
+            end, MouseLeftButton)
         end
     end
     if stashWindow:isHidden() then

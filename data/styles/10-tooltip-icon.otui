@@ -1,0 +1,11 @@
+UITooltipGrey < UIWidget
+  image-source: /images/skin/show-gui-help-grey
+  size: 12 12
+
+UITooltipOrange < UIWidget
+  image-source: /images/skin/show-gui-help-orange
+  size: 12 12
+
+UITooltipRed < UIWidget
+  image-source: /images/skin/show-gui-help-red
+  size: 12 12

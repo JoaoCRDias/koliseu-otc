@@ -16,7 +16,7 @@ HistoryEntry < UIWidget
   margin-right: 8
   margin-top: 24
   size: 535 15
-  background-color: #484848
+  background-color: #404040
 
   Label
     id: historyDate
@@ -46,27 +46,30 @@ RowStore < StoreLightFlatPanel
 
   Box
     id: image
-    size: 64 64
+    size: 68 68
     anchors.top: parent.top
     anchors.left: parent.left
     margin: 5 0 0 5
+    image-source: /game_store/images/panel_container
+    image-border: 3
 
   Label
     id: lblName
     anchors.top: parent.top
     anchors.left: prev.right
     anchors.right: parent.right
-    margin: 8 0 0 8
+    margin: 8 8 0 8
+
     text-auto-resize: true
     text-wrap: true
   Panel
     id: StackOffers
-    margin-left: 31
+    width: 150
     height: 80
-    margin-top: 12
-    anchors.top: prev.bottom
-    anchors.left: image.right
+    anchors.bottom: parent.bottom
     anchors.right: parent.right
+    margin-right: -7
+    margin-bottom: -2
     layout:
       type: grid
       cell-size: 145 20
@@ -85,6 +88,7 @@ MenuCategoryStore < UIWidget
   text-wrap: true
   icon-align: left
   icon-offset: 6 0
+  font: verdana-11px-rounded
 
   $pressed:
     text-offset: 25 0
@@ -93,7 +97,7 @@ MenuCategoryStore < UIWidget
     image-clip: 0 22 166 22
 
 StoreWindow
-  size: 780 537
+  size: 850 750
   !text: tr('Store')
   color: #909090
   visible: false
@@ -127,54 +131,62 @@ StoreWindow
     image-color: #1111118c
     focusable: false
     phantom: true
-    image-source: /game_store/images/panel
+    image-source: /images/ui/button-9grid-pressed
     image-border: 3
     Label
-      id: lblTibiaCoins
+      id: lblParenthesis
       anchors.bottom: parent.bottom
-      anchors.left: parent.left
+      anchors.right: parent.right
+      !text: tr(")")
       focusable: false
-      margin-left:22
-      margin-bottom: 3
+      phantom: true
+      font: verdana-11px-rounded
+      color: #C0C0C0
+      margin-right: 3
+      margin-bottom: 1
+
+    UIWidget
+      id: iconodos
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      focusable: false
+      phantom: true
+      margin-right: 0
+      margin-bottom: 2
+      image-source: images/icon-tibiacointransferable
+
+    Label
+      id: lblTibiaTransfer
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
       text-auto-resize: true
+      margin-right: 2
+      margin-bottom: 1
+      font: verdana-11px-rounded
+      color: #C0C0C0
       phantom: true
 
     UIWidget
       id: icono
       anchors.bottom: parent.bottom
-      anchors.left: prev.right
-      margin-left: 5
-      margin-bottom: 3
+      anchors.right: prev.left
+      margin-right: 2
+      margin-bottom: 2
       image-source: /images/ui/tibiaCoin
       focusable: false
       phantom: true
 
     Label
-      id: lblTibiaTransfer
+      id: lblTibiaCoins
       anchors.bottom: parent.bottom
-      anchors.left: prev.right
+      anchors.right: prev.left
+      focusable: false
+      margin-bottom: 1
+      margin-right: 2
+      font: verdana-11px-rounded
+      color: #C0C0C0
       text-auto-resize: true
-      margin-left:5
-      margin-bottom: 3 
-      phantom: true
-
-    UIWidget
-      id: iconodos
-      anchors.bottom: parent.bottom
-      anchors.left: prev.right
-      focusable: false
-      phantom: true
-      margin-left:5
-      margin-bottom: 3
-      image-source: images/icon-tibiacointransferable
-    Label
-      anchors.bottom: parent.bottom
-      anchors.left: prev.right
-      !text: tr(")")
-      focusable: false
-      phantom: true
-      margin-left:5
-      margin-bottom: 3 
+      phantom: true 
 
   StoreButton
     id: btnCoins
@@ -183,7 +195,7 @@ StoreWindow
     anchors.left: prev.right
     margin-left: 5
     margin-bottom: 2
-    !tooltip: tr('Get Tibia Coins')
+    !tooltip: tr('Buy Tibia Coins via Pix')
     image-color: green
     icon: /images/ui/tibiaCoin
     icon-align: center
@@ -191,13 +203,13 @@ StoreWindow
     text-offset: -10 0
     !text: tr('Get')
     font: cipsoftFont
-    @onClick: modules.game_store.getCoinsWebsite()
+    @onClick: modules.game_store.buyViaPix()
 
     $pressed:
       text-offset: -18 0
       icon-offset: 10 0
 
-  StoreButton
+  Button
     id: transferPoints
     anchors.top: btnCoins.top
     !tooltip: tr('Transfer Coins')
@@ -206,8 +218,10 @@ StoreWindow
     icon-align: center
     icon-source: images/iconTransfer
     size: 64 20
+    @onClick: modules.game_store.onGiftWindow()
 
-  StoreButton
+  Button
+    id: auctionCharacter
     anchors.top: transferPoints.top
     !tooltip: tr('Setup up an auction to sell you currents characters.')
     anchors.left: transferPoints.right
@@ -215,6 +229,7 @@ StoreWindow
     icon-align: center
     icon-source: images/icon-trade
     size: 64 20
+    @onClick: modules.game_store.openBaazarWindow()
 
   HorizontalSeparator
     anchors.bottom: prev.top
@@ -224,11 +239,11 @@ StoreWindow
 
   UIScrollArea
     id: listCategory
-    size: 190 450
+    size: 209 450
     anchors.top: parent.top
     anchors.left: parent.left
     anchors.bottom: prev.top
-    image-source: images/panel
+    image-source: /images/ui/2pixel_up_frame_borderimage_dark
     image-border: 3
     auto-focus: none
     layout: verticalBox
@@ -255,13 +270,16 @@ StoreWindow
     image-source: /game_cyclopedia/images/button_clear_search
     image-color: white
     opacity: 0.8
+    enabled: false
     @onClick: modules.game_store.search()
-    $hover:
+    $hover !disabled:
       opacity: 1.0
       image-color: white
     $pressed:
       opacity: 1.0
       image-color: gray
+    $disabled:
+      opacity: 0.5
 
   StoreLightFlatPanel
     id: panelItem
@@ -296,12 +314,12 @@ StoreWindow
 
     UIScrollArea
       id: listProduct
-      size: 260 407
+      size: 286 407
       anchors.top: comboBoxContainer.bottom
       anchors.left: parent.left
       anchors.bottom: parent.bottom
       vertical-scrollbar: scrollList
-      image-source: images/panel
+      image-source: /game_store/images/panel_container
       image-border: 3
       layout: verticalBox
       padding: 5
@@ -329,34 +347,148 @@ StoreWindow
 
     Box
       id: image
-      size: 96 96
+      size: 124 124
       anchors.top: lblName.bottom
       anchors.left: scrollList.right
       margin: 8 0 0 8
+      image-source: /game_store/images/panel_container
+      image-border: 3
 
     Panel
-      id: StackOffers
+      id: buyButtonsPanel
       anchors.top: prev.top
       anchors.left: prev.right
       anchors.right: parent.right
       margin-left: 10
-      layout:
-        type: grid
-        cell-size: 145 50
-        cell-spacing: 3
-        flow: true
-        fit-children: true
+      size: 145 70
+      
+      StoreButton
+        id: btnBuy1
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 23
+        !text: tr('Buy')
+        font: cipsoftFont
+        image-color: #75bfff
+        visible: true
+        enabled: true
+        opacity: 1.0
 
-    StoreFlatLabel
-      id: lblDescription
+      UIWidget
+        id: lblPrice1
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 23
+        margin-top: 3
+        image-source: /images/ui/test/button-verydarkgrey-down
+        image-border: 3
+        visible: true
+        phantom: false
+
+        Label
+          id: priceText
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.horizontalCenter: parent.horizontalCenter
+          margin-right: 8
+          font: verdana-11px-antialised
+          color: #C0C0C0
+          text: 0
+          text-auto-resize: true
+
+        UIWidget
+          id: priceIcon
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: priceText.right
+          margin-left: 3
+          size: 12 12
+          image-source: /images/ui/tibiaCoin
+
+      StoreButton
+        id: btnBuy2
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 5
+        height: 23
+        !text: tr('Buy')
+        font: cipsoftFont
+        image-color: #75bfff
+        visible: false
+        enabled: true
+        opacity: 1.0
+
+      UIWidget
+        id: lblPrice2
+        anchors.top: btnBuy2.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 23
+        margin-top: 3
+        image-source: /images/ui/test/button-verydarkgrey-down
+        image-border: 3
+        visible: false
+        phantom: false
+
+        Label
+          id: priceText
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.horizontalCenter: parent.horizontalCenter
+          margin-right: 8
+          font: verdana-11px-antialised
+          color: #C0C0C0
+          text: 0
+          text-auto-resize: true
+
+        UIWidget
+          id: priceIcon
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: priceText.right
+          margin-left: 3
+          size: 12 12
+          image-source: /images/ui/tibiaCoin
+
+    Panel
+      id: descriptionPanel
       anchors.top: image.bottom
       anchors.left: scrollList.right
       anchors.right: parent.right
       anchors.bottom: scrollList.bottom
       margin-left: 8
       margin-top: 7
-      text-auto-resize: true
-      text-wrap: true
+      image-source: /game_store/images/panel_flat
+      image-border: 1
+      padding: 5
+      
+      UIScrollArea
+        id: descriptionScrollArea
+        anchors.fill: parent
+        vertical-scrollbar: descriptionScrollbar
+        background-color: #404040
+        margin: -3
+
+        Label
+          id: lblDescription
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: parent.top
+          text-wrap: true
+          text-auto-resize: true
+          text-align: top
+          text-vertical-auto-resize: true
+          font: verdana-11px-rounded
+          color: #F4F4F4
+          margin: 0
+
+      VerticalScrollBar
+        id: descriptionScrollbar
+        anchors.top: descriptionScrollArea.top
+        anchors.bottom: descriptionScrollArea.bottom
+        anchors.left: descriptionScrollArea.right
+        margin-left: -4
+        margin-top: -5
+        margin-bottom: -6
 
   QtPanel
     id: transferHistory
@@ -411,12 +543,12 @@ StoreWindow
     padding: 6
     UIWidget
       id: HomeImagen
-      height: 20
-      size: 530 202
+      size: 583 222
       anchors.top: parent.top
       anchors.left: parent.left
       anchors.right: parent.right
       margin-right:10
+
     UIButton
       id: prevImagen
       anchors.verticalCenter: prev.verticalCenter
@@ -445,27 +577,53 @@ StoreWindow
         image-source: images/button-featured-offers-right-highlight
 
     MiniPanel
-      id:HomeRecentlyAdded
+      id: HomePromotions
       anchors.top: HomeImagen.bottom
       anchors.left: parent.left
-      anchors.bottom: parent.bottom
-      size: 530 407
-      margin-top:10
-      text: Recently Added
+      anchors.right: parent.right
+      height: 150
+      margin-top: 5
+      text: Promotions
+      
       UIScrollArea
-        id: HomeProductos
-        size: 505 190
-        vertical-scrollbar: scrollList2
-        image-border: 3
-        layout: verticalBox
-        margin-right:10
-
-
-        auto-focus: none
+        id: HomeGoods
         anchors.fill: parent
+        vertical-scrollbar: scrollPromo
+        image-border: 3
+        margin-right: 15
         layout:
           type: grid
-          cell-size: 254 94
+          cell-size: 272 80
+          cell-spacing: 5
+          flow: true
+
+      VerticalScrollBar
+        id: scrollPromo
+        anchors.top: HomeGoods.top
+        anchors.bottom: HomeGoods.bottom
+        anchors.left: HomeGoods.right
+        step: 14
+        pixels-scroll: true
+
+    MiniPanel
+      id:HomeRecentlyAdded
+      anchors.top: HomePromotions.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 5
+      text: Recently Added
+      
+      UIScrollArea
+        id: HomeProductos
+        anchors.fill: parent
+        vertical-scrollbar: scrollList2 
+        image-border: 3
+        margin-right: 15
+        layout:
+          type: grid
+          cell-size: 272 80
+          cell-spacing: 5
           flow: true
 
       

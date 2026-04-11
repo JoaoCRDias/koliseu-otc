@@ -8,6 +8,7 @@ controller:registerEvents(g_game, {
         -- g_game.enableFeature(GameAllowCustomBotScripts)
 
         g_game.enableFeature(GameFormatCreatureName)
+        
 
         -- For Walk
         g_game.enableFeature(GameAllowPreWalk)
@@ -219,6 +220,8 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GamePlayerFamiliars)
             g_game.disableFeature(GameEnvironmentEffect)
             g_game.disableFeature(GameItemAnimationPhase)
+            -- Canary/OTCR: servidor envia group id (u8) após vocation em AddCreature (ver docs/context/04-protocol-and-network.md)
+            g_game.enableFeature(GameCreatureGroupType)
         end
 
         if version >= 1290 then

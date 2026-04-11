@@ -50,8 +50,7 @@ function assignSpell(button)
     for spellName, spellData in pairs(spells) do
         if showAllSpells or table.contains(spellData.vocations, playerVocation) then
             local widget = g_ui.createWidget('SpellPreview', spellList)
-            local spellId = spellData.clientId
-            local clip = Spells.getImageClip(spellId)
+            local clip = spellData.id and Spells.getImageClip(spellData.id, 'Default') or "0 0 32 32"
             radio:addWidget(widget)
             widget:setId(spellData.id)
             widget:setText(spellName .. "\n" .. spellData.words)
@@ -83,9 +82,8 @@ function assignSpell(button)
     end
     if button.cache.spellData and not button.cache.isRuneSpell then
         local spellData = button.cache.spellData
-        local spellId = spellData.clientId
+        local spellId = spellData.id
         if not spellId then
-            print("Warning Spell ID not found L81 modules/game_actionbar/logics/ActionAssignmentWindows.lua")
             return
         end
         local clip = Spells.getImageClip(spellId, 'Default')
@@ -164,8 +162,7 @@ function assignSpell(button)
         spellList:destroyChildren()
         for spellName, spellData in pairs(spells) do
             local widget = g_ui.createWidget('SpellPreview', spellList)
-            local spellId = spellData.clientId
-            local clip = Spells.getImageClip(spellId)
+            local clip = spellData.id and Spells.getImageClip(spellData.id, 'Default') or "0 0 32 32"
             radio:addWidget(widget)
             widget:setId(spellData.id)
             widget:setText(spellName .. "\n" .. spellData.words)

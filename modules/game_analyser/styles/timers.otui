@@ -1,0 +1,114 @@
+TimerEntry < UIWidget
+  phantom: true
+  focusable: false
+  size: 36 56
+
+  UIWidget
+    id: background
+    size: 36 36
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    focusable: false
+    phantom: false
+    border-width: 1
+    border-color: gold
+    tooltip-delayed: true
+
+  UIWidget
+    id: icon
+    size: 32 32
+    phantom: true
+    anchors.centerIn: background
+    image-smooth: true
+    focusable: false
+
+  UIItem
+    id: itemIcon
+    size: 32 32
+    phantom: true
+    anchors.centerIn: background
+    focusable: false
+    visible: false
+    virtual: true
+
+    UIWidget
+      id: tier
+      size: 10 9
+      image-source: /images/inventory/tiers-strip
+      image-clip: 0 0 10 9
+      image-size: 10 9
+      anchors.top: parent.top
+      anchors.right: parent.right
+      phantom: true
+      focusable: false
+      visible: false
+
+  Label
+    id: countdown
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: background.bottom
+    margin-top: 2
+    height: 15
+    font: $var-cip-font-mono-rounded
+    color: #72da74
+    text-horizontal-auto-resize: true
+    phantom: true
+
+TimerCategoryLabel < Label
+  font: $var-cip-font-mono-rounded
+  color: $var-text-cip-color
+  height: 14
+  text-auto-resize: true
+  phantom: true
+  margin-bottom: 2
+  margin-top: 4
+
+TimerCategorySeparator < HorizontalSeparator
+  margin-top: 4
+  margin-bottom: 2
+
+TimersGridPanel < Panel
+  clipping: true
+  layout:
+    type: grid
+    cell-size: 36 56
+    cell-spacing: 3
+    flow: true
+
+MiniWindow
+  id: timersAnalyserMiniWindow
+  &type: 'timersAnalyser'
+  !text: tr('Active Timers')
+  height: 100
+  &save: false
+  &autoOpen: false
+
+  UIWidget
+    id: miniwindowIcon
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    margin-top: 2
+    margin-left: 4
+    size: 12 12
+    image-source: /images/icons/icon_timers
+    image-smooth: false
+
+  Label
+    id: miniwindowTitle
+    anchors.top: miniwindowHeader.top
+    anchors.left: miniwindowHeader.left
+    anchors.right: miniwindowHeader.right
+    margin-top: 2
+    margin-left: 20
+    margin-right: 50
+    font: verdana-11px-monochrome
+    height: 13
+    color: #9d9d9dff
+    !text: tr('Consumable Timers')
+
+  ScrollablePanel
+    id: contentsPanel
+    anchors.fill: parent
+    margin: 16 18 5 5
+    step: 20
+    vertical-scrollbar: miniwindowScrollBar

@@ -1,0 +1,300 @@
+UIWidget
+  anchors.fill: parent
+  visible: false
+
+  ScrollablePanel
+    id: scrollPanel
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: scrollBar.left
+    anchors.bottom: parent.bottom
+    margin-right: 5
+    vertical-scrollbar: scrollBar
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 22
+
+      OptionCheckBox
+        id: textualEffect
+        !text: tr('Show Textual Effects')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Show damage numbers, healing and experience gain as\nfloating text on the game screen.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: showMessages
+        !text: tr('Show Messages')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Master toggle for displaying status and event messages\non the game screen. Disabling this will hide all\non-screen messages.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: showPrivateMessagesOnScreen
+        !text: tr('Show Private Messages')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Display private messages as on-screen notifications\nin the game window.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: potionSoundEffect
+        !text: tr('Show Potion Sound Effects')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Play sound effects when using potions.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: showSpells
+        !text: tr('Show Spells')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Display spell words spoken by your character\non the game screen.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: spellsOthers
+        !text: tr('Show Spells of Others')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Display spell words spoken by other players\non the game screen.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: showHotkeyMessagesOnScreen
+        !text: tr('Show Hotkey Usage Notifications')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Display a notification on screen whenever\nyou use a hotkey.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: showLootMessagesOnScreen
+        !text: tr('Show Loot Messages')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Display loot messages on the game screen\nwhen you loot a creature.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: lootHighlight
+        !text: tr('Show Loot Highlighting')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Highlight loot items with different colours based on\ntheir value in loot messages and console.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 22
+
+      OptionCheckBox
+        id: storeNotification
+        !text: tr('Show Store Notifications in Combat')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Show the store purchase confirmation window\nwhile you are in combat. If disabled, the\npurchase will complete silently during combat.')
+
+    SmallReversedQtPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 7
+      height: 174
+
+      OptionCheckBox
+        id: showCustomNotificationWindow
+        !text: tr('Show Custom Notification Window')
+
+      UIWidget
+        image-source: /images/icons/show_gui_help_grey
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: showCustomNotificationWindow.verticalCenter
+        margin-right: 3
+        !tooltip: tr('Enable the custom notification window that displays\ntimed alerts for active bonuses and consumables.\nDisabling this will hide all custom notifications below.')
+
+      OptionCheckBox
+        id: notifyKillBonus
+        anchors.top: showCustomNotificationWindow.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 16
+        !text: tr('Kill Bonus')
+
+      OptionCheckBox
+        id: notifyConcoctions
+        anchors.top: notifyKillBonus.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 16
+        !text: tr('Concoctions')
+
+      OptionCheckBox
+        id: notifyFoods
+        anchors.top: notifyConcoctions.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 16
+        !text: tr('Foods')
+
+      OptionCheckBox
+        id: notifyPotions
+        anchors.top: notifyFoods.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 16
+        !text: tr('Potions')
+
+      OptionCheckBox
+        id: notifyXpBoost
+        anchors.top: notifyPotions.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 16
+        !text: tr('XP Boost')
+
+      OptionCheckBox
+        id: notifyRaids
+        anchors.top: notifyXpBoost.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 16
+        !text: tr('Raids')
+
+      OptionCheckBox
+        id: notifyBeastScroll
+        anchors.top: notifyRaids.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 16
+        !text: tr('Beast Scroll')
+
+      OptionCheckBox
+        id: alertSupply
+        anchors.top: notifyBeastScroll.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-left: 16
+        !text: tr('Alert Supply')
+
+        UIWidget
+          image-source: /images/icons/show_gui_help_grey
+          size: 12 12
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-right: 3
+          !tooltip: tr('Plays an alarm sound every 10 seconds and shows a notification\nwhen a monitored supply item count falls below the configured threshold.')
+
+  VerticalQtScrollBar
+    id: scrollBar
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    step: 28
+    pixels-scroll: true

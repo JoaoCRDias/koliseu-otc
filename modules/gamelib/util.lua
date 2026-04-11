@@ -10,6 +10,21 @@ function dirtostring(dir)
     end
 end
 
+function short_text(text, chars_limit)
+    if #text > chars_limit then
+        local newstring = ''
+        for char in (text):gmatch(".") do
+            newstring = string.format("%s%s", newstring, char)
+            if #newstring >= chars_limit then
+                break
+            end
+        end
+        return newstring .. '...'
+    else
+        return text
+    end
+end
+
 function comma_value(n)
     local left, num, right = string.match(n, '^([^%d]*%d)(%d*)(.-)$')
     return left .. (num:reverse():gsub('(%d%d%d)', '%1,'):reverse()) .. right
@@ -93,6 +108,48 @@ function convertLongGold(amount, shortValue, normalized)
     end
   
     return formatted
+end
+
+function translateVocationName(id)
+  if id == 1 or id == 11 then
+    return "Knight"
+  elseif id == 2 or id == 12 then
+    return "Paladin"
+  elseif id == 3 or id == 13 then
+    return "Sorcerer"
+  elseif id == 4 or id == 14 then
+    return "Druid"
+  elseif id == 5 or id == 15 then
+    return "Monk"
+  end
+
+  return "Rookie"
+end
+
+local gold = {
+  [3031] = "gold coin",
+  [3035] = "platinum coin",
+  [3043] = "crystal coin"
+}
+
+function isGoldCoin(itemId)
+  if gold[itemId] then
+    return true
+  end
+  return false
+end
+
+function getItemServerName(itemId)
+  local thing = g_things.getThingType(itemId, ThingCategoryItem)
+  if not thing then
+    return ""
+  end
+
+  if gold[itemId] then
+    return string.capitalize(gold[itemId])
+  end
+
+  return string.capitalize(thing:getMarketData().name) or ""
 end
 
 function translateWheelVocation(id)

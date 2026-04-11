@@ -262,6 +262,7 @@ end
 ActionBarController = Controller:new()
 function ActionBarController:onInit()
     g_ui.importStyle("otui/style.otui")
+    g_ui.importStyle("otui/equippreset.otui")
     gameRootPanel = modules.game_interface.getRootPanel()
     mouseGrabberWidget = g_ui.createWidget('UIWidget')
     mouseGrabberWidget:setVisible(false)
@@ -320,6 +321,7 @@ end
 
 function ActionBarController:onGameEnd()
     isLoaded = false
+    offLineEvents()
     for _, actionbar in pairs(activeActionBars) do
         unbindActionBarEvent(actionbar)
     end

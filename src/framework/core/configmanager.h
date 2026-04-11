@@ -39,10 +39,45 @@ struct FontConfig
     std::string creatureText;
 };
 
+struct ServicesConfig
+{
+    std::string updater;
+    std::string updaterRemoteConfigUrl;
+    std::string updaterZipUrl;
+    std::string updaterLocalConfigFile;
+    std::string status;
+    std::string websites;
+    std::string createAccount;
+    std::string logUpload;
+    std::string polopag;
+    std::string polopagConfig;
+};
+
+struct GameStoreConfig
+{
+    std::string getCoins;
+    std::string images;
+};
+
+struct HelpersConfig
+{
+    std::string wiki;
+    std::string info;
+};
+
+struct GeneralConfig
+{
+    std::string tibiaHintsUrl;
+};
+
 struct PublicConfig
 {
     GraphicsConfig graphics;
     FontConfig font;
+    ServicesConfig services;
+    GameStoreConfig gameStore;
+    HelpersConfig helpers;
+    GeneralConfig general;
 };
 
 // @bindsingleton g_configs
@@ -66,6 +101,25 @@ public:
 
     const PublicConfig& getPublicConfig() const { return m_publicConfig; }
     void loadPublicConfig(const std::string& file);
+
+    const std::string& getServiceUpdater() const { return m_publicConfig.services.updater; }
+    const std::string& getServiceUpdaterRemoteConfigUrl() const { return m_publicConfig.services.updaterRemoteConfigUrl; }
+    const std::string& getServiceUpdaterZipUrl() const { return m_publicConfig.services.updaterZipUrl; }
+    const std::string& getServiceUpdaterLocalConfigFile() const { return m_publicConfig.services.updaterLocalConfigFile; }
+    const std::string& getServiceStatus() const { return m_publicConfig.services.status; }
+    const std::string& getServiceWebsites() const { return m_publicConfig.services.websites; }
+    const std::string& getServiceCreateAccount() const { return m_publicConfig.services.createAccount; }
+    const std::string& getServiceLogUpload() const { return m_publicConfig.services.logUpload; }
+    const std::string& getServicePolopag() const { return m_publicConfig.services.polopag; }
+    const std::string& getServicePolopagConfig() const { return m_publicConfig.services.polopagConfig; }
+
+    const std::string& getGameStoreGetCoins() const { return m_publicConfig.gameStore.getCoins; }
+    const std::string& getGameStoreImages() const { return m_publicConfig.gameStore.images; }
+
+    const std::string& getHelperWiki() const { return m_publicConfig.helpers.wiki; }
+    const std::string& getHelperInfo() const { return m_publicConfig.helpers.info; }
+
+    const std::string& getTibiaHintsUrl() const { return m_publicConfig.general.tibiaHintsUrl; }
 
 protected:
     ConfigPtr m_settings;

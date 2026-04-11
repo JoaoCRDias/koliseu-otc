@@ -28,12 +28,7 @@ function UIGameMap:onDragEnter(mousePos)
 
     self.currentDragThing = thing
 
-    -- Use native cursor when enabled, otherwise use custom cursor
-    if modules.client_options and modules.client_options.getOption('nativeCursor') then
-        g_window.setSystemCursor('cross')
-    else
-        g_mouse.pushCursor('target')
-    end
+    g_mouse.pushCursor('target')
     self.allowNextRelease = false
     return true
 end
@@ -41,12 +36,7 @@ end
 function UIGameMap:onDragLeave(droppedWidget, mousePos)
     self.currentDragThing = nil
     self.hoveredWho = nil
-    -- Restore cursor
-    if modules.client_options and modules.client_options.getOption('nativeCursor') then
-        g_window.restoreMouseCursor()
-    else
-        g_mouse.popCursor('target')
-    end
+    g_mouse.popCursor('target')
     UIDragIcon:hide()
     return true
 end

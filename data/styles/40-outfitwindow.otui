@@ -153,46 +153,33 @@ OutfitWindow < MainWindow
         spacing: 5
 
       FlatPanel
-        id: showFloor
-        height: 22
-        padding: 5
-
-        CheckBox
-          id: check
-          anchors.verticalCenter: parent.verticalCenter
-          anchors.left: parent.left
-          anchors.right: parent.right
-          text: Show Floor
-
-      FlatPanel
         id: showOutfit
-        height: 22
-        padding: 5
+        size: 110 22
+        image-source: /game_cyclopedia/images/ui/panel-background
+        padding: 1 1 1 1
 
         CheckBox
           id: check
-          anchors.verticalCenter: parent.verticalCenter
-          anchors.left: parent.left
-          anchors.right: parent.right
+          size: 12 12
+          font: Verdana Bold-11px
           text: Show Outfit
-          checked: true
-
-      FlatPanel
-        id: showMount
-        height: 22
-        padding: 5
-
-        CheckBox
-          id: check
-          anchors.verticalCenter: parent.verticalCenter
+          text-offset: 14 -2
+          text-auto-resize: true
+          color: #c0c0c0
           anchors.left: parent.left
-          anchors.right: parent.right
-          text: Show Mount
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 4
+          checked: true
+          $hover !disabled:
+            color: #dfdfdf
+          $disabled:
+            color: #707070
 
       FlatPanel
         id: showFamiliar
-        height: 22
-        padding: 5
+        size: 110 22
+        image-source: /game_cyclopedia/images/ui/panel-background
+        padding: 1 1 1 1
         @onSetup: |
           if not g_game.getFeature(GamePlayerFamiliars) then
             self:hide()
@@ -202,14 +189,71 @@ OutfitWindow < MainWindow
 
         CheckBox
           id: check
-          anchors.verticalCenter: parent.verticalCenter
-          anchors.left: parent.left
-          anchors.right: parent.right
+          size: 12 12
+          font: Verdana Bold-11px
           text: Show Familiar
+          text-offset: 14 -2
+          text-auto-resize: true
+          color: #c0c0c0
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 4
           @onSetup: |
             if not g_game.getFeature(GamePlayerFamiliars) then
               self:hide()
             end
+          $hover !disabled:
+            color: #dfdfdf
+          $disabled:
+            color: #707070
+
+      FlatPanel
+        id: showMount
+        size: 110 22
+        image-source: /game_cyclopedia/images/ui/panel-background
+        padding: 1 1 1 1
+
+        CheckBox
+          id: check
+          size: 12 12
+          font: Verdana Bold-11px
+          text: Show Mount
+          text-offset: 14 -2
+          text-auto-resize: true
+          color: #c0c0c0
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 4
+          @onSetup: |
+            if not g_game.getFeature(GamePlayerMounts) then
+              self:hide()
+            end
+          $hover !disabled:
+            color: #dfdfdf
+          $disabled:
+            color: #707070
+
+      FlatPanel
+        id: showFloor
+        size: 110 22
+        image-source: /game_cyclopedia/images/ui/panel-background
+        padding: 1 1 1 1
+
+        CheckBox
+          id: check
+          size: 12 12
+          font: Verdana Bold-11px
+          text: Show Floor
+          text-offset: 14 -2
+          text-auto-resize: true
+          color: #c0c0c0
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 4
+          $hover !disabled:
+            color: #dfdfdf
+          $disabled:
+            color: #707070
 
       FlatPanel
         id: showWings
@@ -401,45 +445,80 @@ OutfitWindow < MainWindow
     margin-top: 5
     margin-bottom: 5
     text: Configure
-    layout:
-      type: verticalBox
-      spacing: 5
 
     FlatPanel
       id: addon1
-      height: 22
-      padding: 5
+      size: 120 22
+      image-source: /game_cyclopedia/images/ui/panel-background
+      padding: 1 1 1 1
+      anchors.top: parent.top
+      anchors.left: parent.left
 
       CheckBox
         id: check
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.left: parent.left
-        anchors.right: parent.right
+        size: 12 12
+        font: Verdana Bold-11px
         text: Addon 1
+        text-offset: 14 -2
+        text-auto-resize: true
+        color: #c0c0c0
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        $hover !disabled:
+          color: #dfdfdf
+        $disabled:
+          color: #707070
 
     FlatPanel
       id: addon2
-      height: 22
-      padding: 5
+      size: 120 22
+      image-source: /game_cyclopedia/images/ui/panel-background
+      padding: 1 1 1 1
+      anchors.top: addon1.bottom
+      anchors.left: parent.left
+      margin-top: 5
 
       CheckBox
         id: check
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.left: parent.left
-        anchors.right: parent.right
+        size: 12 12
+        font: Verdana Bold-11px
         text: Addon 2
+        text-offset: 14 -2
+        text-auto-resize: true
+        color: #c0c0c0
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        $hover !disabled:
+          color: #dfdfdf
+        $disabled:
+          color: #707070
 
     FlatPanel
       id: mount
-      height: 22
-      padding: 5
+      size: 120 22
+      image-source: /game_cyclopedia/images/ui/panel-background
+      padding: 1 1 1 1
+      anchors.top: addon2.bottom
+      anchors.left: parent.left
+      margin-top: 5
 
       CheckBox
         id: check
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.left: parent.left
-        anchors.right: parent.right
+        size: 12 12
+        font: Verdana Bold-11px
         text: Mount
+        text-offset: 14 -2
+        text-auto-resize: true
+        color: #c0c0c0
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        $hover !disabled:
+          color: #dfdfdf
+        $disabled:
+          color: #707070
 
   MiniPanel
     id: appearance
@@ -451,49 +530,17 @@ OutfitWindow < MainWindow
     margin-left: 5
     text: Change Appearance
 
-    ScrollablePanel
+    Panel
       id: settings
       anchors.top: parent.top
       anchors.left: parent.left
       anchors.right: parent.right
-      image-source: /images/ui/panel_flat
-      image-border: 1
       padding: 5
-      padding-right: 15
       height: 86
-      vertical-scrollbar: scrollbar
       layout:
         type: verticalBox
         spacing: 2
-      
-      Panel
-        id: preset
-        height: 20
 
-        CheckBoxCircle
-          id: check
-          anchors.verticalCenter: parent.verticalCenter
-          anchors.left: parent.left
-          size: 12 12
-          font: Verdana Bold-11px
-          text: Preset:
-          text-offset: 15 0
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
-
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
-          id: name
-          anchors.top: parent.top
-          anchors.bottom: parent.bottom
-          anchors.left: prev.right
-          anchors.right: parent.right
-          text: -
-      
       Panel
         id: outfit
         height: 20
@@ -504,23 +551,23 @@ OutfitWindow < MainWindow
           anchors.left: parent.left
           text-offset: 15 0
           text: Outfit:
-          size: 12 12
-          font: Verdana Bold-11px
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
+          width: 55
 
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
-      
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: Verdana Bold-11px
+          color: #ffffff
+          $pressed:
+            image-clip: 0 20 230 20
+
       Panel
         id: mount
         height: 20
@@ -530,23 +577,23 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
-          font: Verdana Bold-11px
           text: Mount:
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
+          width: 55
 
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: Verdana Bold-11px
+          color: #ffffff
+          $pressed:
+            image-clip: 0 20 230 20
 
       Panel
         id: familiar
@@ -563,30 +610,58 @@ OutfitWindow < MainWindow
           anchors.left: parent.left
           text-offset: 15 0
           text: Familiar:
-          size: 12 12
-          font: Verdana Bold-11px
-          width: 84
+          width: 55
           @onSetup: |
             if not g_game.getFeature(GamePlayerFamiliars) then
               self:hide()
             end
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
 
-          $hover !disabled:
-            color: #C0C0C0
-
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: Verdana Bold-11px
+          color: #ffffff
           @onSetup: |
             if not g_game.getFeature(GamePlayerFamiliars) then
               self:hide()
             end
+          $pressed:
+            image-clip: 0 20 230 20
+
+      Panel
+        id: preset
+        height: 20
+
+        CheckBoxCircle
+          id: check
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.left: parent.left
+          text-offset: 15 0
+          text: Preset:
+          width: 55
+
+        UIButton
+          id: name
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          anchors.right: parent.right
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: Verdana Bold-11px
+          color: #ffffff
+          text: -
+          $pressed:
+            image-clip: 0 20 230 20
 
       Panel
         id: wings
@@ -597,24 +672,24 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
-          font: Verdana Bold-11px
           text: Wings:
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
+          width: 55
 
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
-      
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: cipsoftFont
+          color: #ffffff
+          $pressed:
+            image-clip: 0 20 230 20
+
       Panel
         id: aura
         height: 20
@@ -624,24 +699,24 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
-          font: Verdana Bold-11px
           text: Aura:
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
+          width: 55
 
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
-      
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: cipsoftFont
+          color: #ffffff
+          $pressed:
+            image-clip: 0 20 230 20
+
       Panel
         id: shader
         height: 20
@@ -651,24 +726,24 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
-          font: Verdana Bold-11px
           text: Shader:
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
+          width: 55
 
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
-      
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: cipsoftFont
+          color: #ffffff
+          $pressed:
+            image-clip: 0 20 230 20
+
       Panel
         id: healthBar
         height: 20
@@ -678,24 +753,24 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
-          font: Verdana Bold-11px
           text: Health Bar:
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
+          width: 70
 
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
-      
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: cipsoftFont
+          color: #ffffff
+          $pressed:
+            image-clip: 0 20 230 20
+
       Panel
         id: effects
         height: 20
@@ -705,23 +780,23 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
-          font: Verdana Bold-11px
           text: Effects:
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
+          width: 55
 
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: cipsoftFont
+          color: #ffffff
+          $pressed:
+            image-clip: 0 20 230 20
 
       Panel
         id: title
@@ -732,58 +807,56 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
-          font: Verdana Bold-11px
-          text: title :
-          width: 84
-          color: #c0c0c0
-          image-source: /images/ui/checkboxcircle
-          image-clip: 0 0 12 12
+          text: Title:
+          width: 55
 
-          $hover !disabled:
-            color: #C0C0C0
-        
-        FlatPanel
+        UIButton
           id: name
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          anchors.left: prev.right
           anchors.right: parent.right
-
-    VerticalScrollBar
-      id: scrollbar
-      anchors.top: settings.top
-      anchors.right: settings.right
-      anchors.bottom: settings.bottom
-      step: 24
-      pixel-scroll: true
+          width: 200
+          image-source: /images/ui/pressed-large-button
+          image-clip: 0 0 230 20
+          image-border: 3
+          text-align: center
+          font: cipsoftFont
+          color: #c0c0c0
+          $pressed:
+            image-clip: 0 20 230 20
 
     Panel
       id: colorMode
-      anchors.top: prev.bottom
+      anchors.bottom: colorBoxPanel.top
       anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: next.top
-      margin-top: 3
+      size: 253 18
       margin-bottom: 3
-      layout: horizontalBox
+      image-source: /images/ui/colors-panel
+      image-clip: 0 0 253 18
 
-      ButtonBox
+      UIButton
         id: head
-        width: 80
-        text: Head
-      ButtonBox
+        size: 64 18
+        anchors.top: parent.top
+        anchors.left: parent.left
+
+      UIButton
         id: primary
-        width: 80
-        text: Primary
-      ButtonBox
+        size: 64 18
+        anchors.top: parent.top
+        anchors.left: prev.right
+
+      UIButton
         id: secondary
-        width: 80
-        text: Secondary
-      ButtonBox
+        size: 64 18
+        anchors.top: parent.top
+        anchors.left: prev.right
+
+      UIButton
         id: detail
-        width: 81
-        text: Detail
+        size: 61 18
+        anchors.top: parent.top
+        anchors.left: prev.right
 
     Panel
       id: colorBoxPanel

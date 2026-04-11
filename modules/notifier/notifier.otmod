@@ -1,0 +1,9 @@
+Module
+  name: notifier
+  description: Notifier Module - Displays a notification
+  author: gabp
+  sandboxed: true
+  autoload: true
+  scripts: [ notifier ]
+  @onLoad: init()
+  @onUnload: terminate()

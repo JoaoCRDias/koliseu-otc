@@ -352,15 +352,17 @@ UIWidget
         id: List
         vertical-scrollbar: ListScrollbar
         anchors.fill: parent
-        size: 200 60
-        padding: 1
+        padding-top: 3
+        padding-left: 5
+        padding-right: 18
+        padding-bottom: 3
         layout:
-          type: grid
-          cell-size: 425 22
-          cell-spacing: 2
-          flow: true
+          type: verticalBox
+          spacing: 2
         UIWidget
           !text: tr('Status: Loading, please wait...')
+          text-wrap: true
+          text-auto-resize: true
       VerticalScrollBar
         id: ListScrollbar
         anchors.top: List.top

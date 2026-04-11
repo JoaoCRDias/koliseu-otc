@@ -43,8 +43,7 @@ end
 
 function reloadMainPanelSizes()
     local main_panel = modules.game_interface.getMainRightPanel()
-    local right_panel = modules.game_interface.getRightPanel()
-    if not main_panel or not right_panel then
+    if not main_panel then
         return
     end
     local total_height = 1
@@ -54,7 +53,7 @@ function reloadMainPanelSizes()
                 panel:setHeight(panel.panelHeight)
                 total_height = total_height + panel.panelHeight
                 if panel:getId() == 'mainoptionspanel' then
-                    if panel:isOn() then
+                    if panel:isOn() and optionsController and optionsController.ui and optionsController.ui.onPanel then
                         local options_panel = optionsController.ui.onPanel.options
                         local options_height, options_count =
                             calculatePanelHeight(options_panel, PANEL_CONSTANTS.MAX_ICONS_PER_ROW.OPTIONS)
@@ -86,16 +85,22 @@ function reloadMainPanelSizes()
         end
     end
     main_panel:setHeight(total_height)
-    right_panel:fitAll()
+    if modules.game_interface.fitMainRightPanel then
+        modules.game_interface.fitMainRightPanel()
+    else
+        main_panel:fitAllChildren()
+    end
 end
 
 local function refreshOptionsSizes()
     if optionsShrink then
         optionsController.ui:setOn(false)
         optionsController.ui.offPanel:show()
+        optionsController.ui.onPanel:hide()
     else
         optionsController.ui:setOn(true)
         optionsController.ui.offPanel:hide()
+        optionsController.ui.onPanel:show()
     end
     reloadMainPanelSizes()
 end

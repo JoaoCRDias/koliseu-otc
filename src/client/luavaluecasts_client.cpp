@@ -1849,3 +1849,23 @@ bool luavalue_cast(int index, GemData& gem)
 
     return true;
 }
+
+int push_luavalue(const ActiveTimerEntry& e)
+{
+    g_lua.createTable(0, 5);
+    g_lua.pushInteger(e.category);
+    g_lua.setField("category");
+    g_lua.pushInteger(e.keyType);
+    g_lua.setField("keyType");
+    if (e.keyType == 0) {
+        g_lua.pushString(e.keyString);
+    } else {
+        g_lua.pushInteger(e.keyItemId);
+    }
+    g_lua.setField("key");
+    g_lua.pushString(e.value);
+    g_lua.setField("value");
+    g_lua.pushInteger(e.remaining);
+    g_lua.setField("remaining");
+    return 1;
+}

@@ -1,0 +1,485 @@
+EquipRuleItem < UIWidget
+  height: 28
+  background-color: #00000022
+  &ruleId: 0
+
+  UIWidget
+    id: itemIcon
+    size: 24 24
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 4
+    image-source: /images/game/actionbar/actionbarslot
+    phantom: true
+
+  Label
+    id: ruleText
+    anchors.left: itemIcon.right
+    anchors.right: enableCheck.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 6
+    margin-right: 4
+    font: verdana-11px-antialised
+    color: #dfdfdf
+    text-auto-resize: false
+    text-wrap: false
+
+  CheckBox
+    id: enableCheck
+    size: 15 15
+    anchors.right: removeButton.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 8
+    checked: true
+    tooltip: Enable/Disable rule
+
+  UIButton
+    id: removeButton
+    size: 15 15
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 15
+    margin-bottom: : 1
+    image-source: /images/ui/buttons/button-clear-18x18-up
+    image-color: #ff6666
+    tooltip: Remove rule
+
+EquipPanel < Panel
+  anchors.fill: parent
+
+  Panel
+    id: equipPanel
+    anchors.fill: parent
+    image-source: /images/ui/t2pixel-up-frame-borderimage
+    image-border: 18
+
+    Label
+      id: equipTitle
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 1
+      !text: tr('Equip Helper')
+      font: verdana-11px-antialised
+      color: #AAAAAA
+      text-auto-resize: true
+
+    // Presets Section
+    PresetsSection
+      id: presetsSection
+      anchors.top: equipTitle.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin: 8 10 0 10
+
+    Panel
+      id: configFormPanel
+      anchors.top: presetsSection.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 230
+      margin: 5 10 5 10
+
+      // Row 1: Item Selection
+      Label
+        id: itemLabel
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: 5
+        text: Item:
+        font: verdana-11px-antialised
+        color: #aaaaaa
+        width: 35
+
+      UIButton
+        id: itemButton
+        size: 34 34
+        anchors.top: parent.top
+        anchors.left: itemLabel.right
+        margin-left: 5
+        image-source: /images/game/actionbar/actionbarslot
+
+      Label
+        id: itemNameLabel
+        anchors.left: itemButton.right
+        anchors.verticalCenter: itemButton.verticalCenter
+        margin-left: 8
+        text: (click to select)
+        font: verdana-11px-antialised
+        color: #888888
+        text-auto-resize: true
+
+      Button
+        id: clearButton
+        size: 45 17
+        anchors.left: itemNameLabel.right
+        anchors.verticalCenter: itemButton.verticalCenter
+        margin-left: 8
+        text: Clear
+        visible: false
+
+      // Row 2: Condition 1
+      Label
+        id: cond1Label
+        anchors.top: itemButton.bottom
+        anchors.left: parent.left
+        margin-top: 8
+        text: When:
+        font: verdana-11px-antialised
+        color: #aaaaaa
+        width: 40
+
+      ComboBox
+        id: cond1Resource
+        size: 60 16
+        anchors.top: itemButton.bottom
+        anchors.left: cond1Label.right
+        margin-top: 8
+        margin-left: 15
+        text-offset: -10 0
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        @onSetup: |
+          self:addOption("HP%")
+          self:addOption("MP%")
+          self:addOption("HP")
+          self:addOption("MP")
+          self:setCurrentOption("HP%")
+
+      ComboBox
+        id: cond1Operator
+        size: 45 16
+        anchors.top: cond1Resource.top
+        anchors.left: cond1Resource.right
+        margin-left: 5
+        text-offset: -10 0
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        @onSetup: |
+          self:addOption("<=")
+            self:addOption(">=")
+          self:addOption("<")
+            self:addOption(">")
+          self:setCurrentOption("<=")
+            
+      TextEdit
+        id: cond1Value
+        size: 55 16
+        anchors.top: cond1Operator.top
+        anchors.left: cond1Operator.right
+        margin-left: 5
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text: 50
+        text-align: center
+        max-length: 6
+
+      // Row 3: AND/OR + Condition 2 enable
+      ComboBox
+        id: condLogic
+        size: 60 16
+        anchors.top: cond1Resource.bottom
+        anchors.left: cond1Label.right
+        margin-top: 5
+        margin-left: 15
+        text-offset: -10 0
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        @onSetup: |
+          self:addOption("AND")
+          self:addOption("OR")
+          self:setCurrentOption("AND")
+
+      CheckBox
+        id: cond2Enable
+        size: 15 15
+        anchors.top: condLogic.top
+        anchors.left: condLogic.right
+        margin-left: 10
+        checked: false
+
+      Label
+        id: cond2EnableLabel
+        anchors.left: cond2Enable.right
+        anchors.verticalCenter: cond2Enable.verticalCenter
+        margin-left: 4
+        text: 2nd condition
+        font: verdana-11px-antialised
+        color: #888888
+
+      // Row 4: Condition 2
+      ComboBox
+        id: cond2Resource
+        size: 60 16
+        anchors.top: condLogic.bottom
+        anchors.left: cond1Label.right
+        margin-top: 5
+        margin-left: 15
+        text-offset: -10 0
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        enabled: false
+        @onSetup: |
+          self:addOption("HP%")
+          self:addOption("MP%")
+          self:addOption("HP")
+          self:addOption("MP")
+          self:setCurrentOption("MP%")
+
+      ComboBox
+        id: cond2Operator
+        size: 45 16
+        anchors.top: cond2Resource.top
+        anchors.left: cond2Resource.right
+        margin-left: 5
+        text-offset: -10 0
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        enabled: false
+        @onSetup: |
+          self:addOption("<=")
+            self:addOption(">=")
+          self:addOption("<")
+            self:addOption(">")
+          self:setCurrentOption(">=")
+
+      TextEdit
+        id: cond2Value
+        size: 55 16
+        anchors.top: cond2Operator.top
+        anchors.left: cond2Operator.right
+        margin-left: 5
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text: 20
+        text-align: center
+        max-length: 6
+        enabled: false
+
+      // Row 5: Action
+      Label
+        id: actionLabel
+        anchors.top: cond2Resource.bottom
+        anchors.left: parent.left
+        margin-top: 8
+        text: Action:
+        font: verdana-11px-antialised
+        color: #aaaaaa
+        width: 45
+
+      CheckBox
+        id: actionEquip
+        size: 60 15
+        anchors.top: cond2Resource.bottom
+        anchors.left: actionLabel.right
+        margin-top: 8
+        margin-left: 10
+        text: Equip
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        checked: true
+
+      CheckBox
+        id: actionUnequip
+        size: 70 15
+        anchors.top: actionEquip.top
+        anchors.left: actionEquip.right
+        margin-left: 10
+        text: Unequip
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        checked: false
+
+      // Row 6: Skip if equipped
+      CheckBox
+        id: skipIfEquippedCheck
+        size: 15 15
+        anchors.top: actionEquip.bottom
+        anchors.left: parent.left
+        margin-top: 15
+
+      Label
+        id: skipIfEquippedLabel
+        anchors.left: skipIfEquippedCheck.right
+        anchors.verticalCenter: skipIfEquippedCheck.verticalCenter
+        margin-left: 4
+        text: Skip if equipped:
+        font: verdana-11px-antialised
+        color: #aaaaaa
+
+      UIButton
+        id: skipItemButton
+        size: 26 26
+        anchors.left: skipIfEquippedLabel.right
+        anchors.verticalCenter: skipIfEquippedCheck.verticalCenter
+        margin-left: 5
+        image-source: /images/game/actionbar/actionbarslot
+        enabled: false
+
+      UIButton
+        id: skipItemButton2
+        size: 26 26
+        anchors.top: skipItemButton.top
+        anchors.left: skipItemButton.right
+        margin-left: 3
+        image-source: /images/game/actionbar/actionbarslot
+        enabled: false
+
+      UIButton
+        id: skipItemButton3
+        size: 26 26
+        anchors.top: skipItemButton.top
+        anchors.left: skipItemButton2.right
+        margin-left: 3
+        image-source: /images/game/actionbar/actionbarslot
+        enabled: false
+
+      UIButton
+        id: skipItemButton4
+        size: 26 26
+        anchors.top: skipItemButton.top
+        anchors.left: skipItemButton3.right
+        margin-left: 3
+        image-source: /images/game/actionbar/actionbarslot
+        enabled: false
+
+      // Row 7: Player Conditions (first row)
+      Label
+        id: conditionsLabel
+        anchors.top: skipIfEquippedCheck.bottom
+        anchors.left: parent.left
+        margin-top: 8
+        text: Conditions:
+        font: verdana-11px-antialised
+        color: #aaaaaa
+
+      CheckBox
+        id: condRooted
+        size: 55 14
+        anchors.top: conditionsLabel.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        text: Rooted
+        font: verdana-11px-antialised
+        color: #dfdfdf
+
+      CheckBox
+        id: condFeared
+        size: 55 14
+        anchors.top: condRooted.top
+        anchors.left: condRooted.right
+        margin-left: 12
+        text: Feared
+        font: verdana-11px-antialised
+        color: #dfdfdf
+
+      CheckBox
+        id: condPz
+        size: 35 14
+        anchors.top: condRooted.top
+        anchors.left: condFeared.right
+        margin-left: 12
+        text: PZ
+        font: verdana-11px-antialised
+        color: #dfdfdf
+
+      // Row 8: Player Conditions (second row)
+      CheckBox
+        id: condNonPz
+        size: 55 14
+        anchors.top: condRooted.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        text: non-PZ
+        font: verdana-11px-antialised
+        color: #dfdfdf
+
+      CheckBox
+        id: condUtamo
+        size: 75 14
+        anchors.top: condNonPz.top
+        anchors.left: condNonPz.right
+        margin-left: 12
+        text: Utamo Vita
+        font: verdana-11px-antialised
+        color: #dfdfdf
+
+
+    // Rules List Panel
+    Panel
+      id: rulesListPanel
+      anchors.top: configFormPanel.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: enableEquipmentPanel.top
+      margin: 0 10 5 10
+
+      Label
+        id: rulesListLabel
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.verticalCenter: addButton.verticalCenter
+        text: Rules:
+        font: verdana-11px-antialised
+        color: #aaaaaa
+
+      Button
+        id: addButton
+        size: 50 17
+        anchors.top: parent.top
+        anchors.right: parent.right
+        text: Add
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        image-source: /images/ui/buttons-blue
+
+      TextList
+        id: rulesList
+        anchors.top: addButton.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        margin-top: 5
+        margin-right: 3
+        vertical-scrollbar: rulesScrollBar
+        focusable: false
+        auto-focus: first
+        phantom: false
+
+      VerticalScrollBar
+        id: rulesScrollBar
+        anchors.top: rulesList.top
+        anchors.bottom: rulesList.bottom
+        anchors.right: parent.right
+        step: 28
+        pixels-scroll: true
+
+    // Enable Equipment Panel
+    Panel
+      id: enableEquipmentPanel
+      height: 30
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin: 0 10 5 10
+
+      CheckBox
+        id: enableEquipment
+        width: 140
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: parent.left
+        !text: tr('Enable Equipment')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 18 0
+        checked: true
+        change-cursor-image: false
+        $hover !disabled:
+          color: #c0c0c0
+
+      Button
+        id: setKeyEquipmentButton
+        size: 50 17
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.right: parent.right
+        !text: tr('Set Key')
+        @onClick: manageHotkeys("Enable/Disable Equipment")

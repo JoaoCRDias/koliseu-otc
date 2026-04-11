@@ -1,0 +1,70 @@
+SpellListItem < Panel
+  height: 36
+  border-width: 1
+  border-color: #000000
+  background-color: #2a2a2a
+  focusable: true
+
+  $hover:
+    background-color: #4a4a6a
+
+  UIWidget
+    id: icon
+    size: 32 32
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 2
+    phantom: true
+
+  Label
+    id: name
+    anchors.left: icon.right
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    margin-right: 4
+    color: #ffffff
+    font: verdana-11px-rounded
+    phantom: true
+
+MainWindow
+  id: attackSpellModal
+  !text: tr('Attack Spells')
+  size: 260 400
+  @onEscape: self:destroy()
+
+  Panel
+    id: spellListPanel
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: cancelButton.top
+    margin-bottom: 10
+    background-color: #1a1a1a
+
+    VerticalScrollBar
+      id: spellScrollBar
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      step: 36
+      pixels-scroll: true
+
+    ScrollablePanel
+      id: spellList
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: spellScrollBar.left
+      anchors.bottom: parent.bottom
+      vertical-scrollbar: spellScrollBar
+      margin-right: 1
+      layout:
+        type: verticalBox
+        spacing: 2
+
+  Button
+    id: cancelButton
+    !text: tr('Cancel')
+    width: 80
+    anchors.bottom: parent.bottom
+    anchors.horizontalCenter: parent.horizontalCenter

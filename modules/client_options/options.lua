@@ -1,4 +1,11 @@
 local options = dofile("data_options")
+-- Normalize legacy option declarations (e.g. `foo = true`) into `{ value = ... }`
+-- so `setOption/getOption` can safely assume a table shape.
+for key, obj in pairs(options) do
+    if type(obj) ~= 'table' then
+        options[key] = { value = obj }
+    end
+end
 panels = {
     generalPanel = nil,
     graphicsPanel = nil,
@@ -7,6 +14,9 @@ panels = {
     graphicsEffectsPanel = nil,
     interfaceHUD = nil,
     interface = nil,
+    interfaceConsole = nil,
+    gameWindow = nil,
+    actionbars = nil,
     misc = nil,
     miscHelp = nil,
     keybindsPanel = nil
@@ -40,6 +50,9 @@ local buttons = { {
     }, {
         text = "Console",
         open = "interfaceConsole"
+    }, {
+        text = "Game Window",
+        open = "gameWindow"
     }, {
         text = "Action Bars",
         open = "actionbars"
@@ -189,6 +202,28 @@ local function setupComboBox()
         setOption('listKeybindsPanel', option)
     end
     panels.keybindsPanel.presets.list:setCurrentOption(Keybind.currentPreset)
+
+    local showMessagesCheckbox = panels.gameWindow and panels.gameWindow:recursiveGetChildById('showMessages')
+    if showMessagesCheckbox then
+        showMessagesCheckbox.onCheckChange = function(widget)
+            setOption('showMessages', widget:isChecked())
+        end
+    end
+
+    local showSpellsCheckbox = panels.gameWindow and panels.gameWindow:recursiveGetChildById('showSpells')
+    if showSpellsCheckbox then
+        showSpellsCheckbox.onCheckChange = function(widget)
+            setOption('showSpells', widget:isChecked())
+        end
+    end
+
+    local showCustomNotificationCheckbox = panels.gameWindow and
+        panels.gameWindow:recursiveGetChildById('showCustomNotificationWindow')
+    if showCustomNotificationCheckbox then
+        showCustomNotificationCheckbox.onCheckChange = function(widget)
+            setOption('showCustomNotificationWindow', widget:isChecked())
+        end
+    end
 end
 
 local function setup()
@@ -274,6 +309,16 @@ local function setup()
             parent:setMarginTop(0)
         end
     end
+
+    if options.showMessages and options.showMessages.action then
+        options.showMessages.action(options.showMessages.value, options, controller, panels, extraWidgets)
+    end
+    if options.showSpells and options.showSpells.action then
+        options.showSpells.action(options.showSpells.value, options, controller, panels, extraWidgets)
+    end
+    if options.showCustomNotificationWindow and options.showCustomNotificationWindow.action then
+        options.showCustomNotificationWindow.action(options.showCustomNotificationWindow.value, options, controller, panels, extraWidgets)
+    end
 end
 
 
@@ -307,6 +352,7 @@ function controller:onInit()
     panels.interface = g_ui.loadUI('styles/interface/interface', controller.ui.optionsTabContent)
     panels.interfaceConsole = g_ui.loadUI('styles/interface/console', controller.ui.optionsTabContent)
     panels.interfaceHUD = g_ui.loadUI('styles/interface/HUD', controller.ui.optionsTabContent)
+    panels.gameWindow = g_ui.loadUI('styles/interface/gamewindow', controller.ui.optionsTabContent)
     panels.actionbars = g_ui.loadUI('styles/interface/actionbars', controller.ui.optionsTabContent)
 
     panels.soundPanel = g_ui.loadUI('styles/sound/audio', controller.ui.optionsTabContent)

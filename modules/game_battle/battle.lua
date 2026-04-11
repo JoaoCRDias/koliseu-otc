@@ -1,6 +1,4 @@
 -- Global variables
-local binaryTree = {}
-local battleButtons = {}
 local battleWindow, battleButton, battlePanel, mouseWidget, filterPanel, toggleFilterButton
 local lastBattleButtonSwitched, lastCreatureSelected
 local hideButtons = {}
@@ -432,6 +430,7 @@ BattleListInstance = {
     filterPanel = nil,
     toggleFilterButton = nil,
     binaryTree = {},
+    binaryTreeIndex = {},
     battleButtons = {},
     lastBattleButtonSwitched = nil,
     settings = {},
@@ -444,6 +443,7 @@ function BattleListInstance:new(id, customName)
     
     instance.id = id or BattleListManager.nextId
     instance.binaryTree = {}
+    instance.binaryTreeIndex = {}
     instance.battleButtons = {}
     instance.lastBattleButtonSwitched = nil
     instance.lastAge = 0
@@ -733,6 +733,7 @@ function BattleListInstance:destroy(saveSettings)
     end
     
     self.binaryTree = {}
+    self.binaryTreeIndex = {} -- Reverse index: creatureId -> position in binaryTree (O(1) lookup)
     self.battleButtons = {}
     self.settings = nil
     self.lastBattleButtonSwitched = nil
@@ -1115,15 +1116,23 @@ function BattleListInstance:addCreature(creature, sortType)
         self.lastAge = self.lastAge + 1
         
         local newIndex = binaryInsert(self.binaryTree, newCreature, BSComparatorSortType, sortType, true)
-        
+
+        -- Update binaryTreeIndex for all affected entries (insertion shifts indices)
+        for i = newIndex, #self.binaryTree do
+            local entry = self.binaryTree[i]
+            if entry and entry.id then
+                self.binaryTreeIndex[entry.id] = i
+            end
+        end
+
         battleButton = BattleButtonPool:get()
-        battleButton:setup(creature, true)
-        
+        battleButton:setup(creature, true, newCreature.healthpercent)
+
         battleButton.data = {}
         for i, v in pairs(newCreature) do
             battleButton.data[i] = v
         end
-        
+
         self.battleButtons[creatureId] = battleButton
         
         if creature == g_game.getAttackingCreature() then
@@ -1158,6 +1167,7 @@ end
 function BattleListInstance:removeCreature(creature, all)
     if all then
         self.binaryTree = {}
+        self.binaryTreeIndex = {}
         self.lastBattleButtonSwitched = nil
         for i, v in pairs(self.battleButtons) do
             BattleButtonPool:release(v)
@@ -1179,15 +1189,26 @@ function BattleListInstance:removeCreature(creature, all)
         assert(valuetoSearch, 'Could not find information (data) in sent battleButton')
         valuetoSearch.id = creatureId
         
-        local index = binarySearch(self.binaryTree, valuetoSearch, BSComparatorSortType, sortType, creatureId)
-        if index ~= nil and creatureId == self.binaryTree[index].id then
+        -- Try O(1) lookup first, fallback to binary search
+        local index = self.binaryTreeIndex[creatureId]
+        if index == nil or self.binaryTree[index] == nil or self.binaryTree[index].id ~= creatureId then
+            index = binarySearch(self.binaryTree, valuetoSearch, BSComparatorSortType, sortType, creatureId)
+        end
+
+        if index ~= nil and self.binaryTree[index] and creatureId == self.binaryTree[index].id then
             local creatureListSize = #self.binaryTree
+            -- Remove from index
+            self.binaryTreeIndex[creatureId] = nil
             if index < creatureListSize then
                 for i = index, creatureListSize - 1 do
                     -- Swap elements in instance binary tree
                     local tmp = self.binaryTree[i]
                     self.binaryTree[i] = self.binaryTree[i + 1]
                     self.binaryTree[i + 1] = tmp
+                    -- Update index for swapped element
+                    if self.binaryTree[i] and self.binaryTree[i].id then
+                        self.binaryTreeIndex[self.binaryTree[i].id] = i
+                    end
                 end
             end
             self.binaryTree[creatureListSize] = nil
@@ -1269,9 +1290,19 @@ function BattleListInstance:swap(index, newIndex) -- Swap indexes of a given tab
         lowest = newIndex
     end
 
-    local tmp = self.binaryTree[lowest]
-    self.binaryTree[lowest] = self.binaryTree[highest]
-    self.binaryTree[highest] = tmp
+    local entryLow = self.binaryTree[lowest]
+    local entryHigh = self.binaryTree[highest]
+
+    self.binaryTree[lowest] = entryHigh
+    self.binaryTree[highest] = entryLow
+
+    -- Update reverse index
+    if entryLow and entryLow.id then
+        self.binaryTreeIndex[entryLow.id] = highest
+    end
+    if entryHigh and entryHigh.id then
+        self.binaryTreeIndex[entryHigh.id] = lowest
+    end
 end
 
 -- Global legacy functions for backward compatibility
@@ -1425,6 +1456,7 @@ function init()
             end,
             function(obj)
                 if obj.data then obj.data = nil end
+                if obj.creature then obj.creature = nil end
             
                 if lastBattleButtonSwitched == obj then
                     lastBattleButtonSwitched = nil
@@ -1470,6 +1502,22 @@ function init()
     -- Setup keybind
     Keybind.new("Windows", "Show/hide battle list", "Ctrl+B", "")
     Keybind.bind("Windows", "Show/hide battle list", {{ type = KEY_DOWN, callback = toggle }})
+
+    Keybind.new("Battle", "Attack Next Creature", "", "")
+    Keybind.bind("Battle", "Attack Next Creature", {
+        {
+            type = KEY_DOWN,
+            callback = attackNext,
+        }
+    })
+
+    Keybind.new("Battle", "Attack Previous Creature", "", "")
+    Keybind.bind("Battle", "Attack Previous Creature", {
+        {
+            type = KEY_DOWN,
+            callback = function() attackNext(true) end,
+        }
+    })
 
     -- Setup scrollbar - use default MiniWindow behavior
     local scrollbar = battleWindow:getChildById('miniwindowScrollBar')
@@ -1680,11 +1728,16 @@ function binaryInsert(tbl, value, comparator, ...)
 end
 
 function onGameStart()
-    battleWindow:setupOnStart() -- load character window configuration
+    -- Restore battle window position from saved settings (with delay to ensure panels are ready)
+    scheduleEvent(function()
+        if battleWindow then
+            battleWindow:restorePosition()
+        end
+    end, 150)
 
     -- Update battle list title in case it was customized
     updateBattleListTitle()
-    
+
     -- Load main instance lock state (in case it wasn't loaded during init)
     local mainInstance = BattleListManager.instances[0]
     if mainInstance then
@@ -1694,7 +1747,11 @@ function onGameStart()
     -- Initialize all battle list instances
     for _, instance in pairs(BattleListManager.instances) do
         if instance.window then
-            instance.window:setupOnStart()
+            scheduleEvent(function()
+                if instance.window then
+                    instance.window:restorePosition()
+                end
+            end, 150)
         end
         instance:updateTitle()
     end
@@ -2314,13 +2371,8 @@ function onCreatureHealthPercentChange(creature, healthPercent, oldHealthPercent
         local battleButton = instance.battleButtons[creatureId]
         if battleButton then
             local sortType = instance:getSortType()
-            if battleButton.setLifeBarPercent then
-                battleButton:setLifeBarPercent(healthPercent)
-            end
-            if battleButton.data then
-                battleButton.data.healthpercent = healthPercent
-            end
             local skipInstance = false
+
             if sortType == 'health' then
                 if healthPercent == oldHealthPercent then
                     skipInstance = true -- Skip this instance
@@ -2330,22 +2382,48 @@ function onCreatureHealthPercentChange(creature, healthPercent, oldHealthPercent
                 end
 
                 if not skipInstance then
-                    local index = binarySearch(instance.binaryTree, {
-                        healthpercent = oldHealthPercent,
-                        id = creatureId
-                    }, BSComparatorSortType, 'health', true)
-                    if index ~= nil and creatureId == instance.binaryTree[index].id then
+                    -- O(1) lookup using reverse index
+                    local index = instance.binaryTreeIndex[creatureId]
+
+                    -- Validate index is correct (handle potential desync)
+                    if index == nil or instance.binaryTree[index] == nil or instance.binaryTree[index].id ~= creatureId then
+                        -- Fallback to binary search if index is invalid
+                        index = binarySearch(instance.binaryTree, {
+                            healthpercent = battleButton.data and battleButton.data.healthpercent or oldHealthPercent,
+                            id = creatureId
+                        }, BSComparatorSortType, 'health', true)
+
+                        -- Update index if found
+                        if index and instance.binaryTree[index] and instance.binaryTree[index].id == creatureId then
+                            instance.binaryTreeIndex[creatureId] = index
+                        end
+                    end
+
+                    if index ~= nil and instance.binaryTree[index] and creatureId == instance.binaryTree[index].id then
+                        local currentTreeHealth = instance.binaryTree[index].healthpercent
                         instance.binaryTree[index].healthpercent = healthPercent
-                        battleButton.data.healthpercent = healthPercent
-                        if healthPercent > oldHealthPercent then
+
+                        -- Update UI and data together
+                        if battleButton.setLifeBarPercent then
+                            battleButton:setLifeBarPercent(healthPercent)
+                        end
+                        if battleButton.data then
+                            battleButton.data.healthpercent = healthPercent
+                        end
+
+                        if healthPercent > currentTreeHealth then
                             if index < #instance.binaryTree then
                                 for i = index, #instance.binaryTree - 1 do
                                     local a = instance.binaryTree[i]
                                     local b = instance.binaryTree[i + 1]
                                     if a.healthpercent > b.healthpercent or (a.healthpercent == b.healthpercent and a.id > b.id) then
-                                        local tmp = instance.binaryTree[i]
-                                        instance.binaryTree[i] = instance.binaryTree[i + 1]
-                                        instance.binaryTree[i + 1] = tmp
+                                        instance.binaryTree[i] = b
+                                        instance.binaryTree[i + 1] = a
+                                        -- Update indices for swapped elements
+                                        instance.binaryTreeIndex[b.id] = i
+                                        instance.binaryTreeIndex[a.id] = i + 1
+                                    else
+                                        break -- Already in correct position
                                     end
                                 end
                             end
@@ -2355,17 +2433,38 @@ function onCreatureHealthPercentChange(creature, healthPercent, oldHealthPercent
                                     local a = instance.binaryTree[i - 1]
                                     local b = instance.binaryTree[i]
                                     if a.healthpercent > b.healthpercent or (a.healthpercent == b.healthpercent and a.id > b.id) then
-                                        local tmp = instance.binaryTree[i - 1]
-                                        instance.binaryTree[i - 1] = instance.binaryTree[i]
-                                        instance.binaryTree[i] = tmp
+                                        instance.binaryTree[i - 1] = b
+                                        instance.binaryTree[i] = a
+                                        -- Update indices for swapped elements
+                                        instance.binaryTreeIndex[b.id] = i - 1
+                                        instance.binaryTreeIndex[a.id] = i
+                                    else
+                                        break -- Already in correct position
                                     end
                                 end
                             end
                         end
                         instance:correctBattleButtons()
+                    else
+                        -- Fallback: update UI even if tree update failed
+                        if battleButton.setLifeBarPercent then
+                            battleButton:setLifeBarPercent(healthPercent)
+                        end
+                        if battleButton.data then
+                            battleButton.data.healthpercent = healthPercent
+                        end
                     end
                 end
+            else
+                -- Non-health sort: just update UI and data
+                if battleButton.setLifeBarPercent then
+                    battleButton:setLifeBarPercent(healthPercent)
+                end
+                if battleButton.data then
+                    battleButton.data.healthpercent = healthPercent
+                end
             end
+
             if not skipInstance and battleButton.creature then
                 battleButton:update()
             end
@@ -2571,9 +2670,6 @@ function terminate() -- Terminating the Module (unload)
         instance:destroy(true) -- Preserve settings during module termination
     end
     BattleListManager.instances = {}
-    
-    binaryTree = {}
-    battleButtons = {}
     hideButtons = {}
 
     if battleButton then
@@ -2601,6 +2697,8 @@ function terminate() -- Terminating the Module (unload)
     toggleFilterButton = nil
 
     Keybind.delete("Windows", "Show/hide battle list")
+    Keybind.delete("Battle", "Attack Next Creature")
+    Keybind.delete("Battle", "Attack Previous Creature")
 
     disconnect(g_game, {
         onAttackingCreatureChange = onAttack,

@@ -32,8 +32,69 @@
 #include "framework/otml/otmlnode.h"
 #include <framework/platform/platformwindow.h>
 #include <framework/util/stats.h>
+#include <framework/stdext/string.h>
+
+#include <unordered_set>
 
 UIManager g_ui;
+
+void UIManager::mergeOtuiGlobalAliases(const OTMLDocumentPtr& doc)
+{
+    if (!doc)
+        return;
+    for (const auto& [name, value] : doc->globalAliases())
+        m_otuiGlobalAliases[name] = value;
+}
+
+std::optional<std::string> UIManager::resolveOtuiGlobalAlias(const std::string_view reference) const
+{
+    if (reference.empty())
+        return std::nullopt;
+
+    std::string key(reference);
+    stdext::trim(key);
+    if (!key.empty() && key.front() == '$')
+        key.erase(key.begin());
+    if (!key.empty() && key.front() == '&')
+        key.erase(key.begin());
+    stdext::trim(key);
+    if (key.empty())
+        return std::nullopt;
+
+    std::unordered_set<std::string> visited;
+
+    for (int depth = 0; depth < 64; ++depth) {
+        if (!visited.insert(key).second)
+            return std::nullopt;
+
+        const auto it = m_otuiGlobalAliases.find(key);
+        if (it == m_otuiGlobalAliases.end())
+            return std::nullopt;
+
+        std::string value = it->second;
+        stdext::trim(value);
+        if (value.size() >= 2) {
+            const char first = value.front();
+            const char last = value.back();
+            if ((first == '"' && last == '"') || (first == '\'' && last == '\'')) {
+                value = value.substr(1, value.size() - 2);
+                stdext::trim(value);
+            }
+        }
+
+        if (!value.empty() && value.front() == '$') {
+            key = value.substr(1);
+            if (!key.empty() && key.front() == '&')
+                key.erase(key.begin());
+            stdext::trim(key);
+            if (key.empty())
+                return std::nullopt;
+            continue;
+        }
+        return value;
+    }
+    return std::nullopt;
+}
 
 void UIManager::init()
 {
@@ -61,6 +122,23 @@ void UIManager::terminate()
     m_hoveredWidgets.clear();
     m_pressedWidgets.clear();
     m_hoveredText.clear();
+    m_otuiGlobalAliases.clear();
+}
+
+void UIManager::setGlobalVariable(const std::string& name, const std::string& value)
+{
+    m_globalVariables[name] = value;
+}
+
+std::string UIManager::getGlobalVariable(const std::string& name) const
+{
+    const auto it = m_globalVariables.find(name);
+    return it != m_globalVariables.end() ? it->second : std::string();
+}
+
+void UIManager::clearGlobalVariables()
+{
+    m_globalVariables.clear();
 }
 
 void UIManager::render(DrawPoolType drawPane) const
@@ -427,6 +505,8 @@ void UIManager::onWidgetDestroy(const UIWidgetPtr& widget)
 void UIManager::clearStyles()
 {
     m_styles.clear();
+    m_otuiGlobalAliases.clear();
+    clearGlobalVariables();
 }
 
 bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
@@ -434,6 +514,7 @@ bool UIManager::importStyle(const std::string& fl, const bool checkDeviceStyles)
     const std::string file{ g_resources.guessFilePath(fl, "otui") };
     try {
         const auto& doc = OTMLDocument::parse(file);
+        mergeOtuiGlobalAliases(doc);
 
         for (const auto& styleNode : doc->children()) {
             const std::string tag = styleNode->tag();
@@ -589,6 +670,7 @@ OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const OperatingSyst
     const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + osName, "otui"));
     if (doc) {
         g_logger.info("found os style '{}' for '{}'", osName, rawName);
+        mergeOtuiGlobalAliases(doc);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
@@ -603,6 +685,7 @@ OTMLNodePtr UIManager::loadDeviceUI(const std::string& file, const DeviceType de
     const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(rawName + "." + deviceName, "otui"));
     if (doc) {
         g_logger.info("found device style '{}' for '{}'", deviceName, rawName);
+        mergeOtuiGlobalAliases(doc);
         importStyleFromOTML(doc);
         return findMainWidgetNode(doc);
     }
@@ -614,6 +697,7 @@ UIWidgetPtr UIManager::loadUI(const std::string& file, const UIWidgetPtr& parent
     try {
         OTMLNodePtr widgetNode = nullptr;
         const auto& doc = OTMLDocument::parse(g_resources.guessFilePath(file, "otui"));
+        mergeOtuiGlobalAliases(doc);
 
         for (const auto& node : doc->children()) {
             std::string tag = node->tag();
@@ -668,6 +752,7 @@ UIWidgetPtr UIManager::loadUIFromString(const std::string& data, const UIWidgetP
         sstream.write(&data[0], data.length());
         sstream.seekg(0, std::ios::beg);
         const OTMLDocumentPtr doc = OTMLDocument::parse(sstream, "(string)");
+        mergeOtuiGlobalAliases(doc);
         UIWidgetPtr widget;
         for (const OTMLNodePtr& node : doc->children()) {
             std::string tag = node->tag();

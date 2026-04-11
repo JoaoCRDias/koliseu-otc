@@ -156,7 +156,8 @@ return {
     smartWalk                         = false,
     autoChaseOverride                 = true,
     talkOnRightClick                  = false,
-    moveStack                         = false,
+    moveStack                         = true,
+    alwaysTurnToMovement              = false,
     showStatusMessagesInConsole       = true,
     showEventMessagesInConsole        = true,
     showInfoMessagesInConsole         = true,
@@ -523,36 +524,234 @@ return {
     showLeftExtraPanel                = {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                modules.client_options.setOption('showLeftPanel', true, true)
+            else
+                modules.client_options.setOption('showLeftExtraPanel3', false, true)
+                modules.client_options.setOption('showLeftExtraPanel2', false, true)
+            end
             modules.game_interface.getLeftExtraPanel():setOn(value)
-            -- Update action bars when left extra panel visibility changes
             if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
                 addEvent(function()
                     modules.game_actionbar.updateVisibleWidgetsExternal()
                 end)
             end
+            if options.showHorizontalLeftPanel and options.showHorizontalLeftPanel.value then
+                addEvent(function()
+                    if modules.game_interface.setLeftHorizontalWidth then
+                        modules.game_interface.setLeftHorizontalWidth()
+                    end
+                end)
+            end
+            if modules.game_interface.refreshSidePanelButtons then
+                modules.game_interface.refreshSidePanelButtons()
+            end
         end
     },
-    showLeftPanel                     = {
-        value = true,
+    showLeftExtraPanel2               = {
+        value = false,
         action = function(value, options, controller, panels, extraWidgets)
-            modules.game_interface.getLeftPanel():setOn(value)
-            -- Update action bars when left panel visibility changes
+            if value then
+                modules.client_options.setOption('showLeftPanel', true, true)
+                modules.client_options.setOption('showLeftExtraPanel', true, true)
+            else
+                modules.client_options.setOption('showLeftExtraPanel3', false, true)
+            end
+            modules.game_interface.getLeftExtraPanel2():setOn(value)
             if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
                 addEvent(function()
                     modules.game_actionbar.updateVisibleWidgetsExternal()
                 end)
+            end
+            if options.showHorizontalLeftPanel and options.showHorizontalLeftPanel.value then
+                addEvent(function()
+                    if modules.game_interface.setLeftHorizontalWidth then
+                        modules.game_interface.setLeftHorizontalWidth()
+                    end
+                end)
+            end
+            if modules.game_interface.refreshSidePanelButtons then
+                modules.game_interface.refreshSidePanelButtons()
+            end
+        end
+    },
+    showLeftExtraPanel3               = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                modules.client_options.setOption('showLeftPanel', true, true)
+                modules.client_options.setOption('showLeftExtraPanel', true, true)
+                modules.client_options.setOption('showLeftExtraPanel2', true, true)
+            end
+            if modules.game_interface.getLeftExtraPanel3 then
+                modules.game_interface.getLeftExtraPanel3():setOn(value)
+            end
+            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+                addEvent(function()
+                    modules.game_actionbar.updateVisibleWidgetsExternal()
+                end)
+            end
+            if options.showHorizontalLeftPanel and options.showHorizontalLeftPanel.value then
+                addEvent(function()
+                    if modules.game_interface.setLeftHorizontalWidth then
+                        modules.game_interface.setLeftHorizontalWidth()
+                    end
+                end)
+            end
+            if modules.game_interface.refreshSidePanelButtons then
+                modules.game_interface.refreshSidePanelButtons()
+            end
+        end
+    },
+    showLeftPanel                     = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            -- Painel horizontal esquerdo ativo: não fechar o painel esquerdo (evita opção dessincronizada)
+            if not value and options.showHorizontalLeftPanel and options.showHorizontalLeftPanel.value then
+                if panels and panels.interface then
+                    local checkbox = panels.interface:recursiveGetChildById('showLeftPanel')
+                    if checkbox then
+                        checkbox:setChecked(true, true)
+                    end
+                end
+                return
+            end
+
+            if not value then
+                modules.client_options.setOption('showLeftExtraPanel3', false, true)
+                modules.client_options.setOption('showLeftExtraPanel2', false, true)
+                modules.client_options.setOption('showLeftExtraPanel', false, true)
+            end
+            modules.game_interface.getLeftPanel():setOn(value)
+            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+                addEvent(function()
+                    modules.game_actionbar.updateVisibleWidgetsExternal()
+                end)
+            end
+            if options.showHorizontalLeftPanel and options.showHorizontalLeftPanel.value and modules.game_interface.showLeftHorizontalPanel then
+                modules.game_interface.showLeftHorizontalPanel(value)
+            end
+            if modules.game_interface.refreshSidePanelButtons then
+                modules.game_interface.refreshSidePanelButtons()
             end
         end
     },
     showRightExtraPanel               = {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)
+            if not value then
+                modules.client_options.setOption('showRightExtraPanel3', false, true)
+                modules.client_options.setOption('showRightExtraPanel2', false, true)
+            end
             modules.game_interface.getRightExtraPanel():setOn(value)
-            -- Update action bars when right extra panel visibility changes
             if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
                 addEvent(function()
                     modules.game_actionbar.updateVisibleWidgetsExternal()
                 end)
+            end
+            if options.showHorizontalRightPanel and options.showHorizontalRightPanel.value then
+                addEvent(function()
+                    if modules.game_interface.setRightHorizontalWidth then
+                        modules.game_interface.setRightHorizontalWidth()
+                    end
+                end)
+            end
+            if modules.game_helper and modules.game_helper.updateShortcutPanelPosition then
+                addEvent(function()
+                    modules.game_helper.updateShortcutPanelPosition()
+                end)
+            end
+            if modules.game_interface.refreshSidePanelButtons then
+                modules.game_interface.refreshSidePanelButtons()
+            end
+        end
+    },
+    showRightExtraPanel2              = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                modules.client_options.setOption('showRightExtraPanel', true, true)
+            else
+                modules.client_options.setOption('showRightExtraPanel3', false, true)
+            end
+            modules.game_interface.getRightExtraPanel2():setOn(value)
+            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+                addEvent(function()
+                    modules.game_actionbar.updateVisibleWidgetsExternal()
+                end)
+            end
+            if options.showHorizontalRightPanel and options.showHorizontalRightPanel.value then
+                addEvent(function()
+                    if modules.game_interface.setRightHorizontalWidth then
+                        modules.game_interface.setRightHorizontalWidth()
+                    end
+                end)
+            end
+            if modules.game_helper and modules.game_helper.updateShortcutPanelPosition then
+                addEvent(function()
+                    modules.game_helper.updateShortcutPanelPosition()
+                end)
+            end
+            if modules.game_interface.refreshSidePanelButtons then
+                modules.game_interface.refreshSidePanelButtons()
+            end
+        end
+    },
+    showRightExtraPanel3              = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                modules.client_options.setOption('showRightExtraPanel', true, true)
+                modules.client_options.setOption('showRightExtraPanel2', true, true)
+            end
+            if modules.game_interface.getRightExtraPanel3 then
+                modules.game_interface.getRightExtraPanel3():setOn(value)
+            end
+            if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+                addEvent(function()
+                    modules.game_actionbar.updateVisibleWidgetsExternal()
+                end)
+            end
+            if options.showHorizontalRightPanel and options.showHorizontalRightPanel.value then
+                addEvent(function()
+                    if modules.game_interface.setRightHorizontalWidth then
+                        modules.game_interface.setRightHorizontalWidth()
+                    end
+                end)
+            end
+            if modules.game_helper and modules.game_helper.updateShortcutPanelPosition then
+                addEvent(function()
+                    modules.game_helper.updateShortcutPanelPosition()
+                end)
+            end
+            if modules.game_interface.refreshSidePanelButtons then
+                modules.game_interface.refreshSidePanelButtons()
+            end
+        end
+    },
+    showHorizontalLeftPanel            = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value and options.showLeftPanel and not options.showLeftPanel.value then
+                options.showLeftPanel.value = true
+                if panels and panels.interface then
+                    local checkbox = panels.interface:recursiveGetChildById('showLeftPanel')
+                    if checkbox then
+                        checkbox:setChecked(true, true)
+                    end
+                end
+                modules.game_interface.getLeftPanel():setOn(true)
+            end
+            if modules.game_interface.showLeftHorizontalPanel then
+                modules.game_interface.showLeftHorizontalPanel(value)
+            end
+        end
+    },
+    showHorizontalRightPanel           = {
+        value = false,
+        action = function(value, options, controller, panels, extraWidgets)
+            if modules.game_interface.showRightHorizontalPanel then
+                modules.game_interface.showRightHorizontalPanel(value)
             end
         end
     },
@@ -824,6 +1023,94 @@ return {
             modules.game_actionbar.updateVisibleOptions('hotkey', value)
         end,
     },
+    textualEffect = {
+        value = true,
+        action = function(value)
+            g_app.setDrawTexts(value)
+        end
+    },
+    showMessages = {
+        value = true,
+        action = function(value, options, controller, panels)
+            if not panels or not panels.gameWindow then
+                return
+            end
+
+            local dependentWidgets = {
+                "showPrivateMessagesOnScreen", "potionSoundEffect", "showSpells",
+                "spellsOthers", "showHotkeyMessagesOnScreen", "showLootMessagesOnScreen",
+                "lootHighlight", "storeNotification"
+            }
+
+            for _, widId in ipairs(dependentWidgets) do
+                local widget = panels.gameWindow:recursiveGetChildById(widId)
+                if widget then
+                    widget:setEnabled(value)
+                    widget:setColor(value and '$var-text-cip-color' or '#666666ff')
+                end
+            end
+
+            if value and not options.showSpells.value then
+                local spellsOthers = panels.gameWindow:recursiveGetChildById('spellsOthers')
+                if spellsOthers then
+                    spellsOthers:setEnabled(false)
+                    spellsOthers:setColor('#666666ff')
+                end
+            end
+        end
+    },
+    showPrivateMessagesOnScreen = true,
+    potionSoundEffect = true,
+    showSpells = {
+        value = true,
+        action = function(value, options, controller, panels)
+            if not panels or not panels.gameWindow then
+                return
+            end
+
+            local widget = panels.gameWindow:recursiveGetChildById('spellsOthers')
+            if widget then
+                local enabled = value and options.showMessages.value
+                widget:setEnabled(enabled)
+                widget:setColor(enabled and '$var-text-cip-color' or '#666666ff')
+            end
+        end
+    },
+    spellsOthers = false,
+    showHotkeyMessagesOnScreen = true,
+    showLootMessagesOnScreen = true,
+    lootHighlight = true,
+    storeNotification = true,
+    showCustomNotificationWindow = {
+        value = true,
+        action = function(value, options, controller, panels)
+            if not panels or not panels.gameWindow then
+                return
+            end
+
+            local widgets = {
+                "notifyKillBonus", "notifyConcoctions", "notifyFoods",
+                "notifyPotions", "notifyXpBoost", "notifyRaids",
+                "notifyBeastScroll", "alertSupply"
+            }
+
+            for _, widId in ipairs(widgets) do
+                local widget = panels.gameWindow:recursiveGetChildById(widId)
+                if widget then
+                    widget:setEnabled(value)
+                    widget:setColor(value and '$var-text-cip-color' or '#666666ff')
+                end
+            end
+        end
+    },
+    notifyKillBonus = true,
+    notifyConcoctions = true,
+    notifyFoods = true,
+    notifyPotions = true,
+    notifyXpBoost = true,
+    notifyRaids = true,
+    notifyBeastScroll = true,
+    alertSupply = true,
     actionBarBottomLocked = false,
     actionBarLeftLocked = false,
     actionBarRightLocked = false    

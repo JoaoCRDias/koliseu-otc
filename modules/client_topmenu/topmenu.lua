@@ -209,6 +209,8 @@ function online()
             mainFpsPanel = g_ui.createWidget("testPingPanel", PingWidget:getChildByIndex(2))
             mainFpsPanel:setId("fps")
             fpsPanel2 = mainFpsPanel:getChildByIndex(2)
+            -- Keep ping/FPS above other children of the map (e.g. widgets added by modules).
+            PingWidget:raise()
         end
 
         if showPing and pingFeatureAvailable then
@@ -230,6 +232,10 @@ function online()
         
         local showFps = modules.client_options.getOption('showFps')
         fpsPanel2:setVisible(showFps)
+
+        if PingWidget and not PingWidget:isDestroyed() then
+            PingWidget:raise()
+        end
     end)
 end
 

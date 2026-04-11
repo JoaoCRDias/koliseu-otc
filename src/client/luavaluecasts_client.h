@@ -116,6 +116,7 @@ int push_luavalue(const ForgeConfigData& data);
 int push_luavalue(const BossCooldownData& data);
 int push_luavalue(const PartyMemberData& data);
 int push_luavalue(const PartyMemberName& data);
+int push_luavalue(const ActiveTimerEntry& entry);
 
 // whell gem atelier  
 int push_luavalue(const GemData& gem);  

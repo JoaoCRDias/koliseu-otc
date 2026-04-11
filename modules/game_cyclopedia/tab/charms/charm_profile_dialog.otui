@@ -1,0 +1,60 @@
+NewMainWindow
+  id: charmProfileDialog
+  anchors.horizontalCenter: parent.horizontalCenter
+  !text: tr('Charm Profile')
+  font: verdana-11px-antialised
+  color: #AAAAAA
+  size: 320 115
+
+  Panel
+    id: contentPanel
+    anchors.fill: parent
+    margin: 14 12 12 12
+
+    Label
+      id: nameLabel
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-left: 1
+      !text: tr('Profile name:')
+      font: verdana-11px-antialised
+      color: #dfdfdf
+      text-auto-resize: true
+
+    UIWidget
+      id: warning
+      size: 12 12
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 10
+      image-source: /images/skin/show-gui-help-red
+      visible: false
+      !tooltip: tr('')
+
+    TextEdit
+      id: profileNameInput
+      size: 290 16
+      focusable: true
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      max-length: 20
+      margin-top: 6
+
+    HorizontalSeparator
+      id: separator
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 11
+
+    CancelButton
+      id: cancelButton
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+
+    OkButton
+      id: okButton
+      anchors.bottom: parent.bottom
+      anchors.right: prev.left
+      margin-right: 6

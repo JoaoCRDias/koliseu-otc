@@ -1,0 +1,1805 @@
+// =============================================
+// ESTILOS DE COMPONENTES REUTILIZAVEIS
+// =============================================
+
+// Aba principal do Task Board (Bounty Tasks / Weekly Tasks / Hunting Shop)
+TaskBoardMainTab < UIButton
+  height: 32
+  font: verdana-11px-rounded
+  color: #c0c0c0
+  text-offset: 14 0
+  image-source: /images/ui/tabbutton_rounded
+  image-color: #555555
+  image-clip: 0 0 22 23
+  image-border: 3
+  padding: 5 15 5 15
+  icon-size: 24 24
+  icon-offset: 18 4
+
+  $hover !on !disabled:
+    color: #ffffff
+    image-color: #777777
+
+  $pressed:
+    color: #ffffff
+    image-color: #888888
+
+  $on:
+    color: #ffffff
+    image-clip: 0 46 22 23
+    image-color: #aaaaaa
+
+  $disabled:
+    color: #666666
+    image-color: #444444
+
+// Card de monstro para Bounty Tasks (3 cards lado a lado)
+BountyTaskCard < Panel
+  size: 290 340
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #484848
+  border: 1 #555555
+  focusable: true
+
+  $focus:
+    border: 1 #888888
+
+  // Banner decorativo com nome do monstro (imagem backdrop)
+  Panel
+    id: headerBanner
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 38
+    margin-top: 4
+    margin-left: 4
+    margin-right: 4
+    image-source: /images/game/tasksystem/backdrop_tasksystem_normal_task
+    image-border: 6
+
+    Label
+      id: monsterName
+      anchors.fill: parent
+      text-align: center
+      font: verdana-11px-rounded
+      color: #ffffff
+      text-auto-resize: false
+      text-offset: 0 2
+
+  // Sprite do monstro centralizado
+  UICreature
+    id: monsterCreature
+    anchors.top: headerBanner.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 8
+    size: 64 64
+    animate: true
+
+  // Label de kills (X / Y kills)
+  Label
+    id: killsLabel
+    anchors.top: monsterCreature.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 10
+    font: verdana-11px-rounded
+    color: #ffffff
+    text-align: center
+    text-auto-resize: true
+    !text: tr('0 / 0 abates')
+
+  // Secao de recompensas
+  Panel
+    id: rewardPanel
+    anchors.top: killsLabel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    margin-left: 12
+    margin-right: 12
+    height: 90
+
+    Label
+      id: rewardTitle
+      anchors.top: parent.top
+      anchors.left: parent.left
+      !text: tr('Recompensa:')
+      font: verdana-11px-rounded
+      color: #aaaaaa
+
+    // Linha 1: XP (com borda)
+    Panel
+      id: expLine
+      anchors.top: rewardTitle.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 26
+      margin-top: 2
+      border: 1 #555555
+      background-color: #1a1a1a
+
+      Label
+        id: expReward
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 6
+        font: verdana-11px-rounded
+        color: #ff8800
+        text-auto-resize: true
+        !text: tr('0 XP')
+
+    // Linha 2: Task Token (icone dentro de sub-borda + texto)
+    Panel
+      id: taskTokenLine
+      anchors.top: expLine.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 26
+      margin-top: 2
+      border: 1 #555555
+      background-color: #1a1a1a
+
+      Panel
+        id: taskTokenIconBg
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 2
+        size: 24 24
+        border: 1 #444444
+        background-color: #222222
+
+        UIItem
+          id: taskTokenIcon
+          anchors.fill: parent
+          margin: 1
+          virtual: true
+          item-id: 51996
+
+      Label
+        id: taskTokenReward
+        anchors.left: taskTokenIconBg.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 6
+        font: verdana-11px-rounded
+        color: #44ee44
+        text-auto-resize: true
+
+    // Linha 3: Gold/Silver Token (icone dentro de sub-borda + texto)
+    Panel
+      id: randomTokenLine
+      anchors.top: taskTokenLine.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 26
+      margin-top: 2
+      border: 1 #555555
+      background-color: #1a1a1a
+
+      Panel
+        id: randomTokenIconBg
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 2
+        size: 24 24
+        border: 1 #444444
+        background-color: #222222
+
+        UIItem
+          id: randomTokenIconGold
+          anchors.fill: parent
+          margin: 1
+          virtual: true
+          item-id: 22721
+          visible: false
+
+        UIItem
+          id: randomTokenIconSilver
+          anchors.fill: parent
+          margin: 1
+          virtual: true
+          item-id: 22516
+          visible: false
+
+      Label
+        id: randomTokenReward
+        anchors.left: randomTokenIconBg.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 6
+        font: verdana-11px-rounded
+        color: #44dd44
+        text-auto-resize: true
+
+  // Botao "Cancelar Tarefa" (visivel apenas durante progresso)
+  Button
+    id: cancelButton
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    margin-left: 8
+    margin-bottom: 8
+    width: 90
+    height: 26
+    !text: tr('Cancelar')
+    visible: false
+
+  // Botao "Selecionar Task"
+  Button
+    id: selectButton
+    anchors.bottom: parent.bottom
+    anchors.left: cancelButton.right
+    anchors.right: parent.right
+    margin-left: 4
+    margin-right: 8
+    margin-bottom: 8
+    height: 26
+    !text: tr('Selecionar Tarefa')
+
+// Card de Kill Task para Weekly Tasks
+WeeklyKillCard < Panel
+  size: 130 130
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #484848
+  border: 1 #555555
+  focusable: true
+
+  $focus:
+    border: 1 #888888
+
+  Label
+    id: monsterName
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 4
+    height: 16
+    text-align: center
+    font: verdana-11px-rounded
+    color: #ffffff
+    text-auto-resize: false
+
+  UICreature
+    id: creature
+    anchors.top: monsterName.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 4
+    size: 48 48
+    animate: true
+
+  Label
+    id: killProgress
+    anchors.top: creature.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 4
+    font: verdana-11px-rounded
+    color: #ff4444
+    text-align: center
+    text-auto-resize: true
+    !text: tr('0')
+
+  Label
+    id: killsOf
+    anchors.top: killProgress.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 1
+    font: verdana-11px-rounded
+    color: #aaaaaa
+    text-align: center
+    text-auto-resize: true
+    !text: tr('de 0')
+
+// Card de Delivery Task para Weekly Tasks
+WeeklyDeliveryCard < Panel
+  size: 130 130
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #484848
+  border: 1 #555555
+  focusable: true
+
+  $focus:
+    border: 1 #888888
+
+  Label
+    id: itemName
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 4
+    height: 16
+    text-align: center
+    font: verdana-11px-rounded
+    color: #ffffff
+    text-auto-resize: false
+
+  UIItem
+    id: itemWidget
+    anchors.top: itemName.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 4
+    size: 48 48
+    virtual: true
+
+  Label
+    id: deliveryCount
+    anchors.top: itemWidget.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 2
+    font: verdana-11px-rounded
+    color: #aaaaaa
+    text-align: center
+    text-auto-resize: true
+    !text: tr('de 0')
+
+  Button
+    id: deliverButton
+    anchors.bottom: parent.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-bottom: 4
+    size: 60 20
+    !text: tr('Entregar')
+    font: verdana-11px-rounded
+
+// Slot de unlock permanente (azul)
+WeeklyUnlockSlot < Panel
+  height: 40
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #1a4a7a
+  border: 1 #2266aa
+
+  Label
+    id: unlockLabel
+    anchors.centerIn: parent
+    font: verdana-11px-rounded
+    color: #ffcc00
+    text-align: center
+    text-auto-resize: true
+    !text: tr('Desbloquear permanentemente')
+
+// Card de item para Hunting Task Shop
+ShopItemCard < Panel
+  size: 290 90
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #484848
+  border: 1 #555555
+  focusable: true
+
+  $focus:
+    border: 1 #888888
+
+  // Icone do item (UIItem com item-id definido via Lua)
+  UIItem
+    id: shopItemIcon
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-top: 8
+    margin-left: 10
+    size: 34 34
+    virtual: true
+
+  Label
+    id: shopItemName
+    anchors.top: parent.top
+    anchors.left: shopItemIcon.right
+    anchors.right: parent.right
+    margin-top: 10
+    margin-left: 8
+    margin-right: 8
+    height: 16
+    font: verdana-11px-rounded
+    color: #ffffff
+    text-auto-resize: false
+
+  // Linha de preco: icone Task Token + valor
+  UIItem
+    id: shopTokenIcon
+    anchors.top: shopItemName.bottom
+    anchors.left: shopItemIcon.right
+    margin-top: 4
+    margin-left: 8
+    size: 14 14
+    item-id: 51996
+    virtual: true
+
+  Label
+    id: shopPriceInfo
+    anchors.top: shopItemName.bottom
+    anchors.left: shopTokenIcon.right
+    margin-top: 5
+    margin-left: 4
+    height: 14
+    font: verdana-11px-rounded
+    color: #44ee44
+    text-auto-resize: true
+
+  // Linha inferior: Quantidade (-/+) e botao Comprar
+  Button
+    id: qtyMinusBtn
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    margin-left: 10
+    margin-bottom: 8
+    size: 22 22
+    !text: tr('-')
+    font: verdana-11px-rounded
+
+  Label
+    id: qtyLabel
+    anchors.bottom: parent.bottom
+    anchors.left: qtyMinusBtn.right
+    margin-left: 2
+    margin-bottom: 10
+    size: 26 14
+    text-align: center
+    font: verdana-11px-rounded
+    color: #ffffff
+    !text: tr('1')
+
+  Button
+    id: qtyPlusBtn
+    anchors.bottom: parent.bottom
+    anchors.left: qtyLabel.right
+    margin-left: 2
+    margin-bottom: 8
+    size: 22 22
+    !text: tr('+')
+    font: verdana-11px-rounded
+
+  Label
+    id: totalCostLabel
+    anchors.bottom: parent.bottom
+    anchors.left: qtyPlusBtn.right
+    margin-left: 8
+    margin-bottom: 11
+    font: verdana-11px-rounded
+    color: #ffcc00
+    text-auto-resize: true
+    !text: tr('= 0')
+
+  Button
+    id: buyButton
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    margin-right: 8
+    margin-bottom: 8
+    size: 72 22
+    !text: tr('Comprar')
+    font: verdana-11px-rounded
+
+// Linha de item trocavel (Troca por Mystic Tokens)
+ExchangeItemRow < Panel
+  height: 50
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #3d3d3d
+  border: 1 #555555
+  focusable: true
+
+  $focus:
+    border: 1 #888888
+
+  UIItem
+    id: exchangeItemIcon
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 6
+    size: 32 32
+    virtual: true
+
+  Label
+    id: exchangeItemName
+    anchors.left: exchangeItemIcon.right
+    anchors.top: parent.top
+    margin-left: 8
+    margin-top: 7
+    font: verdana-11px-rounded
+    color: #ffffff
+    text-auto-resize: true
+
+  Label
+    id: exchangeItemCount
+    anchors.left: exchangeItemIcon.right
+    anchors.top: exchangeItemName.bottom
+    margin-left: 8
+    margin-top: 2
+    font: verdana-11px-rounded
+    color: #aaaaaa
+    text-auto-resize: true
+
+  Button
+    id: exchangeButton
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 6
+    size: 60 22
+    !text: tr('Trocar')
+    font: verdana-11px-rounded
+
+  Label
+    id: exchangeItemPrice
+    anchors.right: exchangeButton.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 4
+    width: 36
+    font: verdana-11px-rounded
+    color: #44ee44
+    text-align: right
+
+  UIItem
+    id: exchangeTokenIcon
+    anchors.right: exchangeItemPrice.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 3
+    size: 40 40
+    item-id: 51962
+    virtual: true
+
+  Button
+    id: exchangePlusBtn
+    anchors.right: exchangeTokenIcon.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 8
+    size: 20 20
+    !text: '+'
+    font: verdana-11px-rounded
+
+  TextEdit
+    id: exchangeQtyInput
+    anchors.right: exchangePlusBtn.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 2
+    size: 40 20
+    font: verdana-11px-rounded
+    text-align: center
+    color: #ffffff
+
+  Button
+    id: exchangeMinusBtn
+    anchors.right: exchangeQtyInput.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 2
+    size: 20 20
+    !text: '-'
+    font: verdana-11px-rounded
+
+// Slot de upgrade do Bounty Talisman (estilo oficial)
+TalismanUpgradeSlot < Panel
+  height: 78
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #3d3d3d
+  border: 1 #555555
+
+  Label
+    id: talismanName
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 14
+    margin-top: 4
+    margin-left: 8
+    margin-right: 8
+    font: verdana-11px-rounded
+    color: #ffffff
+
+  Label
+    id: talismanValue
+    anchors.top: talismanName.bottom
+    anchors.left: parent.left
+    height: 14
+    margin-left: 8
+    margin-top: 2
+    font: verdana-11px-rounded
+    color: #ffcc00
+
+  Button
+    id: upgradeButton
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    margin-right: 4
+    margin-bottom: 6
+    size: 80 20
+    font: verdana-11px-rounded
+    !text: tr('Melhorar')
+
+  UIItem
+    id: upgradeCostIcon
+    anchors.verticalCenter: upgradeButton.verticalCenter
+    anchors.right: upgradeButton.left
+    margin-right: 2
+    size: 22 22
+    virtual: true
+
+  Label
+    id: upgradeCost
+    anchors.verticalCenter: upgradeButton.verticalCenter
+    anchors.right: upgradeCostIcon.left
+    margin-right: 1
+    font: verdana-11px-rounded
+    color: #aaaaaa
+    text-auto-resize: true
+
+// =============================================
+// TEMPLATES DA LISTA PREFERIDA
+// =============================================
+
+// Linha de monstro na lista de selecao
+PreferredMonsterRow < Panel
+  height: 30
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #3a3a3a
+  focusable: true
+
+  $hover !disabled:
+    image-color: #4a4a4a
+
+  $focus:
+    image-color: #505050
+
+  UICreature
+    id: creatureSprite
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 4
+    size: 24 24
+    animate: true
+
+  Label
+    id: monsterNameLabel
+    anchors.left: creatureSprite.right
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 6
+    margin-right: 4
+    font: verdana-11px-rounded
+    color: #cccccc
+    text-auto-resize: false
+
+// Slot de criatura na grade Preferidos/Indesejados
+PreferredCreatureSlot < Panel
+  size: 34 34
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #2a2a2a
+  border: 1 #444444
+  focusable: true
+
+  $hover !disabled:
+    border: 1 #666666
+
+  UICreature
+    id: slotCreature
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+    size: 28 28
+    animate: true
+    visible: false
+
+// Linha de desbloqueio de slots adicionais
+PreferredUnlockRow < Panel
+  height: 32
+  image-source: /images/ui/panel_flat
+  image-border: 4
+  image-color: #3d3d3d
+  border: 1 #555555
+
+  Label
+    id: unlockLabel
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    font: verdana-11px-rounded
+    color: #aaaaaa
+    !text: tr('Slots Adicionais')
+
+  Label
+    id: unlockSlotsCount
+    anchors.left: unlockLabel.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    font: verdana-11px-rounded
+    color: #ffffff
+    text-auto-resize: true
+    !text: tr('0')
+
+  Button
+    id: unlockBtn
+    anchors.right: unlockCostIcon.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 4
+    size: 80 20
+    font: verdana-11px-rounded
+    !text: tr('Desbloquear')
+
+  Panel
+    id: unlockCostIcon
+    anchors.right: unlockCostLabel.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 2
+    size: 20 20
+    border: 1 #444444
+    background-color: #222222
+
+    UIItem
+      id: unlockCostItem
+      anchors.fill: parent
+      virtual: true
+      item-id: 22516
+
+  Label
+    id: unlockCostLabel
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 8
+    font: verdana-11px-rounded
+    color: #c0c0c0
+    text-auto-resize: true
+    !text: tr('300')
+
+// Janela da Lista Preferida (template criado dinamicamente via Lua)
+PreferredListWindow < MainWindow
+  id: preferredListWindow
+  size: 560 520
+  !text: tr('Lista Preferida')
+  @onEscape: modules.game_tasksystem.closePreferredList()
+
+  // Painel esquerdo - Lista de Monstros
+  Panel
+    id: monsterListPanel
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.bottom: closePreferredBtn.top
+    width: 220
+    margin-bottom: 8
+
+    Panel
+      id: searchBar
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 26
+
+      TextEdit
+        id: searchInput
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: clearSearchBtn.left
+        anchors.bottom: parent.bottom
+        margin-right: 2
+        font: verdana-11px-rounded
+
+      Button
+        id: clearSearchBtn
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        size: 24 24
+        !text: tr('X')
+        font: verdana-11px-rounded
+
+    ScrollablePanel
+      id: monsterScrollArea
+      anchors.top: searchBar.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 4
+      vertical-scrollbar: monsterScrollBar
+      padding-right: 14
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #2a2a2a
+      layout:
+        type: verticalBox
+        spacing: 2
+
+    VerticalScrollBar
+      id: monsterScrollBar
+      anchors.top: searchBar.bottom
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 4
+      step: 30
+      pixel-scroll: true
+
+  // Painel direito - Preferidos & Indesejados
+  Panel
+    id: rightPanel
+    anchors.top: parent.top
+    anchors.left: monsterListPanel.right
+    anchors.right: parent.right
+    anchors.bottom: closePreferredBtn.top
+    margin-left: 8
+    margin-bottom: 8
+
+    // Cabecalho Preferidos
+    Panel
+      id: preferredHeader
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 24
+
+      Label
+        id: preferredTitle
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        font: verdana-11px-rounded
+        color: #44ee44
+        text-auto-resize: true
+        !text: tr('Preferidos')
+
+      Button
+        id: clearPreferredBtn
+        anchors.right: preferredCountLabel.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 6
+        size: 50 20
+        font: verdana-11px-rounded
+        !text: tr('Limpar')
+
+      Label
+        id: preferredCountLabel
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        font: verdana-11px-rounded
+        color: #aaaaaa
+        text-auto-resize: true
+        !text: tr('10')
+
+    // Grade de Preferidos
+    Panel
+      id: preferredGrid
+      anchors.top: preferredHeader.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 76
+      margin-top: 4
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #222222
+      layout:
+        type: grid
+        cell-size: 36 36
+        cell-spacing: 2
+        flow: true
+        num-columns: 8
+
+    // Cabecalho Indesejados
+    Panel
+      id: unwantedHeader
+      anchors.top: preferredGrid.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 24
+      margin-top: 8
+
+      Label
+        id: unwantedTitle
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        font: verdana-11px-rounded
+        color: #ff4444
+        text-auto-resize: true
+        !text: tr('Indesejados')
+
+      Button
+        id: clearUnwantedBtn
+        anchors.right: unwantedCountLabel.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 6
+        size: 50 20
+        font: verdana-11px-rounded
+        !text: tr('Limpar')
+
+      Label
+        id: unwantedCountLabel
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        font: verdana-11px-rounded
+        color: #aaaaaa
+        text-auto-resize: true
+        !text: tr('10')
+
+    // Grade de Indesejados
+    Panel
+      id: unwantedGrid
+      anchors.top: unwantedHeader.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 76
+      margin-top: 4
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #222222
+      layout:
+        type: grid
+        cell-size: 36 36
+        cell-spacing: 2
+        flow: true
+        num-columns: 8
+
+    // Titulo Slots Adicionais
+    Label
+      id: additionalSlotsTitle
+      anchors.top: unwantedGrid.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 20
+      margin-top: 10
+      font: verdana-11px-rounded
+      color: #cccccc
+      !text: tr('Slots Adicionais')
+
+    // Painel de desbloqueios
+    Panel
+      id: additionalSlotsPanel
+      anchors.top: additionalSlotsTitle.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 4
+      layout:
+        type: verticalBox
+        spacing: 4
+
+  // Botao Fechar
+  Button
+    id: closePreferredBtn
+    anchors.bottom: parent.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-bottom: 2
+    size: 80 24
+    font: verdana-11px-rounded
+    !text: tr('Fechar')
+
+// =============================================
+// JANELA PRINCIPAL DO TASK BOARD
+// =============================================
+MainWindow
+  id: taskBoardWindow
+  size: 960 620
+  !text: tr('Task Board')
+  @onEscape: modules.game_tasksystem.toggleWindow()
+
+  // =============================================
+  // BARRA DE ABAS PRINCIPAL (3 abas)
+  // =============================================
+  Panel
+    id: mainTabBar
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 36
+    margin-top: 2
+
+    TaskBoardMainTab
+      id: tabBountyTasks
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 0
+      width: 280
+      !text: tr('Bounty Tasks')
+      icon-source: /images/game/tasksystem/icon-bountytasks
+
+    TaskBoardMainTab
+      id: tabWeeklyTasks
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.verticalCenter: parent.verticalCenter
+      width: 280
+      !text: tr('Weekly Tasks')
+      icon-source: /images/game/tasksystem/icon-weeklytasks
+
+    TaskBoardMainTab
+      id: tabHuntingShop
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      width: 280
+      !text: tr('Hunting Shop')
+      icon-source: /images/game/tasksystem/icon-huntingtaskshop
+
+  // =============================================
+  // CONTEUDO ABA 1: BOUNTY TASKS
+  // =============================================
+  Panel
+    id: bountyTasksContent
+    anchors.top: mainTabBar.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: bottomBar.top
+    margin-top: 4
+    visible: true
+
+    // Barra "Configurar & Reroll Tasks"
+    Panel
+      id: setupBar
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 24
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #555555
+
+      Label
+        id: setupLabel
+        anchors.centerIn: parent
+        font: verdana-11px-rounded
+        color: #cccccc
+        !text: tr('Configure & Reroll Tasks')
+
+    // Barra de controles (dificuldade, preferred, reroll, claim)
+    Panel
+      id: controlBar
+      anchors.top: setupBar.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 30
+      margin-top: 4
+
+      Label
+        id: difficultyLabel
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        font: verdana-11px-rounded
+        color: #aaaaaa
+        !text: tr('Dificuldade:')
+
+      ComboBox
+        id: difficultyCombo
+        anchors.left: difficultyLabel.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 8
+        size: 120 23
+        font: verdana-11px-rounded
+
+      Button
+        id: preferredListBtn
+        anchors.left: difficultyCombo.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 12
+        size: 120 23
+        !text: tr('Lista Preferida')
+        font: verdana-11px-rounded
+
+      Button
+        id: rerollTasksBtn
+        anchors.left: preferredListBtn.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 12
+        size: 90 23
+        !text: tr('Reroll')
+        font: verdana-11px-rounded
+
+      Label
+        id: rerollCountLabel
+        anchors.left: rerollTasksBtn.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        font: verdana-11px-rounded
+        color: #44ee44
+        text-auto-resize: true
+        !text: tr('5')
+
+      Button
+        id: buyRerollBtn
+        anchors.left: rerollCountLabel.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 10
+        size: 130 23
+        !text: tr('Comprar Reroll')
+        font: verdana-11px-rounded
+
+      Label
+        id: buyRerollCostLabel
+        anchors.left: buyRerollBtn.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        font: verdana-11px-rounded
+        color: #ffcc00
+        text-auto-resize: true
+        !text: tr('10kk gold')
+
+      Button
+        id: claimDailyBtn
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 4
+        size: 110 23
+        !text: tr('Coletar Diaria')
+        font: verdana-11px-rounded
+
+    // Painel dos 3 cards de monstros
+    Panel
+      id: bountyCardsPanel
+      anchors.top: controlBar.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 8
+      height: 350
+
+      BountyTaskCard
+        id: bountyCard1
+        anchors.left: parent.left
+        anchors.top: parent.top
+        margin-left: 4
+
+      BountyTaskCard
+        id: bountyCard2
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+
+      BountyTaskCard
+        id: bountyCard3
+        anchors.right: parent.right
+        anchors.top: parent.top
+        margin-right: 4
+
+    // Separador
+    HorizontalSeparator
+      id: talismanSep
+      anchors.top: bountyCardsPanel.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 4
+
+    // Titulo Bounty Talisman
+    Panel
+      id: talismanHeader
+      anchors.top: talismanSep.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 22
+      margin-top: 2
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #555555
+
+      Label
+        id: talismanTitle
+        anchors.centerIn: parent
+        font: verdana-11px-rounded
+        color: #cccccc
+        !text: tr('Talisma de Task')
+
+    // Painel com 4 slots de upgrade do Talisman (horizontal)
+    Panel
+      id: talismanPanel
+      anchors.top: talismanHeader.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 4
+
+      TalismanUpgradeSlot
+        id: talismanSlot1
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        width: 220
+        margin-right: 4
+
+      TalismanUpgradeSlot
+        id: talismanSlot2
+        anchors.top: parent.top
+        anchors.left: talismanSlot1.right
+        anchors.bottom: parent.bottom
+        width: 220
+        margin-left: 4
+        margin-right: 4
+
+      TalismanUpgradeSlot
+        id: talismanSlot3
+        anchors.top: parent.top
+        anchors.left: talismanSlot2.right
+        anchors.bottom: parent.bottom
+        width: 220
+        margin-left: 4
+        margin-right: 4
+
+      TalismanUpgradeSlot
+        id: talismanSlot4
+        anchors.top: parent.top
+        anchors.left: talismanSlot3.right
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        margin-left: 4
+
+  // =============================================
+  // CONTEUDO ABA 2: WEEKLY TASKS
+  // =============================================
+  Panel
+    id: weeklyTasksContent
+    anchors.top: mainTabBar.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: bottomBar.top
+    margin-top: 4
+    visible: false
+
+    // Metade esquerda: Kill Tasks
+    Panel
+      id: killTasksSection
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.bottom: weeklyUnlockPanel.top
+      width: 450
+      margin-bottom: 4
+
+      Panel
+        id: killTasksHeader
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 22
+        image-source: /images/ui/panel_flat
+        image-border: 4
+        image-color: #555555
+
+        Label
+          anchors.centerIn: parent
+          font: verdana-11px-rounded
+          color: #cccccc
+          !text: tr('Kill Tasks')
+
+      // Grid 3x2 de Kill Task cards
+      Panel
+        id: killTasksGrid
+        anchors.top: killTasksHeader.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        margin-top: 4
+        layout:
+          type: grid
+          cell-size: 140 130
+          cell-spacing: 4
+          flow: true
+          num-columns: 3
+
+    // Metade direita: Delivery Tasks
+    Panel
+      id: deliveryTasksSection
+      anchors.top: parent.top
+      anchors.left: killTasksSection.right
+      anchors.right: parent.right
+      anchors.bottom: weeklyUnlockPanel.top
+      margin-left: 8
+      margin-bottom: 4
+
+      Panel
+        id: deliveryTasksHeader
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 22
+        image-source: /images/ui/panel_flat
+        image-border: 4
+        image-color: #555555
+
+        Label
+          anchors.centerIn: parent
+          font: verdana-11px-rounded
+          color: #cccccc
+          !text: tr('Delivery Tasks')
+
+      // Grid 3x2 de Delivery Task cards
+      Panel
+        id: deliveryTasksGrid
+        anchors.top: deliveryTasksHeader.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        margin-top: 4
+        layout:
+          type: grid
+          cell-size: 140 130
+          cell-spacing: 4
+          flow: true
+          num-columns: 3
+
+    // Slots de unlock permanente
+    Panel
+      id: weeklyUnlockPanel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: weeklyXpLabel.top
+      height: 40
+      margin-bottom: 4
+
+      WeeklyUnlockSlot
+        id: unlockSlot1
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        width: 450
+
+      WeeklyUnlockSlot
+        id: unlockSlot2
+        anchors.top: parent.top
+        anchors.left: unlockSlot1.right
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        margin-left: 8
+
+    // Label de recompensa XP
+    Label
+      id: weeklyXpLabel
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: weeklyProgressPanel.top
+      height: 20
+      margin-bottom: 4
+      text-align: center
+      font: verdana-11px-rounded
+      color: #cccccc
+      !text: tr('Cada task recompensa voce com 0 XP.')
+
+    // Painel de progresso semanal
+    Panel
+      id: weeklyProgressPanel
+      anchors.left: parent.left
+      anchors.right: weeklyRewardsPanel.left
+      anchors.bottom: parent.bottom
+      height: 70
+      margin-right: 8
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #3d3d3d
+      border: 1 #555555
+
+      // Titulo "Progresso Semanal"
+      Label
+        id: progressTitle
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 4
+        height: 16
+        text-align: center
+        font: verdana-11px-rounded
+        color: #cccccc
+        !text: tr('Progresso Semanal')
+
+      // Barra de multiplicadores
+      Panel
+        id: multiplierBar
+        anchors.top: progressTitle.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 18
+        margin-top: 4
+        margin-left: 8
+        margin-right: 8
+
+        Label
+          id: multLabel
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          font: verdana-11px-rounded
+          color: #aaaaaa
+          !text: tr('Multiplicador:')
+
+        Label
+          id: mult1
+          anchors.left: multLabel.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 15
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('x1')
+
+        Label
+          id: mult2
+          anchors.left: mult1.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 30
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('x1.3')
+
+        Label
+          id: mult3
+          anchors.left: mult2.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 30
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('x1.7')
+
+        Label
+          id: mult4
+          anchors.left: mult3.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 30
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('x2')
+
+        Label
+          id: mult5
+          anchors.left: mult4.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 30
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('x2.5')
+
+      // Barra de progresso visual
+      Panel
+        id: progressBarBg
+        anchors.top: multiplierBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 8
+        margin-top: 2
+        margin-left: 8
+        margin-right: 8
+        image-source: /images/ui/panel_flat
+        image-border: 1
+        image-color: #222222
+
+        Panel
+          id: progressBarFill
+          anchors.top: parent.top
+          anchors.left: parent.left
+          anchors.bottom: parent.bottom
+          width: 0
+          image-source: /images/ui/panel_flat
+          image-border: 1
+          image-color: #555555
+
+      // Labels de tarefas completadas
+      Panel
+        id: completedBar
+        anchors.top: progressBarBg.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 16
+        margin-top: 2
+        margin-left: 8
+        margin-right: 8
+
+        Label
+          id: compLabel
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          font: verdana-11px-rounded
+          color: #aaaaaa
+          !text: tr('Concluidas:')
+
+        Label
+          id: comp0
+          anchors.left: compLabel.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 15
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('0')
+
+        Label
+          id: comp4
+          anchors.left: comp0.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 35
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('4')
+
+        Label
+          id: comp8
+          anchors.left: comp4.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 35
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('8')
+
+        Label
+          id: comp12
+          anchors.left: comp8.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 30
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('12')
+
+        Label
+          id: comp15
+          anchors.left: comp12.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 25
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('15')
+
+        Label
+          id: comp18
+          anchors.left: comp15.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 25
+          font: verdana-11px-rounded
+          color: #ffffff
+          !text: tr('18')
+
+    // Painel de recompensas semanais
+    Panel
+      id: weeklyRewardsPanel
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      width: 150
+      height: 70
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #3d3d3d
+      border: 1 #555555
+
+      Label
+        id: weeklyRewardsTitle
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 4
+        height: 16
+        text-align: center
+        font: verdana-11px-rounded
+        color: #cccccc
+        !text: tr('Recompensas')
+
+      Panel
+        id: weeklyReward1
+        anchors.top: weeklyRewardsTitle.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 20
+        margin-top: 4
+        margin-left: 4
+        margin-right: 4
+
+        Label
+          id: reward1Value
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          font: verdana-11px-rounded
+          color: #ff4444
+          text-auto-resize: true
+          !text: tr('0')
+
+      Panel
+        id: weeklyReward2
+        anchors.top: weeklyReward1.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 20
+        margin-left: 4
+        margin-right: 4
+
+        Label
+          id: reward2Value
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          font: verdana-11px-rounded
+          color: #44aaff
+          text-auto-resize: true
+          !text: tr('0')
+
+  // =============================================
+  // CONTEUDO ABA 3: HUNTING TASK SHOP
+  // =============================================
+  Panel
+    id: huntingShopContent
+    anchors.top: mainTabBar.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: bottomBar.top
+    margin-top: 4
+    visible: false
+
+    // Parte superior: Loja de compra
+    ScrollablePanel
+      id: shopScrollPanel
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: exchangeSeparator.top
+      vertical-scrollbar: shopScrollBar
+      padding-right: 16
+      layout:
+        type: grid
+        cell-size: 295 95
+        cell-spacing: 6
+        flow: true
+        num-columns: 3
+
+    VerticalScrollBar
+      id: shopScrollBar
+      anchors.top: parent.top
+      anchors.right: parent.right
+      anchors.bottom: exchangeSeparator.top
+      step: 80
+      pixel-scroll: true
+
+    // Separador: Titulo da secao de troca
+    Panel
+      id: exchangeSeparator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      height: 22
+
+      HorizontalSeparator
+        anchors.left: parent.left
+        anchors.right: exchangeTitle.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 6
+
+      Label
+        id: exchangeTitle
+        anchors.centerIn: parent
+        font: verdana-11px-rounded
+        color: #ffaa00
+        text-auto-resize: true
+        !text: tr('Trocar Itens por Mystic Tokens')
+
+      HorizontalSeparator
+        anchors.left: exchangeTitle.right
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 6
+
+    // Parte inferior: Lista de itens trocaveis
+    ScrollablePanel
+      id: exchangeScrollPanel
+      anchors.top: exchangeSeparator.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      vertical-scrollbar: exchangeScrollBar
+      padding-right: 16
+      padding-top: 4
+      layout:
+        type: verticalBox
+        spacing: 3
+
+    VerticalScrollBar
+      id: exchangeScrollBar
+      anchors.top: exchangeSeparator.bottom
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      step: 40
+      pixel-scroll: true
+
+  // =============================================
+  // BARRA INFERIOR (moedas + fechar)
+  // =============================================
+  Panel
+    id: bottomBar
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 30
+    margin-bottom: 2
+
+    // Task Tokens
+    Panel
+      id: taskTokensPanel
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      size: 120 24
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #3d3d3d
+      border: 1 #555555
+
+      Panel
+        id: taskTokensIconBg
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 2
+        size: 20 20
+        border: 1 #444444
+        background-color: #222222
+
+        UIItem
+          id: taskTokensIcon
+          anchors.fill: parent
+          virtual: true
+          item-id: 51996
+
+      Label
+        id: taskTokensValue
+        anchors.left: taskTokensIconBg.right
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        font: verdana-11px-rounded
+        color: #44ee44
+        text-align: center
+        !text: tr('0')
+
+    // Silver Tokens
+    Panel
+      id: silverTokensPanel
+      anchors.left: taskTokensPanel.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 6
+      size: 120 24
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #3d3d3d
+      border: 1 #555555
+
+      Panel
+        id: silverTokensIconBg
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 2
+        size: 20 20
+        border: 1 #444444
+        background-color: #222222
+
+        UIItem
+          id: silverTokensIcon
+          anchors.fill: parent
+          virtual: true
+          item-id: 22516
+
+      Label
+        id: silverTokensValue
+        anchors.left: silverTokensIconBg.right
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        font: verdana-11px-rounded
+        color: #c0c0c0
+        text-align: center
+        !text: tr('0')
+
+    // Gold Tokens
+    Panel
+      id: goldTokensPanel
+      anchors.left: silverTokensPanel.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 6
+      size: 120 24
+      image-source: /images/ui/panel_flat
+      image-border: 4
+      image-color: #3d3d3d
+      border: 1 #555555
+
+      Panel
+        id: goldTokensIconBg
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 2
+        size: 20 20
+        border: 1 #444444
+        background-color: #222222
+
+        UIItem
+          id: goldTokensIcon
+          anchors.fill: parent
+          virtual: true
+          item-id: 22721
+
+      Label
+        id: goldTokensValue
+        anchors.left: goldTokensIconBg.right
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 4
+        font: verdana-11px-rounded
+        color: #ffcc00
+        text-align: center
+        !text: tr('0')
+
+    // Botao Fechar
+    Button
+      id: closeButton
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      size: 80 24
+      !text: tr('Fechar')
+      @onClick: modules.game_tasksystem.toggleWindow()

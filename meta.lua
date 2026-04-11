@@ -731,7 +731,8 @@ function g_game.setScheduleLastWalk(scheduleLastWalk) end
 
 ---@param dirs integer[]
 ---@param startPos Position | string
-function g_game.autoWalk(dirs, startPos) end
+---@param cancelFollowBeforeWalk? boolean default true
+function g_game.autoWalk(dirs, startPos, cancelFollowBeforeWalk) end
 
 ---@param direction integer
 function g_game.forceWalk(direction) end
@@ -739,7 +740,8 @@ function g_game.forceWalk(direction) end
 ---@param direction integer
 function g_game.turn(direction) end
 
-function g_game.stop() end
+---@param cancelFollowIfFollowing? boolean default true; false = nao cancelar follow (ex.: retry de auto-walk do Smart Follow)
+function g_game.stop(cancelFollowIfFollowing) end
 
 ---@param thing Thing
 ---@param inBattleList? boolean false
@@ -2207,6 +2209,15 @@ function Item:isStackable() end
 function Item:isMarketable() end
 
 ---@return boolean
+function Item:isDepot() end
+
+---@return integer
+function Item:getDepotId() end
+
+---@param depotId integer
+function Item:setDepotId(depotId) end
+
+---@return boolean
 function Item:isFluidContainer() end
 
 ---@return MarketData
@@ -2662,7 +2673,8 @@ function LocalPlayer:stopAutoWalk() end
 ---@param destination Position | string
 ---@param retry? boolean false
 ---@return boolean
-function LocalPlayer:autoWalk(destination, retry) end
+---@param cancelFollowBeforeWalk? boolean default true; false = Smart Follow (nao cancela follow nativo)
+function LocalPlayer:autoWalk(destination, retry, cancelFollowBeforeWalk) end
 
 ---@param resource integer
 ---@return number

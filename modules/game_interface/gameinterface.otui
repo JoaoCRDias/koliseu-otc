@@ -53,12 +53,12 @@ UIWidget
     id: gameMapPanel
     anchors.left: gameLeftActionPanel.right
     anchors.right: gameRightActionPanel.left
-    anchors.top: gameTopPanel.bottom
+    anchors.top: parent.top
     anchors.bottom: bottomSplitter.top
     focusable: false
     margin-top: 1
     margin-bottom: 1
-
+	
     Button
       id: showTopMenuButton
       anchors.top: parent.top
@@ -67,23 +67,37 @@ UIWidget
       height: 32
       visible: false
 
+// background panels behind side panel buttons (defined first so they render behind)
+  UIWidget
+    id: leftSidePanelButtonsBackground
+    anchors.left: gameLeftExtraPanel3.right
+    anchors.top: parent.top
+    size: 0 54
+    image-source: /images/ui/panel_map
+
+  UIWidget
+    id: rightSidePanelButtonsBackground
+    anchors.right: gameRightExtraPanel3.left
+    anchors.top: parent.top
+    size: 0 54
+    image-source: /images/ui/panel_map
+
 // actionbar
   Panel
     id: gameLeftActionPanel
     phantom: true
     focusable: false
-    anchors.top: gameTopPanel.bottom
-    anchors.left: gameLeftExtraPanel.right
+    anchors.top: parent.top
+    anchors.left: gameLeftExtraPanel3.right
     anchors.bottom: bottomSplitter.top
-    padding-top: 1
+    margin-top: 54
+    padding-top: 3
     margin-left: 1
-    border-width-right: 1
-    border-color-right: #292929
     width: 36
     image-source: /images/ui/actionbar/actionbar_background-light
     image-border: 1
     margin-bottom: 16
-    padding-right: 3 
+    padding-right: 3
     layout:
       type: horizontalBox
       fit-children: true
@@ -110,19 +124,17 @@ UIWidget
     id: gameRightActionPanel
     phantom: true
     focusable: false
-    anchors.top: gameTopPanel.bottom
-    anchors.right: gameRightExtraPanel.left
+    anchors.top: parent.top
+    anchors.right: gameRightExtraPanel3.left
     anchors.bottom: bottomSplitter.top
+    margin-top: 54
+    padding-top: 3
     margin-right: 1
-    margin-top: 1
-    border-width-left: 1
-    border-color-left: #747474
     width: 36
     image-source: /images/ui/actionbar/actionbar_background-light
     image-border: 1
     margin-bottom: 16
     padding-left: 3
-
     layout:
       type: horizontalBox
       fit-children: true
@@ -207,7 +219,7 @@ UIWidget
     anchors.bottom: parent.bottom
     focusable: false
     visible: true
-    on: true
+    on: false
     $!on:
       width: 0
       visible: false
@@ -220,7 +232,33 @@ UIWidget
     margin-left: 1
     focusable: false
     visible: true
-    on: true
+    on: false
+    $!on:
+      width: 0
+      visible: false
+
+  GameSidePanel
+    id: gameLeftExtraPanel2
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 1
+    focusable: false
+    visible: true
+    on: false
+    $!on:
+      width: 0
+      visible: false
+
+  GameSidePanel
+    id: gameLeftExtraPanel3
+    anchors.left: prev.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 1
+    focusable: false
+    visible: true
+    on: false
     $!on:
       width: 0
       visible: false
@@ -231,7 +269,6 @@ UIWidget
     anchors.top: parent.top
     &ignoreFillAll: true
     &onlyPhantomDrop: true
-    height: 200
     focusable: false
     on: true
 
@@ -251,7 +288,33 @@ UIWidget
     margin-right: 1
     focusable: false
     visible: true
-    on: true
+    on: false
+    $!on:
+      width: 0
+      visible: false
+
+  GameSidePanel
+    id: gameRightExtraPanel2
+    anchors.right: prev.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-right: 1
+    focusable: false
+    visible: true
+    on: false
+    $!on:
+      width: 0
+      visible: false
+
+  GameSidePanel
+    id: gameRightExtraPanel3
+    anchors.right: prev.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-right: 1
+    focusable: false
+    visible: true
+    on: false
     $!on:
       width: 0
       visible: false
@@ -276,10 +339,30 @@ UIWidget
     anchors.right: gameLeftExtraPanel.right
     anchors.bottom: gameLeftExtraPanel.bottom
 
+  SelectColumnButton
+    id: gameSelectLeftExtraColumn2
+    anchors.right: gameLeftExtraPanel2.right
+    anchors.bottom: gameLeftExtraPanel2.bottom
+
+  SelectColumnButton
+    id: gameSelectLeftExtraColumn3
+    anchors.right: gameLeftExtraPanel3.right
+    anchors.bottom: gameLeftExtraPanel3.bottom
+
+  SelectColumnButton
+    id: gameSelectRightExtraColumn2
+    anchors.right: gameRightExtraPanel2.right
+    anchors.bottom: gameRightExtraPanel2.bottom
+
+  SelectColumnButton
+    id: gameSelectRightExtraColumn3
+    anchors.right: gameRightExtraPanel3.right
+    anchors.bottom: gameRightExtraPanel3.bottom
+
   Splitter
     id: bottomSplitter
-    anchors.left: gameLeftExtraPanel.right
-    anchors.right: gameRightExtraPanel.left
+    anchors.left: gameLeftExtraPanel3.right
+    anchors.right: gameRightExtraPanel3.left
     anchors.bottom: parent.bottom
     height: 6
     image-source: /images/ui/actionbar/splitterActBottom
@@ -314,23 +397,25 @@ UIWidget
 
   TopStatsBar
     id: gameTopPanel
-    anchors.left: gameLeftExtraPanel.right
-    anchors.right: gameRightExtraPanel.left
+    anchors.left: gameLeftExtraPanel3.right
+    anchors.right: gameRightExtraPanel3.left
     anchors.top: parent.top
     focusable: false
+    visible: true
 
   TopStatsBar
     id: gameBottomStatsBarPanel
-    anchors.left: gameLeftExtraPanel.right
-    anchors.right: gameRightExtraPanel.left
+    anchors.left: gameLeftExtraPanel3.right
+    anchors.right: gameRightExtraPanel3.left
     anchors.top: bottomSplitter.bottom
     margin-left: 1
     margin-right: 1
     focusable: false
 
+// side panel buttons (defined last so they render on top of everything)
   Button
     id: leftIncreaseSidePanels
-    anchors.left: gameLeftExtraPanel.right
+    anchors.left: gameLeftExtraPanel3.right
     anchors.top: parent.top
     image-source: /images/ui/topstats_button_panel
     image-clip: 27 0 9 27
@@ -338,51 +423,54 @@ UIWidget
     @onClick: onIncreaseLeftPanels()
 
     $hover:
-      image-clip: 27 0 9 27
-    $disabled:
       image-clip: 36 0 9 27
+    $disabled:
+      image-clip: 45 0 9 27
 
   Button
     id: leftDecreaseSidePanels
     anchors.left: leftIncreaseSidePanels.left
     anchors.top: leftIncreaseSidePanels.bottom
+    margin-top: 1
     image-source: /images/ui/topstats_button_panel
-    image-clip: 36 26 9 27
+    image-clip: 0 0 9 27
     size: 9 27
     @onClick: onDecreaseLeftPanels()
 
     $hover:
-      image-clip: 36 26 9 27
+      image-clip: 9 0 9 27
 
     $disabled:
-      image-clip: 27 27 9 27
+      image-clip: 18 0 9 27
 
   Button
     id: rightIncreaseSidePanels
-    anchors.right: gameRightExtraPanel.left
+    anchors.right: gameRightExtraPanel3.left
     anchors.top: parent.top
     image-source: /images/ui/topstats_button_panel
-    image-clip: 0 0 9 27
+    image-clip: 27 27 9 27
     size: 9 27
     @onClick: onIncreaseRightPanels()
 
     $hover:
-      image-clip: 0 0 9 27
+      image-clip: 36 27 9 27
 
     $disabled:
-      image-clip: 9 0 9 27
+      image-clip: 45 27 9 27
+
 
   Button
     id: rightDecreaseSidePanels
     anchors.right: rightIncreaseSidePanels.right
     anchors.top: rightIncreaseSidePanels.bottom
+    margin-top: 1
     image-source: /images/ui/topstats_button_panel
-    image-clip: 9 27 9 27
+    image-clip: 9 28 9 27
     size: 9 27
     @onClick: onDecreaseRightPanels()
 
     $hover:
-      image-clip: 9 27 9 27
-
+      image-clip: 9 28 9 27
     $disabled:
-      image-clip: 0 27 9 27
+      image-clip: 18 28 9 27
+

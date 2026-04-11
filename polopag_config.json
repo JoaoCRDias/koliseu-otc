@@ -1,0 +1,19 @@
+{
+  "apiUrl": "https://seu-site.com/api_otclient.php",
+  "offers": [
+    { "id": 1, "coins": 125, "price": 10.0, "name": "125 Tibia Coins", "category": "Tibia Coins" },
+    { "id": 2, "coins": 250, "price": 20.0, "name": "250 Tibia Coins", "category": "Tibia Coins" },
+    { "id": 3, "coins": 625, "price": 50.0, "name": "625 Tibia Coins", "category": "Tibia Coins" },
+    { "id": 4, "coins": 1325, "price": 100.0, "name": "1325 Tibia Coins", "category": "Tibia Coins" },
+    { "id": 5, "coins": 2150, "price": 150.0, "name": "Coins Pack", "category": "Pacotes" },
+    { "id": 6, "coins": 6150, "price": 400.0, "name": "Coins Pack", "category": "Pacotes" },
+    { "id": 7, "coins": 2250, "price": 200.0, "name": "Pack Bronze", "category": "Pacotes" },
+    { "id": 8, "coins": 3500, "price": 400.0, "name": "Pack Silver", "category": "Pacotes" },
+    { "id": 9, "coins": 7000, "price": 600.0, "name": "Pack Gold", "category": "Pacotes" },
+    { "id": 10, "coins": 0, "price": 40.0, "name": "Pack Utilities", "category": "Pacotes" },
+    { "id": 11, "coins": 0, "price": 44.0, "name": "Vip 60 dias", "category": "Tibia Coins" },
+    { "id": 12, "coins": 0, "price": 66.0, "name": "Vip 90 dias", "category": "Tibia Coins" },
+    { "id": 13, "coins": 0, "price": 150.0, "name": "Pack Cosmetics", "category": "Pacotes" },
+    { "id": 14, "coins": 0, "price": 22.0, "name": "Vip 30 dias", "category": "Tibia Coins" }
+  ]
+}

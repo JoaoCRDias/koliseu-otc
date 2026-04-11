@@ -34,6 +34,12 @@
 #include "framework/graphics/painter.h"
 #include "framework/graphics/shadermanager.h"
 
+namespace
+{
+    /// Client id do item de depot/locker no servidor RadBR (não vem atributo extra no protocolo).
+    constexpr uint32_t kDepotLockerClientItemId = 3499;
+}
+
 #ifdef FRAMEWORK_EDITOR
 #include <framework/core/binarytree.h>
 #include "itemtype.h"
@@ -440,5 +446,35 @@ void Item::serializeItem(const OutputBinaryTreePtr& out)
 }
 
 #endif
+
+bool Item::isDepot() const
+{
+#ifdef FRAMEWORK_EDITOR
+    return m_attribs.has(ATTR_DEPOT_ID) || getClientId() == kDepotLockerClientItemId;
+#else
+    return getClientId() == kDepotLockerClientItemId;
+#endif
+}
+
+uint16_t Item::getDepotId() const
+{
+#ifdef FRAMEWORK_EDITOR
+    return m_attribs.get<uint16_t>(ATTR_DEPOT_ID, 0);
+#else
+    return 0;
+#endif
+}
+
+void Item::setDepotId(const uint16_t depotId)
+{
+#ifdef FRAMEWORK_EDITOR
+    if (depotId != 0)
+        m_attribs.set(ATTR_DEPOT_ID, depotId);
+    else
+        m_attribs.remove(ATTR_DEPOT_ID);
+#else
+    (void)depotId;
+#endif
+}
 
 /* vim: set ts=4 sw=4 et :*/

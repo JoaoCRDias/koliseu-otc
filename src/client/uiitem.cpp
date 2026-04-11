@@ -23,6 +23,7 @@
 #include "uiitem.h"
 
 #include "framework/graphics/drawpoolmanager.h"
+#include "framework/graphics/texturemanager.h"
 #include "framework/otml/otmlnode.h"
 #include "gameconfig.h"
 #include "item.h"
@@ -54,7 +55,13 @@ void UIItem::drawSelf(const DrawPoolType drawPane)
         m_item->setColor(m_color);
         m_item->draw(Point(exactSize - g_gameConfig.getSpriteSize()) + m_item->getDisplacement());
         g_drawPool.releaseFrameBuffer(getPaddingRect(), m_flipDirection);
+    }
 
+    // After the item: rarity UVs must go through DrawPool::add RECT path so atlas src-rect is translated;
+    // addTexturedCoordsBuffer leaves local UVs and samples wrong atlas regions (garbled glyphs).
+    drawRarityImage(m_rect);
+
+    if (m_itemVisible && m_item) {
         if (m_font && (m_alwaysShowCount && (m_item->isStackable() || m_item->isChargeable())) && m_item->getCountOrSubType() > 1) {
             static constexpr Color STACK_COLOR(231, 231, 231);
             const auto& count = m_item->getCountOrSubType();
@@ -77,9 +84,10 @@ void UIItem::setItemId(const int id)
 {
     m_itemId = id;
 
-    if (id == 0)
+    if (id == 0) {
         m_item = nullptr;
-    else if (m_item)
+        m_shaderName.clear();
+    } else if (m_item)
         m_item->setId(id);
     else
         m_item = Item::create(id);
@@ -106,6 +114,7 @@ void UIItem::setItemSubType(const int subType)
 
 void UIItem::setItem(const ItemPtr& item)
 {
+    m_shaderName.clear();
     m_item = item;
     if (item)
         m_itemId = item->getClientId();
@@ -146,3 +155,36 @@ void UIItem::setShader(std::string_view name) {
 }
 
 bool UIItem::hasShader() { return getItem() ? getItem()->getShader() != nullptr : false; }
+
+void UIItem::setRaritySource(const std::string_view source)
+{
+    if (source.empty()) {
+        m_rarityTexture = nullptr;
+        m_raritySource.clear();
+        return;
+    }
+
+    m_raritySource = source;
+    m_rarityTexture = g_textures.getTexture(m_raritySource);
+}
+
+void UIItem::setRarityClip(const Rect& clipRect)
+{
+    m_rarityClipRect = clipRect;
+}
+
+void UIItem::clearRarity()
+{
+    m_rarityTexture = nullptr;
+    m_raritySource.clear();
+    m_rarityClipRect = {};
+}
+
+void UIItem::drawRarityImage(const Rect& screenCoords)
+{
+    if (!m_rarityTexture || !screenCoords.isValid())
+        return;
+
+    const auto clipRect = m_rarityClipRect.isValid() ? m_rarityClipRect : Rect(0, 0, m_rarityTexture->getSize());
+    g_drawPool.addTexturedRect(screenCoords, m_rarityTexture, clipRect, Color::white);
+}

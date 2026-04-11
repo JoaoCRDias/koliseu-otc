@@ -91,6 +91,14 @@ ActionButton < UIButton
     phantom: true
     visible: false
 
+  Panel
+    id: presetFrame
+    anchors.fill: parent
+    margin: 0 0 0 0
+    image-source: /images/game/actionbar/equip-preset/selected_frame
+    phantom: true
+    visible: false
+
 LeftSliders < Panel
   size: 17 34
   UIButton

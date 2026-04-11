@@ -27,6 +27,10 @@
 #include "framework/otml/declarations.h"
 #include "framework/platform/platform.h"
 
+#include <optional>
+#include <string_view>
+#include <unordered_map>
+
  //@bindsingleton g_ui
 class UIManager
 {
@@ -45,6 +49,8 @@ public:
     void updateHoveredText(bool now = false);
 
     void clearStyles();
+    /// Resolves a root-level OTUI/OTML global variable (e.g. "$myColor") using aliases collected from loaded .otui files.
+    std::optional<std::string> resolveOtuiGlobalAlias(std::string_view reference) const;
     bool importStyle(const std::string& fl, bool checkDeviceStyles = true);
     void importStyleFromOTML(const OTMLNodePtr& styleNode);
     void importStyleFromOTML(const OTMLDocumentPtr& doc);
@@ -78,6 +84,11 @@ public:
 
     bool isDrawingDebugBoxes() { return m_drawDebugBoxes; }
 
+    // Global variables for $var- support
+    void setGlobalVariable(const std::string& name, const std::string& value);
+    std::string getGlobalVariable(const std::string& name) const;
+    void clearGlobalVariables();
+
 protected:
     void onWidgetAppear(const UIWidgetPtr& widget);
     void onWidgetDisappear(const UIWidgetPtr& widget);
@@ -102,6 +113,10 @@ private:
     std::string m_hoveredText;
     UIWidgetList m_destroyedWidgets;
     ScheduledEventPtr m_checkEvent;
+    std::unordered_map<std::string, std::string> m_otuiGlobalAliases;
+    std::unordered_map<std::string, std::string> m_globalVariables;
+
+    void mergeOtuiGlobalAliases(const OTMLDocumentPtr& doc);
 };
 
 extern UIManager g_ui;

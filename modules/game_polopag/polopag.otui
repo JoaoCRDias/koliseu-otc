@@ -1,0 +1,213 @@
+PolopagOffer < UIWidget
+  width: 160
+  height: 140
+  image-source: /images/store/serviceid_icon_normal
+  
+  $checked:
+    opacity: 1.0
+
+  $!checked:
+    opacity: 1.0
+
+  UIWidget
+    id: selectionOverlay
+    anchors.fill: parent
+    image-source: /images/store/serviceid_icon_selected
+    phantom: true
+    visible: false
+
+  UIWidget
+    id: border
+    anchors.fill: parent
+    image-source: /images/ui/rarity_square_gold
+    image-border: 5
+    margin: -2
+    phantom: true
+    visible: false
+
+
+
+  UIWidget
+    id: infoButton
+    size: 20 20
+    anchors.top: parent.top
+    anchors.right: parent.right
+    margin: 5
+    !tooltip: tr('Show Description')
+    image-source: /images/game/npcicons/icon_quest.png
+    opacity: 0.8
+    $hover:
+      opacity: 1.0
+
+  Label
+    id: name
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 18
+    margin-left: 20
+    margin-right: 20
+    text-align: center
+    font: verdana-11px-rounded
+    text-wrap: true
+
+  UIWidget
+    id: image
+    size: 87 60
+    margin-top: 9
+    anchors.centerIn: parent
+    image-source: /images/store/serviceid_6
+    phantom: true
+
+  UIWidget
+    id: priceBg
+    height: 25
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin: 5
+    image-source: /images/ui/panel_flat
+    image-border: 1
+    image-color: #000000AA
+
+  Label
+    id: price
+    anchors.centerIn: priceBg
+    text-align: center
+    font: verdana-11px-rounded
+    color: #FFA500
+
+MainWindow
+  id: polopagWindow
+  !text: tr('Buy Tibia Coins')
+  size: 600 550
+  @onEscape: modules.game_polopag.toggle()
+
+  Panel
+    id: categoryPanel
+    height: 30
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+
+    Button
+      id: btnTibiaCoins
+      !text: tr('Tibia Coins')
+      anchors.top: parent.top
+      anchors.left: parent.left
+      width: 120
+      @onClick: modules.game_polopag.selectCategory('Tibia Coins')
+
+    Button
+      id: btnPacotes
+      !text: tr('Pacotes')
+      anchors.top: parent.top
+      anchors.left: prev.right
+      margin-left: 5
+      width: 120
+      @onClick: modules.game_polopag.selectCategory('Pacotes')
+
+  Panel
+    id: offersPanel
+    anchors.top: categoryPanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: buyButton.top
+    margin-top: 10
+    margin-bottom: 10
+    image-source: /images/ui/panel_flat
+    image-source: /images/ui/panel_flat
+    image-border: 1
+    padding-top: 10
+    padding-bottom: 10
+    padding-left: 40
+    
+    ScrollablePanel
+      id: offersContent
+      anchors.fill: parent
+      margin-right: 15
+      vertical-scrollbar: offersScrollbar
+      layout:
+        type: grid
+        cell-size: 160 140
+        cell-spacing: 15
+        flow: true
+
+    VerticalScrollBar
+      id: offersScrollbar
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      margin-right: 2
+      step: 48
+      pixels-scroll: true
+
+  Button
+    id: closeButton
+    !text: tr('Close')
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    width: 80
+    @onClick: modules.game_polopag.toggle()
+
+  Button
+    id: buyButton
+    !text: tr('Generate PIX Code')
+    anchors.bottom: parent.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    width: 140
+    @onClick: modules.game_polopag.buySelectedOffer()
+    enabled: false
+
+  Panel
+    id: paymentPanel
+    anchors.fill: parent
+    visible: false
+    background-color: #000000CC
+
+    Panel
+      id: checkoutBox
+      size: 300 350
+      anchors.centerIn: parent
+      image-source: /images/ui/window
+      image-border: 6
+
+      Label
+        text: Scan the QR Code below:
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 20
+
+      UIWidget
+        id: qrCodeImage
+        anchors.top: prev.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        size: 150 150
+        margin-top: 15
+        image-source: /images/ui/blank
+
+      Button
+        id: copyButton
+        !text: tr('Copy PIX Code')
+        anchors.top: qrCodeImage.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: 140
+        margin-top: 15
+        @onClick: modules.game_polopag.copyPixCode()
+
+      Label
+        id: statusLabel
+        text: Waiting for payment...
+        anchors.top: copyButton.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 15
+        color: #FFA500
+
+      Button
+        !text: tr('Close')
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: 80
+        margin-bottom: 15
+        @onClick: modules.game_polopag.closePayment()

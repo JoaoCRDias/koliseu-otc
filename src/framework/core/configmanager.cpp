@@ -149,6 +149,25 @@ void ConfigManager::loadPublicConfig(const std::string& fileName) {
         m_publicConfig.font.staticText = reader.Get("font", "static-text", m_publicConfig.font.staticText);
         m_publicConfig.font.animatedText = reader.Get("font", "animated-text", m_publicConfig.font.animatedText);
         m_publicConfig.font.creatureText = reader.Get("font", "creature-text", m_publicConfig.font.creatureText);
+
+        m_publicConfig.services.updater = reader.Get("services", "updater", m_publicConfig.services.updater);
+        m_publicConfig.services.updaterRemoteConfigUrl = reader.Get("services", "updaterRemoteConfigUrl", m_publicConfig.services.updaterRemoteConfigUrl);
+        m_publicConfig.services.updaterZipUrl = reader.Get("services", "updaterZipUrl", m_publicConfig.services.updaterZipUrl);
+        m_publicConfig.services.updaterLocalConfigFile = reader.Get("services", "updaterLocalConfigFile", m_publicConfig.services.updaterLocalConfigFile);
+        m_publicConfig.services.status = reader.Get("services", "status", m_publicConfig.services.status);
+        m_publicConfig.services.websites = reader.Get("services", "websites", m_publicConfig.services.websites);
+        m_publicConfig.services.createAccount = reader.Get("services", "createAccount", m_publicConfig.services.createAccount);
+        m_publicConfig.services.logUpload = reader.Get("services", "logUpload", m_publicConfig.services.logUpload);
+        m_publicConfig.services.polopag = reader.Get("services", "polopag", m_publicConfig.services.polopag);
+        m_publicConfig.services.polopagConfig = reader.Get("services", "polopagConfig", m_publicConfig.services.polopagConfig);
+
+        m_publicConfig.gameStore.getCoins = reader.Get("gamestore", "getCoins", m_publicConfig.gameStore.getCoins);
+        m_publicConfig.gameStore.images = reader.Get("gamestore", "images", m_publicConfig.gameStore.images);
+
+        m_publicConfig.helpers.wiki = reader.Get("helpers", "wiki", m_publicConfig.helpers.wiki);
+        m_publicConfig.helpers.info = reader.Get("helpers", "info", m_publicConfig.helpers.info);
+
+        m_publicConfig.general.tibiaHintsUrl = reader.Get("general", "tibiaHintsUrl", m_publicConfig.general.tibiaHintsUrl);
     } catch (const std::exception& e) {
         g_logger.error("Failed to parse public config '{}': {}", fileName, e.what());
     }

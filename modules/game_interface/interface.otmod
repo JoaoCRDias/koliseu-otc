@@ -6,6 +6,7 @@ Module
   sandboxed: true
   scripts: [ widgets/uigamemap, widgets/uiitem, widgets/statsbar, gameinterface ]
   load-later:
+    - game_sidebars
     - game_walk
     - game_joystick
     - game_shortcuts
@@ -14,8 +15,10 @@ Module
     - game_inventory
     - game_mainpanel
     - game_prey
+    - game_prey_hunting
     - game_imbuing
     - game_imbuementtracker
+    - game_imbui
     - game_hotkeys
     - game_questlog
     - game_textmessage
@@ -23,6 +26,7 @@ Module
     - game_actionbar
     - game_outfit
     - game_skills
+    - game_tooltip
     - game_containers
     - game_viplist
     - game_battle
@@ -49,9 +53,16 @@ Module
     - game_blessing
     - game_store
     - game_quickloot
-    - game_cyclopedia
-    - game_creatureinformation
     - game_rewardwall
     - game_forge
+    - game_cyclopedia
+    - game_battlepass
+    - game_trackers
+    - game_creatureinformation
+    - game_proficiency
+    - game_wheel
+    - game_helper
+    - game_autoloot
+    - client_ui_inspector
   @onLoad: init()
   @onUnload: terminate()

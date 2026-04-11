@@ -26,6 +26,8 @@ Module
     dofiles 'classes'
     dofiles 'ui'
 
+    g_ui.importStyle('ui/otui_color_aliases')
+
     dofile 'inputmessage'
     dofile 'outputmessage'
 

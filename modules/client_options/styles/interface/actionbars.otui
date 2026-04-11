@@ -232,7 +232,7 @@ UIWidget
       anchors.top: parent.top
       margin-right: 130
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(1)
+      @onClick: modules.game_actionbar.resetSlots(1)
     QtButton
       id: clearBottomBar2
       !text: tr('Bar 2')
@@ -242,7 +242,7 @@ UIWidget
       anchors.top: parent.top
       margin-right: 65
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(2)
+      @onClick: modules.game_actionbar.resetSlots(2)
     QtButton
       id: clearBottomBar3
       !text: tr('Bar 3')
@@ -252,7 +252,7 @@ UIWidget
       anchors.top: parent.top
       margin-right: 0
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(3)
+      @onClick: modules.game_actionbar.resetSlots(3)
     Label
       !text: tr('Clear Left Action Bars:')
       anchors.left: parent.left
@@ -270,7 +270,7 @@ UIWidget
       anchors.top: clearBottomBar1.bottom
       margin-right: 130
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(4)
+      @onClick: modules.game_actionbar.resetSlots(4)
     QtButton
       id: clearLeftBar2
       !text: tr('Bar 2')
@@ -280,7 +280,7 @@ UIWidget
       anchors.top: clearBottomBar2.bottom
       margin-right: 65
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(5)
+      @onClick: modules.game_actionbar.resetSlots(5)
     QtButton
       id: clearLeftBar3
       !text: tr('Bar 3')
@@ -290,7 +290,7 @@ UIWidget
       anchors.top: clearBottomBar3.bottom
       margin-right: 0
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(6)
+      @onClick: modules.game_actionbar.resetSlots(6)
     Label
       !text: tr('Clear Right Action Bars:')
       anchors.left: parent.left
@@ -308,7 +308,7 @@ UIWidget
       anchors.top: clearLeftBar1.bottom
       margin-right: 130
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(7)
+      @onClick: modules.game_actionbar.resetSlots(7)
     QtButton
       id: clearRightBar2
       !text: tr('Bar 2')
@@ -318,7 +318,7 @@ UIWidget
       anchors.top: clearLeftBar2.bottom
       margin-right: 65
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(8)
+      @onClick: modules.game_actionbar.resetSlots(8)
     QtButton
       id: clearRightBar3
       !text: tr('Bar 3')
@@ -328,14 +328,14 @@ UIWidget
       anchors.top: clearLeftBar3.bottom
       margin-right: 0
       margin-top: 3
-      @onClick: modules.game_actionbar.resetAction(7)
+      @onClick: modules.game_actionbar.resetSlots(9)
 
   QtButton
-    id: clearRightBar3
+    id: resetAllActionBarsButton
     !text: tr('reset')
     width: 60
     height: 18
     anchors.right: parent.right
     anchors.bottom: parent.bottom
     margin-top: 3
-    @onClick: modules.game_actionbar.resetActionBars()
+    @onClick: modules.game_actionbar.resetActionBar()

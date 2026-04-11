@@ -1,5 +1,32 @@
 local UI = nil
 
+Cyclopedia.Bestiary = Cyclopedia.Bestiary or {}
+
+-- Cleanup function to be called before tab switch
+function Cyclopedia.Bestiary.cleanup()
+    -- Reset charm focus state before leaving
+    if UI and UI.ListBase and UI.ListBase.CreatureInfo then
+        local charmBase = UI.ListBase.CreatureInfo.CharmBase
+        local charmBase2 = UI.ListBase.CreatureInfo.CharmBase2
+        if charmBase and charmBase.charmFocusBorder then
+            charmBase.charmFocusBorder:setBorderWidth(0)
+        end
+        if charmBase2 and charmBase2.charmFocusBorder then
+            charmBase2.charmFocusBorder:setBorderWidth(0)
+        end
+    end
+
+    -- Disconnect keyboard binding
+    if UI and UI.SearchEdit then
+        pcall(function()
+            g_keyboard.unbindKeyDown('Enter', UI.SearchEdit)
+        end)
+    end
+
+    -- Clear UI reference
+    UI = nil
+end
+
 local STAGES = {
     CREATURES = 2,
     SEARCH = 4,
@@ -11,15 +38,25 @@ local storedRaceIDs = {}
 -- Move tracker data to global Cyclopedia namespace to persist across module reloads
 Cyclopedia.storedTrackerData = Cyclopedia.storedTrackerData or nil
 Cyclopedia.storedBosstiaryTrackerData = Cyclopedia.storedBosstiaryTrackerData or nil
+-- Store charms data globally
+Cyclopedia.charmsData = Cyclopedia.charmsData or nil
+-- Store current selected creature data
+Cyclopedia.currentCreatureData = Cyclopedia.currentCreatureData or nil
 local animusMasteryPoints = 0
 
+-- Charm categories
+local CHARM_CATEGORY = {
+    MAJOR = 1,
+    MINOR = 2
+}
+
 function Cyclopedia.loadBestiaryOverview(name, creatures, animusMasteryPoints)
-    if (name == "Result" or name == "") and #creatures > 0 then
+    if name == "" and #creatures > 0 then
         if #creatures == 1 then
             g_game.requestBestiarySearch(creatures[1].id)
             Cyclopedia.ShowBestiaryCreature()
         else
-        Cyclopedia.loadBestiarySearchCreatures(creatures)
+            Cyclopedia.loadBestiarySearchCreatures(creatures)
         end
     else
         Cyclopedia.loadBestiaryCreatures(creatures)
@@ -34,18 +71,57 @@ function showBestiary()
     UI = g_ui.loadUI("bestiary", contentContainer)
     UI:show()
 
-    UI.ListBase.CategoryList:setVisible(true)
-    UI.ListBase.CreatureList:setVisible(false)
-    UI.ListBase.CreatureInfo:setVisible(false)
+    -- Clear any discovery highlight when bestiary is opened
+    Cyclopedia.clearBestiaryDiscoveryHighlight()
 
-    Cyclopedia.Bestiary.Stage = STAGES.CATEGORY
+    -- Check if we should go directly to a creature (from tracker click or discovery notification)
+    -- Priority: pendingCreatureRaceId (tracker click) > pendingDiscoveryRaceId (new discovery)
+    local pendingRaceId = Cyclopedia.pendingCreatureRaceId or Cyclopedia.pendingDiscoveryRaceId
+    Cyclopedia.pendingCreatureRaceId = nil -- Clear it immediately
+    Cyclopedia.pendingDiscoveryRaceId = nil -- Clear discovery raceId as well
+
+    if pendingRaceId then
+        -- Go directly to creature view
+        UI.ListBase.CategoryList:setVisible(false)
+        UI.ListBase.CreatureList:setVisible(false)
+        UI.ListBase.CreatureInfo:setVisible(true)
+        Cyclopedia.Bestiary.Stage = STAGES.CREATURE
+
+        -- Set up back button to go to category view
+        UI.BackPageButton:setEnabled(true)
+        function UI.BackPageButton.onClick()
+            Cyclopedia.Bestiary.Stage = STAGES.CATEGORY
+            Cyclopedia.onStageChange()
+            g_game.requestBestiary()
+        end
+    else
+        -- Normal bestiary open - show category list
+        UI.ListBase.CategoryList:setVisible(true)
+        UI.ListBase.CreatureList:setVisible(false)
+        UI.ListBase.CreatureInfo:setVisible(false)
+        Cyclopedia.Bestiary.Stage = STAGES.CATEGORY
+    end
+
     controllerCyclopedia.ui.CharmsBase:setVisible(true)
     controllerCyclopedia.ui.GoldBase:setVisible(true)
     controllerCyclopedia.ui.BestiaryTrackerButton:setVisible(true)
-    if g_game.getClientVersion() >= 1410 then
-        controllerCyclopedia.ui.CharmsBase1410:hide()
+
+    -- Update Charm values
+    local player = g_game.getLocalPlayer()
+    if player then
+        if g_game.getClientVersion() >= 1410 then
+            controllerCyclopedia.ui.CharmsBase1410:setVisible(true)
+            -- Update Minor Charm Echoes value
+            local minorCharm = player:getResourceBalance(ResourceTypes.MINOR_CHARM) or 0
+            local maxMinorCharm = player:getResourceBalance(ResourceTypes.MAX_MINOR_CHARM) or 0
+            controllerCyclopedia.ui.CharmsBase1410.Value:setText(string.format("%d/%d", minorCharm, maxMinorCharm))
+            -- Update Charm value
+            local charm = player:getResourceBalance(ResourceTypes.CHARM) or 0
+            local maxCharm = player:getResourceBalance(ResourceTypes.MAX_CHARM) or 0
+            controllerCyclopedia.ui.CharmsBase.Value:setText(string.format("%d/%d", charm, maxCharm))
+        end
     end
-    
+
     -- Initialize tracker data and storedRaceIDs when bestiary is opened
     -- This ensures Track Kills status is properly loaded from cache
     Cyclopedia.initializeTrackerData()
@@ -58,58 +134,74 @@ function showBestiary()
         end
     end, UI.SearchEdit)
 
-    
-    g_game.requestBestiary()
+    -- Request creature data if we have a pending creature, otherwise request bestiary categories
+    if pendingRaceId then
+        g_game.requestBestiarySearch(pendingRaceId)
+    else
+        g_game.requestBestiary()
+    end
+
+    -- Request again after a short delay to ensure charms data is loaded
+    -- The server sends charms data as a separate packet
+    scheduleEvent(function()
+        if not Cyclopedia.formattedCharmsData or #Cyclopedia.formattedCharmsData == 0 then
+            g_game.requestBestiary()
+        end
+    end, 500)
 end
 
 Cyclopedia.Bestiary = {}
 Cyclopedia.Bestiary.Stage = STAGES.CATEGORY
 
 function Cyclopedia.SetBestiaryProgress(fit, firstBar, secondBar, thirdBar, killCount, firstGoal, secondGoal, thirdGoal)
+    local function calculatePercent(value, max)
+        if max <= 0 then return 0 end
+        return math.min(math.floor((value / max) * 100), 100)
+    end
+
     local function calculateWidth(value, max)
         return math.min(math.floor((value / max) * fit), fit)
     end
 
-    local function setBarVisibility(bar, isVisible, width, isCompleted)
-        isVisible = isVisible and width > 0
-        bar:setVisible(isVisible)
-        if isVisible then
-            -- Use fill image only when bestiary is completed, otherwise use orange progress bar
-            if isCompleted then
-                bar:setImageRect({
-                    height = 12,
-                    x = 0,
-                    y = 0,
-                    width = width
-                })
-                bar:setImageSource("/game_cyclopedia/images/bestiary/fill")
+    local function setBarProgress(bar, percent, isBestiaryCompleted, maxWidth)
+        -- Calculate width based on percentage
+        local width = math.floor((percent / 100) * maxWidth)
+
+        if percent > 0 then
+            bar:setWidth(width)
+            if isBestiaryCompleted then
+                -- Use green progress image when entire bestiary is completed
+                bar:setImageSource("/images/game/cyclopedia/bestiary/progress-green")
             else
-                -- For orange progress bar, set the widget width and use image as background
-                bar:setWidth(width)
-                bar:setImageSource("/game_cyclopedia/images/bestiary/progressbar-orange-small")
-                -- Clear any image rect to use the full image as background
-                bar:setImageRect({})
+                -- Use golden progress image for normal progress
+                bar:setImageSource("/images/game/cyclopedia/bestiary/progress")
             end
+        else
+            -- No progress, hide bar
+            bar:setWidth(0)
         end
     end
 
     -- Check if bestiary is completed (reached final goal)
     local isCompleted = killCount >= thirdGoal
 
-    local firstWidth = calculateWidth(math.min(killCount, firstGoal), firstGoal)
-    setBarVisibility(firstBar, killCount > 0, firstWidth, isCompleted)
+    -- First bar progress
+    local firstPercent = calculatePercent(math.min(killCount, firstGoal), firstGoal)
+    setBarProgress(firstBar, firstPercent, isCompleted, fit)
 
-    local secondWidth = 0
+    -- Second bar progress
+    local secondPercent = 0
     if killCount > firstGoal then
-        secondWidth = calculateWidth(math.min(killCount - firstGoal, secondGoal - firstGoal), secondGoal - firstGoal)
+        secondPercent = calculatePercent(math.min(killCount - firstGoal, secondGoal - firstGoal), secondGoal - firstGoal)
     end
-    setBarVisibility(secondBar, killCount > firstGoal, secondWidth, isCompleted)
+    setBarProgress(secondBar, secondPercent, isCompleted, fit)
 
-    local thirdWidth = 0
+    -- Third bar progress
+    local thirdPercent = 0
     if killCount > secondGoal then
-        thirdWidth = calculateWidth(math.min(killCount - secondGoal, thirdGoal - secondGoal), thirdGoal - secondGoal)
+        thirdPercent = calculatePercent(math.min(killCount - secondGoal, thirdGoal - secondGoal), thirdGoal - secondGoal)
     end
-    setBarVisibility(thirdBar, killCount > secondGoal, thirdWidth, isCompleted)
+    setBarProgress(thirdBar, thirdPercent, isCompleted, fit)
 end
 
 function Cyclopedia.SetBestiaryStars(value)
@@ -120,63 +212,153 @@ function Cyclopedia.SetBestiaryDiamonds(value)
     UI.ListBase.CreatureInfo.DiamondFill:setWidth(value * 9)
 end
 
+local function getRarityTitle(index, isFirstRow)
+    local titles = {
+        [0] = "Common",
+        [1] = "Uncommon",
+        [2] = "Semi-Rare",
+        [3] = "Rare",
+        [4] = "Very Rare"
+    }
+    local title = tr(titles[index] or "Very Rare")
+    if isFirstRow then
+        return title .. ":"
+    else
+        return ""
+    end
+end
+
 function Cyclopedia.CreateCreatureItems(data)
     UI.ListBase.CreatureInfo.ItemsBase.Itemlist:destroyChildren()
 
-    for index, _ in pairs(data) do
-        local widget = g_ui.createWidget("BestiaryItemGroup", UI.ListBase.CreatureInfo.ItemsBase.Itemlist)
-        widget:setId(index)
+    local maxItemsPerRow = 15
+    local widgetIndex = 0
 
-        if index == 0 then
-            widget.Title:setText(tr("Common") .. ":")
-        elseif index == 1 then
-            widget.Title:setText(tr("Uncommon") .. ":")
-        elseif index == 2 then
-            widget.Title:setText(tr("Semi-Rare") .. ":")
-        elseif index == 3 then
-            widget.Title:setText(tr("Rare") .. ":")
-        else
-            widget.Title:setText(tr("Very Rare") .. ":")
-        end
+    for index, items in pairs(data) do
+        local totalItems = #items
+        local rowCount = math.ceil(totalItems / maxItemsPerRow)
 
-        for i = 1, 15 do
-            local item = g_ui.createWidget("BestiaryItem", widget.Items)
-            item:setId(i)
-        end
+        for row = 1, rowCount do
+            local widget = g_ui.createWidget("BestiaryItemGroup", UI.ListBase.CreatureInfo.ItemsBase.Itemlist)
+            local widgetId = string.format("%d_%d", index, row)
+            widget:setId(widgetId)
 
-        for itemIndex, itemData in ipairs(data[index]) do
-            local thing = g_things.getThingType(itemData.id, ThingCategoryItem)
-            local itemWidget = UI.ListBase.CreatureInfo.ItemsBase.Itemlist[index].Items[itemIndex]
-            itemWidget:setItemId(itemData.id)
-            itemWidget.id = itemData.id
-            itemWidget.classification = thing:getClassification()
+            local isFirstRow = (row == 1)
+            widget.Title:setText(getRarityTitle(index, isFirstRow))
 
-            if itemData.id == 0 then
-                itemWidget.undefinedItem:setVisible(true)
+            if not isFirstRow then
+                widget:setMarginTop(-10)
             end
 
-            if itemData.id > 0 then
-                if itemData.stackable then
-                    itemWidget.Stackable:setText("1+")
-                else
-                    itemWidget.Stackable:setText("1")
+            for i = 1, maxItemsPerRow do
+                local item = g_ui.createWidget("BestiaryItem", widget.Items)
+                item:setId(i)
+            end
+
+            local startIndex = (row - 1) * maxItemsPerRow + 1
+            local endIndex = math.min(row * maxItemsPerRow, totalItems)
+
+            for i = startIndex, endIndex do
+                local itemData = items[i]
+                local slotIndex = i - startIndex + 1
+                local itemWidget = widget.Items[slotIndex]
+
+                if not itemWidget then
+                    break
                 end
+
+                local thing = g_things.getThingType(itemData.id, ThingCategoryItem)
+                itemWidget:setItemId(itemData.id)
+                itemWidget.id = itemData.id
+                itemWidget.classification = thing:getClassification()
+
+                if itemData.id == 0 then
+                    itemWidget.undefinedItem:setVisible(true)
+                end
+
+                if itemData.id > 0 then
+                    if itemData.stackable then
+                        itemWidget.Stackable:setText("1+")
+                    else
+                        itemWidget.Stackable:setText("1")
+                    end
+                end
+
+                ItemsDatabase.setRarityItem(itemWidget, itemWidget:getItem())
+
+                itemWidget.onMouseRelease = onAddLootClick
             end
 
-            ItemsDatabase.setRarityItem(itemWidget, itemWidget:getItem())
-
-            itemWidget.onMouseRelease = onAddLootClick
+            widgetIndex = widgetIndex + 1
         end
     end
 end
 
+-- Function to reset creature info visuals before showing (prevents flicker)
+function Cyclopedia.resetCreatureInfoVisuals()
+    if not UI or not UI.ListBase or not UI.ListBase.CreatureInfo then
+        return
+    end
+
+    local creatureInfo = UI.ListBase.CreatureInfo
+    creatureInfo:setText("")
+    -- Hide sprite instead of setting empty outfit (which causes error with invalid thing type)
+    creatureInfo.LeftBase.Sprite:setVisible(false)
+    creatureInfo.ProgressValue:setText("")
+    creatureInfo.Value1:setText("")
+    creatureInfo.Value2:setText("")
+    creatureInfo.Value3:setText("")
+    creatureInfo.Value4:setText("")
+    creatureInfo.Value5:setText("")
+    creatureInfo.BonusValue:setText("")
+    creatureInfo.LocationField.Textlist.Text:setText("")
+
+    -- Reset progress bars
+    creatureInfo.ProgressBack:setWidth(0)
+    creatureInfo.ProgressBack33:setWidth(0)
+    creatureInfo.ProgressBack55:setWidth(0)
+
+    -- Reset charm bases
+    if creatureInfo.CharmBase then
+        creatureInfo.CharmBase:setOpacity(0.5)
+        creatureInfo.CharmBase.charmImage:setVisible(false)
+        creatureInfo.CharmBase.charmBorder:setVisible(false)
+        creatureInfo.CharmBase.charmFocusBorder:setBorderWidth(0)
+    end
+    if creatureInfo.CharmBase2 then
+        creatureInfo.CharmBase2:setOpacity(0.5)
+        creatureInfo.CharmBase2.charmImage:setVisible(false)
+        creatureInfo.CharmBase2.charmBorder:setVisible(false)
+        creatureInfo.CharmBase2.charmFocusBorder:setBorderWidth(0)
+    end
+
+    -- Reset loot items
+    if creatureInfo.ItemsBase and creatureInfo.ItemsBase.ItemList then
+        creatureInfo.ItemsBase.ItemList:destroyChildren()
+    end
+end
+
 function Cyclopedia.loadBestiarySelectedCreature(data)
+    -- Skip if UI is not initialized (happens during Task Hunting)
+    if not UI or not UI.ListBase or not UI.ListBase.CreatureInfo then
+        return
+    end
+
     local occurence = {
         [0] = 1,
         2,
         3,
         4
     }
+
+    -- Safe call to getRaceData
+    local success, raceData = pcall(function()
+        return g_things.getRaceData(data.id)
+    end)
+
+    if not success or not raceData then
+        return
+    end
 
     local raceData = g_things.getRaceData(data.id)
     local formattedName = raceData.name:gsub("(%l)(%w*)", function(first, rest)
@@ -187,11 +369,15 @@ function Cyclopedia.loadBestiarySelectedCreature(data)
     Cyclopedia.SetBestiaryDiamonds(occurence[data.ocorrence])
     Cyclopedia.SetBestiaryStars(data.difficulty)
     UI.ListBase.CreatureInfo.LeftBase.Sprite:setOutfit(raceData.outfit)
+    UI.ListBase.CreatureInfo.LeftBase.Sprite:setVisible(true)
     UI.ListBase.CreatureInfo.LeftBase.Sprite:getCreature():setStaticWalking(1000)
 
-    Cyclopedia.SetBestiaryProgress(60, UI.ListBase.CreatureInfo.ProgressBack, UI.ListBase.CreatureInfo.ProgressBack33,
-        UI.ListBase.CreatureInfo.ProgressBack55, data.killCounter, data.thirdDifficulty, data.secondUnlock,
-        data.lastProgressKillCount)
+    -- Goals should be in ascending order: firstGoal < secondGoal < thirdGoal
+    local goals = { data.thirdDifficulty, data.secondUnlock, data.lastProgressKillCount }
+    table.sort(goals)
+
+    Cyclopedia.SetBestiaryProgress(61, UI.ListBase.CreatureInfo.ProgressBack, UI.ListBase.CreatureInfo.ProgressBack33,
+        UI.ListBase.CreatureInfo.ProgressBack55, data.killCounter, goals[1], goals[2], goals[3])
 
     UI.ListBase.CreatureInfo.ProgressValue:setText(data.killCounter)
 
@@ -229,7 +415,8 @@ function Cyclopedia.loadBestiarySelectedCreature(data)
         UI.ListBase.CreatureInfo.Value2:setText(data.experience)
         UI.ListBase.CreatureInfo.Value3:setText(data.speed)
         UI.ListBase.CreatureInfo.Value4:setText(data.armor)
-        UI.ListBase.CreatureInfo.Value5:setText(data.mitigation .. "%")
+        local parsedMitigation = math.floor(data.mitigation * 100) / 100
+        UI.ListBase.CreatureInfo.Value5:setText(parsedMitigation .. "%")
         UI.ListBase.CreatureInfo.BonusValue:setText(data.charmValue)
     else
         UI.ListBase.CreatureInfo.Value1:setText("?")
@@ -263,8 +450,8 @@ function Cyclopedia.loadBestiarySelectedCreature(data)
         UI.ListBase.CreatureInfo.SubTextLabel:setSize("18 9")
     end
 
-    local resists = {"PhysicalProgress", "FireProgress", "EarthProgress", "EnergyProgress", "IceProgress",
-                     "HolyProgress", "DeathProgress", "HealingProgress"}
+    local resists = { "PhysicalProgress", "FireProgress", "EarthProgress", "EnergyProgress", "IceProgress",
+        "HolyProgress", "DeathProgress", "HealingProgress" }
 
     if not table.empty(data.combat) then
         for i = 1, 8 do
@@ -301,11 +488,405 @@ function Cyclopedia.loadBestiarySelectedCreature(data)
     UI.ListBase.CreatureInfo.LocationField.Textlist.Text:setText(data.location)
 
     if data.AnimusMasteryPoints and data.AnimusMasteryPoints > 1 then
-        UI.ListBase.CreatureInfo.AnimusMastery:setTooltip("The Animus Mastery for this creature is unlocked.\nIt yields "..(data.AnimusMasteryBonus / 10).."% bonus experience points, plus an additional 0.1% for every 10 Animus Masteries unlocked, up to a maximum of 4%.\nYou currently benefit from "..(data.AnimusMasteryBonus / 10).."% bonus experience points due to having unlocked ".. data.AnimusMasteryPoints .." Animus Masteries.")
+        UI.ListBase.CreatureInfo.AnimusMastery:setTooltip(
+            "The Animus Mastery for this creature is unlocked.\nIt yields " ..
+            (data.AnimusMasteryBonus / 10) ..
+            "% bonus experience points, plus an additional 0.1% for every 10 Animus Masteries unlocked, up to a maximum of 4%.\nYou currently benefit from " ..
+            (data.AnimusMasteryBonus / 10) ..
+            "% bonus experience points due to having unlocked " .. data.AnimusMasteryPoints .. " Animus Masteries.")
         UI.ListBase.CreatureInfo.AnimusMastery:setVisible(true)
     else
         UI.ListBase.CreatureInfo.AnimusMastery:removeTooltip()
         UI.ListBase.CreatureInfo.AnimusMastery:setVisible(false)
+    end
+
+    -- Store current creature data for charm selection
+    Cyclopedia.currentCreatureData = data
+
+    -- Setup CharmBase click handlers and enable/disable based on currentLevel
+    Cyclopedia.setupBestiaryCharmBases(data)
+end
+
+-- Helper function to set charm image based on charm ID
+function Cyclopedia.setCharmImage(charmImageWidget, charmId)
+    if charmId and charmId >= 0 then
+        charmImageWidget:setImageSource("/game_cyclopedia/images/charms/monster-bonus-effects")
+        charmImageWidget:setImageClip(string.format("%d 0 32 32", charmId * 32))
+        charmImageWidget:setVisible(true)
+    else
+        charmImageWidget:setImageSource("")
+        charmImageWidget:setVisible(false)
+    end
+end
+
+-- Helper function to set charm tier border
+function Cyclopedia.setCharmTierBorder(charmBase, tier)
+    local charmBorderWidget = charmBase.charmBorder
+    if tier and tier >= 1 and tier <= 3 then
+        charmBorderWidget:setImageSource(string.format("/images/game/cyclopedia/ui/backdrop_charmgrade%d", tier))
+        charmBorderWidget:setVisible(true)
+        charmBase.hasTierBorder = true
+    else
+        charmBorderWidget:setImageSource("")
+        charmBorderWidget:setVisible(false)
+        charmBase.hasTierBorder = false
+    end
+end
+
+-- Helper function to update charm focus border visibility
+function Cyclopedia.updateCharmFocusBorder(charmBase, focused)
+    local focusBorder = charmBase.charmFocusBorder
+    if focused then
+        focusBorder:setBorderWidth(1)
+    else
+        focusBorder:setBorderWidth(0)
+    end
+end
+
+-- Function to setup CharmBase click handlers and populate ComboBox
+function Cyclopedia.setupBestiaryCharmBases(data)
+    local charmBase = UI.ListBase.CreatureInfo.CharmBase
+    local charmBase2 = UI.ListBase.CreatureInfo.CharmBase2
+    local charmSelector = UI.ListBase.CreatureInfo.CharmSelector
+    local charmControlPanel = UI.ListBase.CreatureInfo.CharmControlPanel
+    local selectAssignButton = charmControlPanel.SelectAssignButton
+    local selectClearButton = charmControlPanel.SelectClearButton
+    local coinCostPanel = charmControlPanel.CoinCostPanel
+
+    -- Reset charm bases
+    charmBase:setOpacity(0.5)
+    charmBase2:setOpacity(0.5)
+
+    -- Reset charm images
+    charmBase.charmImage:setImageSource("")
+    charmBase.charmImage:setVisible(false)
+    charmBase2.charmImage:setImageSource("")
+    charmBase2.charmImage:setVisible(false)
+
+    -- Reset charm tier borders and focus border width
+    Cyclopedia.setCharmTierBorder(charmBase, nil)
+    Cyclopedia.setCharmTierBorder(charmBase2, nil)
+
+    -- Reset focus state
+    charmBase:setFocusable(false)
+    charmBase:setFocusable(true)
+    charmBase2:setFocusable(false)
+    charmBase2:setFocusable(true)
+    Cyclopedia.updateCharmFocusBorder(charmBase, false)
+    Cyclopedia.updateCharmFocusBorder(charmBase2, false)
+
+    -- Reset buttons and panels
+    selectAssignButton:setEnabled(false)
+    selectAssignButton:setVisible(true)
+    selectClearButton:setEnabled(false)
+    selectClearButton:setVisible(false)
+    coinCostPanel:setVisible(false)
+
+    charmSelector:setEnabled(false)
+    charmSelector:clearOptions()
+    charmSelector:addOption("Select a charm...")
+
+    -- Store the currently selected charm type (nil = none, 1 = major, 2 = minor)
+    Cyclopedia.selectedCharmType = nil
+    -- Store the currently selected charm data for clear operation
+    Cyclopedia.selectedCharmForClear = nil
+
+    -- Check if there are charms assigned to this creature and display their images
+    local creatureRaceId = data.id
+    if Cyclopedia.formattedCharmsData and creatureRaceId then
+        for _, charmData in ipairs(Cyclopedia.formattedCharmsData) do
+            if charmData.asignedStatus and charmData.raceId == creatureRaceId then
+                if charmData.category == CHARM_CATEGORY.MAJOR then
+                    Cyclopedia.setCharmImage(charmBase.charmImage, charmData.id)
+                    Cyclopedia.setCharmTierBorder(charmBase, charmData.tier)
+                    charmBase:setOpacity(1.0)
+                elseif charmData.category == CHARM_CATEGORY.MINOR then
+                    Cyclopedia.setCharmImage(charmBase2.charmImage, charmData.id)
+                    Cyclopedia.setCharmTierBorder(charmBase2, charmData.tier)
+                    charmBase2:setOpacity(1.0)
+                end
+            end
+        end
+    end
+
+    -- Setup Assign Charm button click handler
+    selectAssignButton.onClick = function()
+        Cyclopedia.onAssignCharmClick()
+    end
+
+    -- Setup Clear Charm button click handler
+    selectClearButton.onClick = function()
+        Cyclopedia.onClearCharmClick()
+    end
+
+    -- Setup focus handlers for charm bases
+    charmBase.onFocusChange = function(widget, focused)
+        Cyclopedia.updateCharmFocusBorder(widget, focused)
+    end
+    charmBase2.onFocusChange = function(widget, focused)
+        Cyclopedia.updateCharmFocusBorder(widget, focused)
+    end
+
+    -- Major Charms (CharmBase) - enabled when currentLevel > 3 (fully unlocked bestiary)
+    if data.currentLevel > 3 then
+        charmBase:setOpacity(1.0)
+        charmBase.onMouseRelease = function(widget, mousePos, mouseButton)
+            if mouseButton == MouseLeftButton then
+                Cyclopedia.onCharmBaseClick(CHARM_CATEGORY.MAJOR)
+                return true
+            end
+            return false
+        end
+    else
+        charmBase.onMouseRelease = nil
+    end
+
+    -- Minor Charms (CharmBase2) - enabled when currentLevel > 1
+    if data.currentLevel > 1 then
+        charmBase2:setOpacity(1.0)
+        charmBase2.onMouseRelease = function(widget, mousePos, mouseButton)
+            if mouseButton == MouseLeftButton then
+                Cyclopedia.onCharmBaseClick(CHARM_CATEGORY.MINOR)
+                return true
+            end
+            return false
+        end
+    else
+        charmBase2.onMouseRelease = nil
+    end
+end
+
+-- Function called when a CharmBase is clicked
+function Cyclopedia.onCharmBaseClick(charmCategory)
+    if not Cyclopedia.formattedCharmsData or #Cyclopedia.formattedCharmsData == 0 then
+        -- Charms data not loaded yet - request it
+        g_game.requestBestiary()
+        return
+    end
+
+    local charmSelector = UI.ListBase.CreatureInfo.CharmSelector
+    local charmBase = UI.ListBase.CreatureInfo.CharmBase
+    local charmBase2 = UI.ListBase.CreatureInfo.CharmBase2
+    local charmControlPanel = UI.ListBase.CreatureInfo.CharmControlPanel
+    local selectAssignButton = charmControlPanel.SelectAssignButton
+    local selectClearButton = charmControlPanel.SelectClearButton
+    local coinCostPanel = charmControlPanel.CoinCostPanel
+
+    -- Visual feedback for selected charm base
+    if charmCategory == CHARM_CATEGORY.MAJOR then
+        charmBase:setBorderWidth(1)
+        charmBase:setBorderColor("#FFFFFF")
+        charmBase2:setBorderWidth(0)
+    else
+        charmBase2:setBorderWidth(1)
+        charmBase2:setBorderColor("#FFFFFF")
+        charmBase:setBorderWidth(0)
+    end
+
+    Cyclopedia.selectedCharmType = charmCategory
+
+    -- Get current creature's race ID
+    local creatureRaceId = Cyclopedia.currentCreatureData and Cyclopedia.currentCreatureData.id
+
+    -- Check if there's a charm already assigned to this creature for this category
+    local assignedCharm = nil
+    for _, charmData in ipairs(Cyclopedia.formattedCharmsData) do
+        if charmData.category == charmCategory and charmData.asignedStatus and charmData.raceId == creatureRaceId then
+            assignedCharm = charmData
+            break
+        end
+    end
+
+    -- Clear and populate the ComboBox with charms of the selected category
+    charmSelector:clearOptions()
+
+    if assignedCharm then
+        -- There's a charm assigned to this creature - show Clear button
+        Cyclopedia.selectedCharmForClear = assignedCharm
+
+        charmSelector:addOption(assignedCharm.name, assignedCharm.id)
+        charmSelector:setEnabled(false)
+
+        selectAssignButton:setVisible(false)
+        selectClearButton:setVisible(true)
+        selectClearButton:setEnabled(true)
+
+        -- Show the cost panel with remove cost
+        coinCostPanel:setVisible(true)
+        local coinCostLabel = coinCostPanel.CoinCost
+        coinCostLabel:setText(Cyclopedia.formatGold(assignedCharm.removeRuneCost or 0))
+    else
+        -- No charm assigned - show Assign button and available charms
+        Cyclopedia.selectedCharmForClear = nil
+
+        local availableCharms = {}
+        for _, charmData in ipairs(Cyclopedia.formattedCharmsData) do
+            -- Check if charm is unlocked (or has tier > 0) AND is not assigned to another creature
+            local isUnlocked = charmData.unlocked or (charmData.tier and charmData.tier > 0)
+            local isFree = not charmData.asignedStatus
+            if charmData.category == charmCategory and isUnlocked and isFree then
+                table.insert(availableCharms, {
+                    id = charmData.id,
+                    name = charmData.name or ("Charm " .. charmData.id),
+                    tier = charmData.tier or 0
+                })
+            end
+        end
+
+        -- Sort by tier (descending) then name
+        table.sort(availableCharms, function(a, b)
+            if a.tier ~= b.tier then
+                return a.tier > b.tier
+            end
+            return a.name:lower() < b.name:lower()
+        end)
+
+        -- Show Assign button, hide Clear button
+        selectAssignButton:setVisible(true)
+        selectClearButton:setVisible(false)
+        coinCostPanel:setVisible(false)
+
+        -- Add charms to ComboBox or show "no charms" message
+        if #availableCharms > 0 then
+            for _, charm in ipairs(availableCharms) do
+                charmSelector:addOption(charm.name, charm.id)
+            end
+            charmSelector:setEnabled(true)
+            selectAssignButton:setEnabled(true)
+        else
+            local noCharmsMsg = charmCategory == CHARM_CATEGORY.MAJOR and "No Major Charms usable" or
+                "No Minor Charms usable"
+            charmSelector:addOption(noCharmsMsg)
+            charmSelector:setEnabled(false)
+            selectAssignButton:setEnabled(false)
+        end
+    end
+end
+
+-- Function called when "Assign Charm" button is clicked
+function Cyclopedia.onAssignCharmClick()
+    local charmSelector = UI.ListBase.CreatureInfo.CharmSelector
+    local selectedCharmName = charmSelector:getCurrentOption().text
+    local selectedCharmId = charmSelector:getCurrentOption().data
+
+    -- Don't proceed if no valid charm is selected
+    if not selectedCharmId then
+        return
+    end
+
+    -- Get the current creature's race ID
+    local creatureRaceId = Cyclopedia.currentCreatureData and Cyclopedia.currentCreatureData.id
+    if not creatureRaceId then
+        return
+    end
+
+    local confirmWindow = nil
+
+    -- Hide the main Cyclopedia window while showing the confirmation dialog
+    if controllerCyclopedia and controllerCyclopedia.ui then
+        controllerCyclopedia.ui:hide()
+    end
+
+    local noCallback = function()
+        if confirmWindow then
+            confirmWindow:destroy()
+            confirmWindow = nil
+        end
+        -- Show the main Cyclopedia window again
+        if controllerCyclopedia and controllerCyclopedia.ui then
+            controllerCyclopedia.ui:show()
+        end
+    end
+
+    local yesCallback = function()
+        if confirmWindow then
+            confirmWindow:destroy()
+            confirmWindow = nil
+        end
+        -- Show the main Cyclopedia window again
+        if controllerCyclopedia and controllerCyclopedia.ui then
+            controllerCyclopedia.ui:show()
+        end
+        -- Send the charm assignment request to the server
+        -- Action 1 = Select/Assign charm to creature
+        g_game.BuyCharmRune(selectedCharmId, 1, creatureRaceId)
+
+        -- Refresh creature details after charm assignment
+        if Cyclopedia.currentCreatureData and Cyclopedia.currentCreatureData.id then
+            g_game.requestBestiarySearch(Cyclopedia.currentCreatureData.id)
+        end
+    end
+
+    confirmWindow = displayGeneralBox(
+        tr('Assign Charm'),
+        string.format('Do you want to use the Charm %s for this creature?', selectedCharmName),
+        {
+            { text = tr('No'),  callback = noCallback },
+            { text = tr('Yes'), callback = yesCallback },
+        },
+        yesCallback,
+        noCallback
+    )
+end
+
+-- Function called when "Clear Charm" button is clicked
+function Cyclopedia.onClearCharmClick()
+    local charmData = Cyclopedia.selectedCharmForClear
+    if not charmData then
+        return
+    end
+
+    local confirmWindow = nil
+
+    -- Hide the main Cyclopedia window while showing the confirmation dialog
+    if controllerCyclopedia and controllerCyclopedia.ui then
+        controllerCyclopedia.ui:hide()
+    end
+
+    local noCallback = function()
+        if confirmWindow then
+            confirmWindow:destroy()
+            confirmWindow = nil
+        end
+        -- Show the main Cyclopedia window again
+        if controllerCyclopedia and controllerCyclopedia.ui then
+            controllerCyclopedia.ui:show()
+        end
+    end
+
+    local yesCallback = function()
+        -- Send the charm removal request to the server
+        -- Action 2 = Remove charm from creature
+        g_game.BuyCharmRune(charmData.id, 2)
+        if confirmWindow then
+            confirmWindow:destroy()
+            confirmWindow = nil
+        end
+        -- Show the main Cyclopedia window again
+        if controllerCyclopedia and controllerCyclopedia.ui then
+            controllerCyclopedia.ui:show()
+        end
+        -- Set redirect so charms tab knows which charm to focus
+        Cyclopedia.Charms.redirect = charmData.id
+
+        -- Refresh creature details after charm removal
+        if Cyclopedia.currentCreatureData and Cyclopedia.currentCreatureData.id then
+            g_game.requestBestiarySearch(Cyclopedia.currentCreatureData.id)
+        end
+    end
+
+    if not confirmWindow then
+        confirmWindow = displayGeneralBox(
+            tr('Confirm Charm Removal'),
+            tr('Do you want to remove the Charm %s from this creature? This will cost you %s gold pieces.',
+                charmData.name, comma_value(charmData.removeRuneCost or 0)),
+            {
+                { text = tr('No'),  callback = noCallback },
+                { text = tr('Yes'), callback = yesCallback },
+            },
+            yesCallback,
+            noCallback
+        )
     end
 end
 
@@ -420,12 +1001,14 @@ end
 function Cyclopedia.BestiarySearch()
     local text = UI.SearchEdit:getText()
     local raceList = g_things.getRacesByName(text)
+
     local list = {}
     for _, race in pairs(raceList) do
         list[#list + 1] = race.raceId
     end
 
     g_game.requestBestiaryOverview("Result", true, list)
+
     UI.SearchEdit:setText("")
 end
 
@@ -460,14 +1043,18 @@ function Cyclopedia.CreateBestiaryCreaturesItem(data)
     widget.Sprite:getCreature():setStaticWalking(1000)
 
     if data.AnimusMasteryBonus > 0 then
-        widget.AnimusMastery:setTooltip("The Animus Mastery for this creature is unlocked.\nIt yields ".. data.AnimusMasteryBonus.. "% bonus experience points, plus an additional 0.1% for every 10 Animus Masteries unlocked, up to a maximum of 4%.\nYou currently benefit from ".. data.AnimusMasteryBonus.. "% bonus experience points due to having unlocked ".. animusMasteryPoints.." Animus Masteries.")
+        widget.AnimusMastery:setTooltip("The Animus Mastery for this creature is unlocked.\nIt yields " ..
+            data.AnimusMasteryBonus ..
+            "% bonus experience points, plus an additional 0.1% for every 10 Animus Masteries unlocked, up to a maximum of 4%.\nYou currently benefit from " ..
+            data.AnimusMasteryBonus ..
+            "% bonus experience points due to having unlocked " .. animusMasteryPoints .. " Animus Masteries.")
         widget.AnimusMastery:setVisible(true)
     else
         widget.AnimusMastery:removeTooltip()
         widget.AnimusMastery:setVisible(false)
     end
 
-    if data.currentLevel >= 3 then
+    if data.currentLevel > 3 then
         widget.Finalized:setVisible(true)
         widget.KillsLabel:setVisible(false)
         widget.Sprite:getCreature():setShader("")
@@ -480,7 +1067,6 @@ function Cyclopedia.CreateBestiaryCreaturesItem(data)
         else
             widget.KillsLabel:setText(string.format("%d / 3", data.currentLevel - 1))
         end
-
     end
 
     function widget.ClassBase:onClick()
@@ -597,6 +1183,10 @@ function Cyclopedia.onStageChange()
         UI.BackPageButton:setEnabled(true)
         UI.ListBase.CategoryList:setVisible(false)
         UI.ListBase.CreatureList:setVisible(false)
+
+        -- Reset creature info before showing to prevent flicker
+        Cyclopedia.resetCreatureInfoVisuals()
+
         UI.ListBase.CreatureInfo:setVisible(true)
 
         function UI.BackPageButton.onClick()
@@ -684,12 +1274,12 @@ function Cyclopedia.refreshBestiaryTracker()
     if not char or #char == 0 then
         return
     end
-    
+
     -- Ensure tracker data is initialized
     if not Cyclopedia.storedTrackerData then
         Cyclopedia.initializeTrackerData()
     end
-    
+
     -- Always try to load cached data for immediate display
     local cachedData = Cyclopedia.loadTrackerData("bestiary")
     if cachedData and #cachedData > 0 then
@@ -699,7 +1289,7 @@ function Cyclopedia.refreshBestiaryTracker()
             Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
         end
     end
-    
+
     -- Always request fresh data from server
     g_game.requestBestiary()
 end
@@ -710,12 +1300,12 @@ function Cyclopedia.refreshBosstiaryTracker()
     if not char or #char == 0 then
         return
     end
-    
+
     -- Ensure tracker data is initialized
     if not Cyclopedia.storedBosstiaryTrackerData then
         Cyclopedia.initializeTrackerData()
     end
-    
+
     -- Always try to load cached data for immediate display
     local cachedData = Cyclopedia.loadTrackerData("bosstiary")
     if cachedData and #cachedData > 0 then
@@ -725,7 +1315,7 @@ function Cyclopedia.refreshBosstiaryTracker()
             Cyclopedia.onParseCyclopediaTracker(1, Cyclopedia.storedBosstiaryTrackerData)
         end
     end
-    
+
     -- Always request fresh data from server
     g_game.requestBestiary()
 end
@@ -735,7 +1325,7 @@ function Cyclopedia.refreshAllVisibleTrackers()
     if trackerMiniWindow and trackerMiniWindow:isVisible() then
         Cyclopedia.refreshBestiaryTracker()
     end
-    
+
     -- Refresh bosstiary tracker if it's visible
     if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary:isVisible() then
         Cyclopedia.refreshBosstiaryTracker()
@@ -749,19 +1339,19 @@ function Cyclopedia.forceRefreshTrackers()
         print("Debug: No character name available")
         return
     end
-    
+
     print("Debug: Force refreshing trackers for character: " .. char)
-    
+
     -- Clear stored data to force reload
     Cyclopedia.storedTrackerData = {}
     Cyclopedia.storedBosstiaryTrackerData = {}
-    
+
     -- Initialize and load fresh data
     Cyclopedia.initializeTrackerData()
-    
+
     -- Request fresh data from server
     g_game.requestBestiary()
-    
+
     -- Refresh all visible trackers
     scheduleEvent(function()
         Cyclopedia.refreshAllVisibleTrackers()
@@ -774,7 +1364,8 @@ function Cyclopedia.debugTrackerState()
     print("=== Tracker Debug Info ===")
     print("Character: " .. (char or "nil"))
     print("Bestiary data count: " .. (Cyclopedia.storedTrackerData and #Cyclopedia.storedTrackerData or "nil"))
-    print("Bosstiary data count: " .. (Cyclopedia.storedBosstiaryTrackerData and #Cyclopedia.storedBosstiaryTrackerData or "nil"))
+    print("Bosstiary data count: " ..
+        (Cyclopedia.storedBosstiaryTrackerData and #Cyclopedia.storedBosstiaryTrackerData or "nil"))
     print("Bestiary window visible: " .. tostring(trackerMiniWindow and trackerMiniWindow:isVisible()))
     print("Bosstiary window visible: " .. tostring(trackerMiniWindowBosstiary and trackerMiniWindowBosstiary:isVisible()))
     if trackerMiniWindow then
@@ -797,13 +1388,13 @@ function Cyclopedia.toggleBestiaryTracker()
     else
         if not trackerMiniWindow:getParent() then
             local panel = modules.game_interface.findContentPanelAvailable(trackerMiniWindow,
-            trackerMiniWindow:getMinimumHeight())
+                trackerMiniWindow:getMinimumHeight())
             if not panel then
                 return
             end
             panel:addChild(trackerMiniWindow)
         end
-        
+
         -- Ensure data is loaded before opening
         local char = g_game.getCharacterName()
         if char and #char > 0 then
@@ -813,16 +1404,16 @@ function Cyclopedia.toggleBestiaryTracker()
                 Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
             end
         end
-        
+
         trackerMiniWindow:open()
-        
+
         -- Multiple fallback attempts
         scheduleEvent(function()
             if trackerMiniWindow:isVisible() then
                 if trackerMiniWindow.contentsPanel:getChildCount() == 0 then
                     Cyclopedia.refreshBestiaryTracker()
                 end
-                
+
                 -- Another fallback check
                 scheduleEvent(function()
                     if trackerMiniWindow:isVisible() and trackerMiniWindow.contentsPanel:getChildCount() == 0 then
@@ -849,13 +1440,13 @@ function Cyclopedia.toggleBosstiaryTracker()
     else
         if not trackerMiniWindowBosstiary:getParent() then
             local panel = modules.game_interface.findContentPanelAvailable(trackerMiniWindowBosstiary,
-            trackerMiniWindowBosstiary:getMinimumHeight())
+                trackerMiniWindowBosstiary:getMinimumHeight())
             if not panel then
                 return
             end
             panel:addChild(trackerMiniWindowBosstiary)
         end
-        
+
         -- Ensure data is loaded before opening
         local char = g_game.getCharacterName()
         if char and #char > 0 then
@@ -865,16 +1456,16 @@ function Cyclopedia.toggleBosstiaryTracker()
                 Cyclopedia.onParseCyclopediaTracker(1, Cyclopedia.storedBosstiaryTrackerData)
             end
         end
-        
+
         trackerMiniWindowBosstiary:open()
-        
+
         -- Multiple fallback attempts
         scheduleEvent(function()
             if trackerMiniWindowBosstiary:isVisible() then
                 if trackerMiniWindowBosstiary.contentsPanel:getChildCount() == 0 then
                     Cyclopedia.refreshBosstiaryTracker()
                 end
-                
+
                 -- Another fallback check
                 scheduleEvent(function()
                     if trackerMiniWindowBosstiary:isVisible() and trackerMiniWindowBosstiary.contentsPanel:getChildCount() == 0 then
@@ -935,36 +1526,157 @@ function Cyclopedia.onParseCyclopediaTracker(trackerType, data)
         Cyclopedia.storedTrackerData = data
         -- Save to persistent storage
         Cyclopedia.saveTrackerData("bestiary", data)
-        
+
         -- Clear and repopulate storedRaceIDs only for bestiary tracker
         storedRaceIDs = {}
     end
-
-    window.contentsPanel:destroyChildren()
 
     -- Sort the data for both trackers
     local trackerTypeStr = isBoss and "bosstiary" or "bestiary"
     data = Cyclopedia.sortTrackerData(data, trackerTypeStr)
 
+    -- Build a set of current raceIds in the new data
+    local newRaceIds = {}
+    for i, entry in ipairs(data) do
+        local raceId = entry[1]
+        newRaceIds[raceId] = i -- Store the expected order
+    end
+
+    -- Check if we need to reorder (compare current order with expected order)
+    local needsReorder = false
+    local children = window.contentsPanel:getChildren()
+    if #children ~= #data then
+        needsReorder = true
+    else
+        for i, child in ipairs(children) do
+            local childId = tonumber(child:getId())
+            if not childId or newRaceIds[childId] ~= i then
+                needsReorder = true
+                break
+            end
+        end
+    end
+
+    -- If order changed, destroy all and recreate
+    if needsReorder then
+        window.contentsPanel:destroyChildren()
+        children = {}
+    else
+        -- Remove widgets that are no longer in the data
+        for _, child in ipairs(children) do
+            local childId = tonumber(child:getId())
+            if childId and not newRaceIds[childId] then
+                child:destroy()
+            end
+        end
+    end
+
     for _, entry in ipairs(data) do
         local raceId, kills, uno, dos, maxKills = unpack(entry)
-        
+
         -- Only add to storedRaceIDs for bestiary tracker
         if not isBoss then
             table.insert(storedRaceIDs, raceId)
         end
-        
+
         local raceData = g_things.getRaceData(raceId)
         local name = raceData.name
 
-        local widget = g_ui.createWidget("TrackerButton", window.contentsPanel)
-        widget:setId(raceId)
-        widget.creature:setOutfit(raceData.outfit)
-        widget.label:setText(name:len() > 12 and name:sub(1, 9) .. "..." or name)
-        widget.kills:setText(kills .. "/" .. maxKills)
-        widget.onMouseRelease = onTrackerClick
+        -- Try to find existing widget (only if we didn't destroy all)
+        local widget = not needsReorder and window.contentsPanel:getChildById(raceId) or nil
 
-        Cyclopedia.SetBestiaryProgress(54,widget.killsBar2, widget.ProgressBack33, widget.ProgressBack55, kills, uno, dos, maxKills)
+        if widget then
+            -- Update existing widget (no flick)
+            widget.kills:setText(kills)
+            widget:setTooltip(kills .. "/" .. maxKills)
+            Cyclopedia.SetBestiaryProgress(45, widget.killsBar2, widget.ProgressBack33, widget.ProgressBack55, kills, uno,
+                dos, maxKills)
+        else
+            -- Create new widget only if it doesn't exist
+            widget = g_ui.createWidget("TrackerButton", window.contentsPanel)
+            widget:setId(raceId)
+            widget.creature:setOutfit(raceData.outfit)
+            widget.label:setText(name:len() > 18 and name:sub(1, 15) .. "..." or name)
+            widget.kills:setText(kills)
+            widget.onMouseRelease = onTrackerClick
+            widget:setTooltip(kills .. "/" .. maxKills)
+            Cyclopedia.SetBestiaryProgress(45, widget.killsBar2, widget.ProgressBack33, widget.ProgressBack55, kills, uno,
+                dos, maxKills)
+        end
+
+        -- Update hourglass icon for bosstiary tracker
+        if isBoss and widget.hourglassIcon then
+            local bossCooldownModule = modules.game_analyser and modules.game_analyser.BossCooldown
+            if bossCooldownModule and bossCooldownModule.hasCooldown then
+                local _, cooldownTime = bossCooldownModule:hasCooldown(raceId)
+                if cooldownTime and cooldownTime > os.time() then
+                    local resttime = cooldownTime - os.time()
+                    local tooltipText = Cyclopedia.formatCooldownTooltip(resttime)
+                    widget.hourglassIcon:setImageSource('/images/game/cyclopedia/bosstiary/hourglass-red')
+                    widget.hourglassIcon:setTooltip(tooltipText)
+                    widget.hourglassIcon:setVisible(true)
+                elseif cooldownTime and cooldownTime >= 0 then
+                    widget.hourglassIcon:setImageSource('/images/game/cyclopedia/bosstiary/hourglass')
+                    widget.hourglassIcon:setTooltip("No Cooldown")
+                    widget.hourglassIcon:setVisible(true)
+                else
+                    widget.hourglassIcon:setVisible(false)
+                end
+            else
+                widget.hourglassIcon:setVisible(false)
+            end
+        end
+    end
+end
+
+-- Helper function to format cooldown time for tooltip
+function Cyclopedia.formatCooldownTooltip(resttime)
+    if resttime <= 0 then
+        return "No Cooldown"
+    elseif resttime <= 60 then
+        return resttime .. "s"
+    else
+        local days = math.floor(resttime / 86400)
+        local hours = math.floor((resttime % 86400) / 3600)
+        local minutes = math.floor((resttime % 3600) / 60)
+        if days > 0 then
+            return string.format("%dd %02dh %02dmin", days, hours, minutes)
+        else
+            return string.format("%02dh %02dmin", hours, minutes)
+        end
+    end
+end
+
+-- Function to update hourglass icons in bosstiary tracker when cooldown data is received
+function Cyclopedia.updateBosstiaryTrackerCooldownIcons()
+    if not trackerMiniWindowBosstiary or not trackerMiniWindowBosstiary.contentsPanel then
+        return
+    end
+
+    local bossCooldownModule = modules.game_analyser and modules.game_analyser.BossCooldown
+    if not bossCooldownModule or not bossCooldownModule.hasCooldown then
+        return
+    end
+
+    local children = trackerMiniWindowBosstiary.contentsPanel:getChildren()
+    for _, widget in ipairs(children) do
+        local raceId = tonumber(widget:getId())
+        if widget.hourglassIcon and raceId then
+            local _, cooldownTime = bossCooldownModule:hasCooldown(raceId)
+            if cooldownTime and cooldownTime > os.time() then
+                local resttime = cooldownTime - os.time()
+                local tooltipText = Cyclopedia.formatCooldownTooltip(resttime)
+                widget.hourglassIcon:setImageSource('/images/game/cyclopedia/bosstiary/hourglass-red')
+                widget.hourglassIcon:setTooltip(tooltipText)
+                widget.hourglassIcon:setVisible(true)
+            elseif cooldownTime and cooldownTime >= 0 then
+                widget.hourglassIcon:setImageSource('/images/game/cyclopedia/bosstiary/hourglass')
+                widget.hourglassIcon:setTooltip("No Cooldown")
+                widget.hourglassIcon:setVisible(true)
+            else
+                widget.hourglassIcon:setVisible(false)
+            end
+        end
     end
 end
 
@@ -990,11 +1702,11 @@ function Cyclopedia.loadTrackerFilters(trackerType)
         local defaultFilters = trackerType == "bosstiary" and BOSSTIARYTRACKER_FILTERS or BESTIATYTRACKER_FILTERS
         return defaultFilters
     end
-    
+
     local filterKey = trackerType == "bosstiary" and "bosstiaryTracker" or "bestiaryTracker"
     local charFilterKey = string.format("%s_%s", filterKey, char)
     local defaultFilters = trackerType == "bosstiary" and BOSSTIARYTRACKER_FILTERS or BESTIATYTRACKER_FILTERS
-    
+
     local settings = g_settings.getNode(charFilterKey)
     if not settings or not settings['filters'] then
         -- Save default filters for first time use
@@ -1012,10 +1724,10 @@ function Cyclopedia.saveTrackerFilters(trackerType)
     if not char or #char == 0 then
         return
     end
-    
+
     local filterKey = trackerType == "bosstiary" and "bosstiaryTracker" or "bestiaryTracker"
     local charFilterKey = string.format("%s_%s", filterKey, char)
-    
+
     g_settings.mergeNode(charFilterKey, {
         ['filters'] = Cyclopedia.loadTrackerFilters(trackerType),
         ['character'] = char
@@ -1028,10 +1740,10 @@ function Cyclopedia.saveTrackerData(trackerType, data)
     if not char or #char == 0 then
         return
     end
-    
+
     local dataKey = trackerType == "bosstiary" and "bosstiaryTrackerData" or "bestiaryTrackerData"
     local charDataKey = string.format("%s_%s", dataKey, char)
-    
+
     g_settings.mergeNode(charDataKey, {
         ['data'] = data,
         ['timestamp'] = os.time(),
@@ -1044,10 +1756,10 @@ function Cyclopedia.loadTrackerData(trackerType)
     if not char or #char == 0 then
         return nil
     end
-    
+
     local dataKey = trackerType == "bosstiary" and "bosstiaryTrackerData" or "bestiaryTrackerData"
     local charDataKey = string.format("%s_%s", dataKey, char)
-    
+
     local settings = g_settings.getNode(charDataKey)
     if settings and settings['data'] and settings['character'] == char then
         -- Check if data is not too old (older than 1 hour = stale)
@@ -1066,7 +1778,7 @@ function Cyclopedia.initializeTrackerData()
         -- Character name not available yet, skip initialization
         return
     end
-    
+
     -- Only initialize if we don't already have data loaded for this character
     if not Cyclopedia.storedTrackerData then
         Cyclopedia.storedTrackerData = {}
@@ -1074,7 +1786,7 @@ function Cyclopedia.initializeTrackerData()
     if not Cyclopedia.storedBosstiaryTrackerData then
         Cyclopedia.storedBosstiaryTrackerData = {}
     end
-    
+
     -- Load cached bestiary tracker data for current character (only if not already loaded)
     if #Cyclopedia.storedTrackerData == 0 then
         local cachedBestiaryData = Cyclopedia.loadTrackerData("bestiary")
@@ -1082,7 +1794,7 @@ function Cyclopedia.initializeTrackerData()
             Cyclopedia.storedTrackerData = cachedBestiaryData
         end
     end
-    
+
     -- Load cached bosstiary tracker data for current character (only if not already loaded)
     if #Cyclopedia.storedBosstiaryTrackerData == 0 then
         local cachedBosstiaryData = Cyclopedia.loadTrackerData("bosstiary")
@@ -1098,10 +1810,10 @@ function Cyclopedia.ensureStoredRaceIDsPopulated()
     if storedRaceIDs and #storedRaceIDs > 0 then
         return
     end
-    
+
     -- Initialize tracker data if not already done
     Cyclopedia.initializeTrackerData()
-    
+
     -- Populate storedRaceIDs from cached bestiary tracker data
     if Cyclopedia.storedTrackerData and #Cyclopedia.storedTrackerData > 0 then
         storedRaceIDs = {}
@@ -1117,7 +1829,7 @@ function Cyclopedia.clearTrackerDataForCharacterChange()
     -- Clear in-memory data
     Cyclopedia.storedTrackerData = {}
     Cyclopedia.storedBosstiaryTrackerData = {}
-    
+
     -- Clear visual tracker displays
     if trackerMiniWindow and trackerMiniWindow.contentsPanel then
         trackerMiniWindow.contentsPanel:destroyChildren()
@@ -1125,7 +1837,7 @@ function Cyclopedia.clearTrackerDataForCharacterChange()
     if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary.contentsPanel then
         trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
     end
-    
+
     -- Clear stored race IDs
     storedRaceIDs = {}
 end
@@ -1135,7 +1847,7 @@ function Cyclopedia.clearTrackerDataForCharacterChange()
     -- Clear in-memory data
     Cyclopedia.storedTrackerData = {}
     Cyclopedia.storedBosstiaryTrackerData = {}
-    
+
     -- Clear visual tracker displays
     if trackerMiniWindow and trackerMiniWindow.contentsPanel then
         trackerMiniWindow.contentsPanel:destroyChildren()
@@ -1143,7 +1855,7 @@ function Cyclopedia.clearTrackerDataForCharacterChange()
     if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary.contentsPanel then
         trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
     end
-    
+
     -- Clear stored race IDs
     storedRaceIDs = {}
 end
@@ -1152,15 +1864,14 @@ end
 function Cyclopedia.cleanupOldTrackerData(daysOld)
     daysOld = daysOld or 30 -- Default: clean data older than 30 days
     local cutoffTime = os.time() - (daysOld * 24 * 60 * 60)
-    
+
     -- Get all settings and find tracker-related keys
     local allSettings = g_settings.getSettings()
     for key, value in pairs(allSettings) do
-        if string.match(key, "^bestiaryTrackerData_") or 
-           string.match(key, "^bosstiaryTrackerData_") or
-           string.match(key, "^bestiaryTracker_") or
-           string.match(key, "^bosstiaryTracker_") then
-            
+        if string.match(key, "^bestiaryTrackerData_") or
+            string.match(key, "^bosstiaryTrackerData_") or
+            string.match(key, "^bestiaryTracker_") or
+            string.match(key, "^bosstiaryTracker_") then
             if value.timestamp and value.timestamp < cutoffTime then
                 g_settings.remove(key)
             end
@@ -1175,10 +1886,10 @@ function Cyclopedia.populateVisibleTrackersWithCachedData()
     if not char or #char == 0 then
         return
     end
-    
+
     -- Ensure tracker data is initialized for this character (but don't force reload if data exists)
     Cyclopedia.initializeTrackerData()
-    
+
     -- Populate bestiary tracker if it's visible and has cached data
     if trackerMiniWindow and trackerMiniWindow:isVisible() then
         if Cyclopedia.storedTrackerData and #Cyclopedia.storedTrackerData > 0 then
@@ -1188,7 +1899,7 @@ function Cyclopedia.populateVisibleTrackersWithCachedData()
             Cyclopedia.refreshBestiaryTracker()
         end
     end
-    
+
     -- Populate bosstiary tracker if it's visible and has cached data
     if trackerMiniWindowBosstiary and trackerMiniWindowBosstiary:isVisible() then
         if Cyclopedia.storedBosstiaryTrackerData and #Cyclopedia.storedBosstiaryTrackerData > 0 then
@@ -1209,18 +1920,18 @@ function Cyclopedia.setTrackerFilter(trackerType, filter, value)
     if not char or #char == 0 then
         return
     end
-    
+
     local filterKey = trackerType == "bosstiary" and "bosstiaryTracker" or "bestiaryTracker"
     local charFilterKey = string.format("%s_%s", filterKey, char)
     local filters = Cyclopedia.loadTrackerFilters(trackerType)
-    
+
     -- Handle mutual exclusion for sorting methods
     if filter == "sortByName" or filter == "ShortByPercentage" or filter == "sortByKills" then
         filters["sortByName"] = false
         filters["ShortByPercentage"] = false
         filters["sortByKills"] = false
         filters[filter] = true
-    -- Handle mutual exclusion for sorting direction
+        -- Handle mutual exclusion for sorting direction
     elseif filter == "sortByAscending" or filter == "sortByDescending" then
         filters["sortByAscending"] = false
         filters["sortByDescending"] = false
@@ -1228,12 +1939,12 @@ function Cyclopedia.setTrackerFilter(trackerType, filter, value)
     else
         filters[filter] = value
     end
-    
+
     g_settings.mergeNode(charFilterKey, {
         ['filters'] = filters,
         ['character'] = char
     })
-    
+
     -- Refresh the tracker display
     Cyclopedia.refreshTracker(trackerType)
 end
@@ -1253,13 +1964,13 @@ end
 function Cyclopedia.sortTrackerData(data, trackerType)
     local filters = Cyclopedia.loadTrackerFilters(trackerType)
     local isDescending = filters.sortByDescending
-    
+
     -- Create a copy of the data to avoid modifying the original
     local sortedData = {}
     for i, v in ipairs(data) do
         sortedData[i] = v
     end
-    
+
     if filters.sortByName then
         table.sort(sortedData, function(a, b)
             local nameA = g_things.getRaceData(a[1]).name:lower()
@@ -1293,7 +2004,7 @@ function Cyclopedia.sortTrackerData(data, trackerType)
             end
         end)
     end
-    
+
     return sortedData
 end
 
@@ -1314,7 +2025,7 @@ function Cyclopedia.createTrackerContextMenu(trackerType, mousePos)
 
     -- Set default selections
     local filters = Cyclopedia.loadTrackerFilters(trackerType)
-    
+
     -- Set sorting method (default: sortByKills)
     if filters.sortByName then
         menu:getChildById('sortByName'):setChecked(true)
@@ -1325,7 +2036,7 @@ function Cyclopedia.createTrackerContextMenu(trackerType, mousePos)
     else
         menu:getChildById('sortByKills'):setChecked(true)
     end
-    
+
     -- Set sorting direction (default: ascending)
     if filters.sortByDescending then
         menu:getChildById('sortByDescending'):setChecked(true)
@@ -1334,11 +2045,21 @@ function Cyclopedia.createTrackerContextMenu(trackerType, mousePos)
     end
 
     -- Add click handlers for menu options
-    menu:getChildById('sortByName').onClick = function() Cyclopedia.setTrackerFilter(trackerType, 'sortByName', true); menu:destroy() end
-    menu:getChildById('ShortByPercentage').onClick = function() Cyclopedia.setTrackerFilter(trackerType, 'ShortByPercentage', true); menu:destroy() end
-    menu:getChildById('sortByKills').onClick = function() Cyclopedia.setTrackerFilter(trackerType, 'sortByKills', true); menu:destroy() end
-    menu:getChildById('sortByAscending').onClick = function() Cyclopedia.setTrackerFilter(trackerType, 'sortByAscending', true); menu:destroy() end
-    menu:getChildById('sortByDescending').onClick = function() Cyclopedia.setTrackerFilter(trackerType, 'sortByDescending', true); menu:destroy() end
+    menu:getChildById('sortByName').onClick = function()
+        Cyclopedia.setTrackerFilter(trackerType, 'sortByName', true); menu:destroy()
+    end
+    menu:getChildById('ShortByPercentage').onClick = function()
+        Cyclopedia.setTrackerFilter(trackerType, 'ShortByPercentage', true); menu:destroy()
+    end
+    menu:getChildById('sortByKills').onClick = function()
+        Cyclopedia.setTrackerFilter(trackerType, 'sortByKills', true); menu:destroy()
+    end
+    menu:getChildById('sortByAscending').onClick = function()
+        Cyclopedia.setTrackerFilter(trackerType, 'sortByAscending', true); menu:destroy()
+    end
+    menu:getChildById('sortByDescending').onClick = function()
+        Cyclopedia.setTrackerFilter(trackerType, 'sortByDescending', true); menu:destroy()
+    end
 
     menu:display(mousePos)
     return true
@@ -1369,15 +2090,53 @@ end
 
 function onTrackerClick(widget, mousePosition, mouseButton)
     local taskId = tonumber(widget:getId())
-    local menu = g_ui.createWidget("PopupMenu")
 
-    menu:setGameMenu(true)
-    menu:addOption("stop Tracking " .. widget.label:getText(), function()
-        g_game.sendStatusTrackerBestiary(taskId, false)
-    end)
-    menu:display(menuPosition)
+    -- Determine if this is a bestiary tracker (not bosstiary)
+    local parentPanel = widget:getParent()
+    local isBestiaryTracker = parentPanel and trackerMiniWindow and parentPanel == trackerMiniWindow.contentsPanel
 
+    if mouseButton == MouseLeftButton and isBestiaryTracker then
+        -- Left-click on bestiary tracker: Open bestiary and select this creature
+        Cyclopedia.openBestiaryWithCreature(taskId)
+    elseif mouseButton == MouseLeftButton and not isBestiaryTracker then
+        -- Left-click on bosstiary tracker: Open bosstiary
+        toggle("bosstiary")
+    elseif mouseButton == MouseRightButton then
+        local menu = g_ui.createWidget("PopupMenu")
+
+        menu:setGameMenu(true)
+        menu:addOption("Stop Tracking " .. widget.label:getText(), function()
+            g_game.sendStatusTrackerBestiary(taskId, false)
+        end)
+        menu:display(menuPosition)
+    end
     return true
+end
+
+-- Stores the raceId to show when bestiary opens (used for direct creature navigation)
+Cyclopedia.pendingCreatureRaceId = nil
+
+-- Opens the Bestiary directly to a specific creature by its raceId
+-- Used by the tracker to allow quick navigation to creature details
+function Cyclopedia.openBestiaryWithCreature(raceId)
+    if not raceId then return end
+
+    -- Check if bestiary UI is fully loaded and visible (means we're on bestiary tab)
+    -- We need to verify UI and its key components exist before using them directly
+    local bestiaryTabActive = UI and UI:isVisible() and UI.BackPageButton and UI.ListBase
+
+    if bestiaryTabActive then
+        -- Bestiary tab already active, just request the creature and show it
+        g_game.requestBestiarySearch(raceId)
+        Cyclopedia.ShowBestiaryCreature()
+    else
+        -- Store the raceId to be loaded when bestiary opens
+        Cyclopedia.pendingCreatureRaceId = raceId
+
+        -- Use show() to open/switch to bestiary tab
+        -- show() calls SelectWindow internally which properly handles tab switching
+        show("bestiary")
+    end
 end
 
 function onAddLootClick(widget, mousePosition, mouseButton)
@@ -1390,14 +2149,22 @@ function onAddLootClick(widget, mousePosition, mouseButton)
 
     if not quickLoot.lootExists(itemId, lootFilterValue) then
         menu:addOption("Add to Loot List",
-        function()
-            quickLoot.addLootList(itemId, lootFilterValue)
-        end)
+            function()
+                quickLoot.addLootList(itemId, lootFilterValue)
+            end)
     else
-        menu:addOption("Remove from Loot List", 
-        function() 
-            quickLoot.removeLootList(itemId, lootFilterValue)
-        end)
+        menu:addOption("Remove from Loot List",
+            function()
+                quickLoot.removeLootList(itemId, lootFilterValue)
+            end)
+    end
+
+    if not modules.game_npctrade.inWhiteList(itemId) then
+        menu:addOption(tr('Add to Quick Sell BlackList'),
+            function() modules.game_npctrade.addToWhitelist(itemId) end)
+    else
+        menu:addOption(tr('Remove from Quick Sell BlackList'),
+            function() modules.game_npctrade.removeItemInList(itemId) end)
     end
 
     menu:display(menuPosition)

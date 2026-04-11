@@ -24,6 +24,7 @@
 #include "otmlparser.h"
 
 #include "framework/core/logger.h"
+#include "framework/ui/uimanager.h"
 
 #include <optional>
 #include <unordered_map>
@@ -122,6 +123,12 @@ namespace {
         }
 
         if (aliases.find(aliasName) == aliases.end()) {
+            // Check if it exists as a global UI alias or $var- global variable before logging error
+            if (g_ui.resolveOtuiGlobalAlias(aliasName).has_value() ||
+                !g_ui.getGlobalVariable(aliasName).empty()) {
+                // Will be resolved later during style application
+                return { true, std::nullopt };
+            }
             g_logger.error("Undefined OTML variable: {}", aliasName);
             return { true, std::nullopt };
         }
@@ -452,6 +459,13 @@ void OTMLParser::parseNode(const std::string_view data)
     }
 
     if (currentParent) {
+        // Check for $var- variable definitions
+        if (tag.starts_with("$var-") && !value.empty()) {
+            std::string varName = tag.substr(5); // Remove "$var-"
+            g_ui.setGlobalVariable(varName, value);
+            return; // Don't add this node to the tree, it's a variable definition
+        }
+
         currentParent->addChild(node);
         parentMap[node] = currentParent;
     } else {

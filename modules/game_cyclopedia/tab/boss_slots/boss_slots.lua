@@ -1,5 +1,12 @@
 local UI = nil
 
+Cyclopedia.BossSlots = Cyclopedia.BossSlots or {}
+
+-- Cleanup function to be called before tab switch
+function Cyclopedia.BossSlots.cleanup()
+    UI = nil
+end
+
 function showBossSlot()
     UI = g_ui.loadUI("boss_slots", contentContainer)
     UI:show()
@@ -116,8 +123,10 @@ function Cyclopedia.loadBossSlots(data)
     local unlockedBosses = data.bossIdSlotTwo
 
     UI.MidTitle:setText(string.format("Boosted Boss: %s", format(raceData.name)))
-    Cyclopedia.setBosstiarySlotsBossProgress(UI.BoostedProgress, data.todaySlotData.killCount,
-        CONFIG[data.todaySlotData.bossRace].MASTERY)
+    local boostedProgress = UI.BoostedProgress
+    Cyclopedia.SetBestiaryProgress(40, boostedProgress.ProgressBack, boostedProgress.ProgressBack33, boostedProgress.ProgressBack55,
+        data.todaySlotData.killCount, CONFIG[data.todaySlotData.bossRace].PROWESS, CONFIG[data.todaySlotData.bossRace].EXPERTISE, CONFIG[data.todaySlotData.bossRace].MASTERY)
+    boostedProgress.ProgressValue:setText(data.todaySlotData.killCount)
     UI.TypeIcon:setImageSource(ICONS[data.todaySlotData.bossRace])
 
     local tooltip =
@@ -130,17 +139,25 @@ function Cyclopedia.loadBossSlots(data)
     UI.TypeIcon:setTooltip(tooltip)
     -- UI.TypeIcon:setTooltipAlign(AlignTopLeft)
 
+    Cyclopedia.BossSlots.UnlockBosses = {}
+
     for i, unlockData in ipairs(data.bossesUnlockedData) do
         if not unlockData then
             break
         end
 
         local uRaceData = g_things.getRaceData(unlockData.bossId)
+        -- Get kills from Bosstiary.KillsData if available
+        local kills = 0
+        if Cyclopedia.Bosstiary and Cyclopedia.Bosstiary.KillsData then
+            kills = Cyclopedia.Bosstiary.KillsData[unlockData.bossId] or 0
+        end
         local data_t = {
             visible = true,
             bossId = unlockData.bossId,
             category = unlockData.bossRace,
-            name = uRaceData.name
+            name = uRaceData.name,
+            kills = kills
         }
 
         table.insert(Cyclopedia.BossSlots.UnlockBosses, data_t)
@@ -244,8 +261,12 @@ function Cyclopedia.setActiveSlot(widget, slot, slotData, data, bossId)
     widget:setText(string.format("Slot %d: %s", slot, raceData.name))
     widget.ActivedBoss.TypeIcon:setImageSource(ICONS[slotData.bossRace])
 
-    Cyclopedia.setBosstiarySlotsBossProgress(widget.ActivedBoss.Progress, slotData.killBonus,
-        CONFIG[slotData.bossRace].MASTERY)
+    -- Use killCount for the actual kill count display
+    local killCount = slotData.killCount or 0
+    local progress = widget.ActivedBoss.Progress
+    Cyclopedia.SetBestiaryProgress(40, progress.ProgressBack, progress.ProgressBack33, progress.ProgressBack55,
+        killCount, CONFIG[slotData.bossRace].PROWESS, CONFIG[slotData.bossRace].EXPERTISE, CONFIG[slotData.bossRace].MASTERY)
+    progress.ProgressValue:setText(killCount)
 
     local tooltip = slotData.bossRace == CATEGORY.ARCHFOE and
                         "Archfoe\n\nFor unlocking a level, you will receive the following boss points:\nProwess: 10\nExpertise: 30\nMastery: 60" or
@@ -259,23 +280,23 @@ function Cyclopedia.setActiveSlot(widget, slot, slotData, data, bossId)
     widget.ActivedBoss.TypeIcon:setTooltip(tooltip)
     widget.ActivedBoss.Progress.ProgressBorder1:setTooltip()
 
-    local fullText = slotData.killBonus >= CONFIG[slotData.bossRace].MASTERY and "(fully unlocked)" or ""
+    local fullText = killCount >= CONFIG[slotData.bossRace].MASTERY and "(fully unlocked)" or ""
 
     local progress = widget.ActivedBoss.Progress
-    progress.ProgressBorder1:setTooltip(string.format(" %d / %d %s", slotData.killBonus,
+    progress.ProgressBorder1:setTooltip(string.format(" %d / %d %s", killCount,
         CONFIG[slotData.bossRace].PROWESS, fullText))
-    progress.ProgressBorder2:setTooltip(string.format(" %d / %d %s", slotData.killBonus,
+    progress.ProgressBorder2:setTooltip(string.format(" %d / %d %s", killCount,
         CONFIG[slotData.bossRace].EXPERTISE, fullText))
-    progress.ProgressBorder3:setTooltip(string.format(" %d / %d %s", slotData.killBonus,
+    progress.ProgressBorder3:setTooltip(string.format(" %d / %d %s", killCount,
         CONFIG[slotData.bossRace].MASTERY, fullText))
 
-    progress.bronzeStar:setImageSource(slotData.killBonus >= CONFIG[slotData.bossRace].PROWESS and
+    progress.bronzeStar:setImageSource(killCount >= CONFIG[slotData.bossRace].PROWESS and
                                            "/game_cyclopedia/images/boss/icon_star_bronze" or
                                            "/game_cyclopedia/images/boss/icon_star_dark")
-    progress.silverStar:setImageSource(slotData.killBonus >= CONFIG[slotData.bossRace].EXPERTISE and
+    progress.silverStar:setImageSource(killCount >= CONFIG[slotData.bossRace].EXPERTISE and
                                            "/game_cyclopedia/images/boss/icon_star_silver" or
                                            "/game_cyclopedia/images/boss/icon_star_dark")
-    progress.goldStar:setImageSource(slotData.killBonus >= CONFIG[slotData.bossRace].MASTERY and
+    progress.goldStar:setImageSource(killCount >= CONFIG[slotData.bossRace].MASTERY and
                                          "/game_cyclopedia/images/boss/icon_star_gold" or
                                          "/game_cyclopedia/images/boss/icon_star_dark")
 
@@ -284,14 +305,13 @@ function Cyclopedia.setActiveSlot(widget, slot, slotData, data, bossId)
     widget.ActivedBoss.EquipmentLabel:setText(string.format("Equipment loot bonus: %d%%", slotData.lootBonus))
     widget.ActivedBoss.Value:setText(comma_value(slotData.removePrice))
 
-    if g_game.getLocalPlayer():getResourceBalance(1) ~= nil then
-        if slotData.removePrice > g_game.getLocalPlayer():getResourceBalance(1) then
-            widget.ActivedBoss.Value:setColor("#D33C3C")
-            widget.ActivedBoss.RemoveButton:setEnabled(false)
-        else
-            widget.ActivedBoss.Value:setColor("#C0C0C0")
-            widget.ActivedBoss.RemoveButton:setEnabled(true)
-        end
+    local playerGold = Cyclopedia.getPlayerTotalGold()
+    if slotData.removePrice > playerGold then
+        widget.ActivedBoss.Value:setColor("#D33C3C")
+        widget.ActivedBoss.RemoveButton:setEnabled(false)
+    else
+        widget.ActivedBoss.Value:setColor("#C0C0C0")
+        widget.ActivedBoss.RemoveButton:setEnabled(true)
     end
 
     widget.ActivedBoss.RemoveButton.onClick = function()
@@ -381,6 +401,7 @@ function Cyclopedia.readjustSelectBoss()
         if internalData.visible then
             local raceData = g_things.getRaceData(internalData.bossId)
             local internalWidget = g_ui.createWidget("SelectBossBossSlots", widget.SelectBoss.ListBase.List)
+            internalWidget:setId(internalData.bossId)
             internalWidget.Sprite:setOutfit(raceData.outfit)
             internalWidget:setText(format(raceData.name))
             internalWidget.Sprite:getCreature():setStaticWalking(1000)

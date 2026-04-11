@@ -98,7 +98,34 @@ UIWidget
   
     OptionCheckBox
       id: moveStack
-      !text: tr('Move stacks directly')
+      text: Pressione CTRL para arrastar pilhas completas
+
+    UIWidget
+      image-source: /images/icons/show_gui_help_grey
+      size: 12 12
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 3
+      tooltip: Se esta opcao estiver ativada, voce tambem arrastara a pilha completa ao mover varios itens iguais.
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+  
+    OptionCheckBox
+      id: alwaysTurnToMovement
+      text: Sempre virar para a direção do movimento
+
+    UIWidget
+      image-source: /images/icons/show_gui_help_grey
+      size: 12 12
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 3
+      tooltip: Se ativado, seu personagem vai virar para a direção do movimento mesmo quando o caminho estiver bloqueado.
 
   SmallReversedQtPanel
     anchors.left: parent.left

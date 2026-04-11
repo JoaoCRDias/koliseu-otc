@@ -33,6 +33,12 @@ void UICreature::drawSelf(const DrawPoolType drawPane)
     UIWidget::drawSelf(drawPane);
 
     if (m_creature) {
+        const auto outfit = m_creature->getOutfit();
+        if (outfit.getCategory() >= ThingLastCategory ||
+            (outfit.getId() == 0 && outfit.getAuxId() == 0)) {
+            return;
+        }
+
         if (m_creature->getOutfit() != m_outfit) {
             m_creature->setOutfit(m_outfit, false);
         }
@@ -45,6 +51,19 @@ void UICreature::drawSelf(const DrawPoolType drawPane)
 void UICreature::setCreature(const CreaturePtr& creature) {
     m_creature = creature;
     if (m_creature) {
+        auto outfit = m_creature->getOutfit();
+        if (outfit.isInvalid()) {
+            if (outfit.getAuxId() > 0) {
+                outfit.setCategory(ThingCategoryItem);
+            } else if (outfit.getId() > 0 || outfit.getMount() > 0 || outfit.getFamiliar() > 0) {
+                outfit.setCategory(ThingCategoryCreature);
+            }
+
+            if (!outfit.isInvalid()) {
+                m_creature->setOutfit(outfit, false);
+            }
+        }
+
         m_direction = m_creature->getDirection();
         m_outfit = m_creature->getOutfit();
     } else

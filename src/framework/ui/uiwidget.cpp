@@ -719,6 +719,26 @@ void UIWidget::applyStyle(const OTMLNodePtr& styleNode)
             }
         }
 
+        // Process $var- variable references and unresolved $ alias references
+        for (const auto& node : styleNode->children()) {
+            const auto& val = node->value();
+            if (!val.empty() && val.front() == '$') {
+                // Try $var- global variables first
+                if (val.starts_with("$var-")) {
+                    std::string varName = val.substr(5);
+                    std::string varValue = g_ui.getGlobalVariable(varName);
+                    if (!varValue.empty()) {
+                        node->setValue(varValue);
+                        continue;
+                    }
+                }
+                // Fall back to global OTML alias resolution
+                if (auto resolved = g_ui.resolveOtuiGlobalAlias(val)) {
+                    node->setValue(*resolved);
+                }
+            }
+        }
+
         onStyleApply(styleNode->tag(), styleNode);
         callLuaField("onStyleApply", styleNode->tag(), styleNode);
 
@@ -1242,6 +1262,11 @@ void UIWidget::setVisible(const bool visible)
 void UIWidget::setOn(const bool on)
 {
     setState(Fw::OnState, on);
+}
+
+void UIWidget::setHighlight(const bool highlight)
+{
+    setState(Fw::HighlightState, highlight);
 }
 
 void UIWidget::setChecked(const bool checked)

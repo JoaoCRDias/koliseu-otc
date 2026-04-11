@@ -1,0 +1,81 @@
+NotifierItem < UIWidget
+  height: 46
+  width: 250
+  background-color: #000000cc
+  border-width: 1
+  border-color: #ffd700
+  phantom: true
+  opacity: 0
+
+  UIWidget
+    id: icon
+    size: 22 22
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    phantom: true
+    visible: false
+
+  UIItem
+    id: itemIcon
+    size: 22 22
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    phantom: true
+    visible: false
+
+  UICreature
+    id: outfitIcon
+    size: 32 32
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 4
+    phantom: true
+    visible: false
+
+  Label
+    id: title
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    margin-left: 34
+    margin-right: 8
+    font: $var-cip-main-font
+    color: $var-text-cip-color-white
+    text-auto-resize: true
+    phantom: true
+
+  Label
+    id: description
+    anchors.top: title.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 1
+    margin-left: 34
+    margin-right: 8
+    font: verdana-11px-mono-rounded
+    color: #bfbfbf
+    text-auto-resize: true
+    text-offset: -3 0
+    phantom: true
+
+Panel
+  id: notifierRoot
+  anchors.fill: gameMapPanel
+  focusable: false
+  phantom: true
+
+  Panel
+    id: notifierContainer
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    margin-top: 10
+    width: 250
+    phantom: true
+    focusable: false
+    layout:
+      type: verticalBox
+      fit-children: true
+      spacing: 4

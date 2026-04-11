@@ -1,5 +1,11 @@
 function UIItem:onDragEnter(mousePos)
     if self:isVirtual() then
+        -- Allow virtual items from actionbar to be dragged if they have custom drag handling
+        local parent = self:getParent()
+        if parent and parent:getId() and parent:getId():match("^%d+%.%d+$") then
+            -- This is an actionbar button item, let the custom handler take over
+            return true
+        end
         return false
     end
 
@@ -11,41 +17,37 @@ function UIItem:onDragEnter(mousePos)
     UIDragIcon:display(item)
     self:setBorderWidth(1)
     self.currentDragThing = item
-    -- Use native cursor when enabled, otherwise use custom cursor
-    if modules.client_options and modules.client_options.getOption('nativeCursor') then
-        g_window.setSystemCursor('cross')
-    else
-        g_mouse.pushCursor('target')
-    end
+    g_mouse.pushCursor('target')
     return true
 end
 
 function UIItem:onDragLeave(droppedWidget, mousePos)
     if self:isVirtual() then
+        -- Allow virtual items from actionbar to handle drag leave
+        local parent = self:getParent()
+        if parent and parent:getId() and parent:getId():match("^%d+%.%d+$") then
+            -- This is an actionbar button item, let the custom handler take over
+            return true
+        end
         return false
     end
     self.currentDragThing = nil
-    -- Restore cursor
-    if modules.client_options and modules.client_options.getOption('nativeCursor') then
-        g_window.restoreMouseCursor()
-    else
-        g_mouse.popCursor('target')
-    end
+    g_mouse.popCursor('target')
     UIDragIcon:hide()
     self:setBorderWidth(0)
     self.hoveredWho = nil
     return true
 end
 
-function UIItem:onDrop(widget, mousePos, forced)
+function UIItem:onDrop(widget, mousePos)
     self:setBorderWidth(0)
 
-    if not self:canAcceptDrop(widget, mousePos) and not forced then
+    if not self:canAcceptDrop(widget, mousePos) then
         return false
     end
 
     local item = widget.currentDragThing
-    if not item or not item:isItem() then
+    if not item:isItem() then
         return false
     end
 
@@ -68,10 +70,6 @@ function UIItem:onDrop(widget, mousePos, forced)
             self:setItem(Item.create(item:getId(), item:getCountOrSubType()))
             return true
         end
-        return false
-    end
-
-    if not itemPos then
         return false
     end
 
@@ -110,7 +108,12 @@ function UIItem:onHoverChange(hovered)
     UIWidget.onHoverChange(self, hovered)
 
     if self:isVirtual() or not self:isDraggable() then
-        UIDragIcon:hide()
+        -- Don't hide UIDragIcon if we're currently dragging something
+        -- This allows items to be dragged over actionbar slots without disappearing
+        local draggingWidget = g_ui.getDraggingWidget()
+        if not draggingWidget then
+            UIDragIcon:hide()
+        end
         return
     end
 
@@ -175,7 +178,7 @@ function UIItem:onMouseRelease(mousePosition, mouseButton)
         return false
     end
 
-    if modules.client_options.getOption('classicControl') and not g_platform.isMobile() and
+    if modules.client_options.getOption('classicControl') and
         ((g_mouse.isPressed(MouseLeftButton) and mouseButton == MouseRightButton) or
             (g_mouse.isPressed(MouseRightButton) and mouseButton == MouseLeftButton)) then
         g_game.look(item)
@@ -208,22 +211,4 @@ function UIItem:canAcceptDrop(widget, mousePos)
 
     error('Widget ' .. self:getId() .. ' not in drop list.')
     return false
-end
-
-function UIItem:onClick(mousePos)
-    if not self.selectable or not self.editable then
-        return
-    end
-
-    if modules.game_itemselector then
-        modules.game_itemselector.show(self)
-    end
-end
-
-function UIItem:onItemChange()
-    local tooltip = ""
-    if self:getItem() and self:getItem():getTooltip():len() > 0 then
-        tooltip = self:getItem():getTooltip()
-    end
-    self:setTooltip(tooltip)
 end

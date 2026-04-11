@@ -186,6 +186,21 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_configs", "unload", &ConfigManager::unload, &g_configs);
     g_lua.bindSingletonFunction("g_configs", "create", &ConfigManager::create, &g_configs);
     g_lua.bindSingletonFunction("g_configs", "saveSettings", &ConfigManager::saveSettings, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServiceUpdater", &ConfigManager::getServiceUpdater, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServiceUpdaterRemoteConfigUrl", &ConfigManager::getServiceUpdaterRemoteConfigUrl, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServiceUpdaterZipUrl", &ConfigManager::getServiceUpdaterZipUrl, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServiceUpdaterLocalConfigFile", &ConfigManager::getServiceUpdaterLocalConfigFile, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServiceStatus", &ConfigManager::getServiceStatus, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServiceWebsites", &ConfigManager::getServiceWebsites, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServiceCreateAccount", &ConfigManager::getServiceCreateAccount, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServiceLogUpload", &ConfigManager::getServiceLogUpload, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServicePolopag", &ConfigManager::getServicePolopag, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getServicePolopagConfig", &ConfigManager::getServicePolopagConfig, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getGameStoreGetCoins", &ConfigManager::getGameStoreGetCoins, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getGameStoreImages", &ConfigManager::getGameStoreImages, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getHelperWiki", &ConfigManager::getHelperWiki, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getHelperInfo", &ConfigManager::getHelperInfo, &g_configs);
+    g_lua.bindSingletonFunction("g_configs", "getTibiaHintsUrl", &ConfigManager::getTibiaHintsUrl, &g_configs);
 
     // Logger
     g_lua.registerSingletonClass("g_logger");
@@ -471,6 +486,9 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_ui", "isDrawingDebugBoxes", &UIManager::isDrawingDebugBoxes, &g_ui);
     g_lua.bindSingletonFunction("g_ui", "isMouseGrabbed", &UIManager::isMouseGrabbed, &g_ui);
     g_lua.bindSingletonFunction("g_ui", "isKeyboardGrabbed", &UIManager::isKeyboardGrabbed, &g_ui);
+    g_lua.bindSingletonFunction("g_ui", "setGlobalVariable", &UIManager::setGlobalVariable, &g_ui);
+    g_lua.bindSingletonFunction("g_ui", "getGlobalVariable", &UIManager::getGlobalVariable, &g_ui);
+    g_lua.bindSingletonFunction("g_ui", "clearGlobalVariables", &UIManager::clearGlobalVariables, &g_ui);
 
     g_lua.registerSingletonClass("g_html");
     g_lua.bindSingletonFunction("g_html", "load", &HtmlManager::load, &g_html);
@@ -551,6 +569,7 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("hideChildren", &UIWidget::hideChildren);
     g_lua.bindClassMemberFunction<UIWidget>("showChildren", &UIWidget::showChildren);
     g_lua.bindClassMemberFunction<UIWidget>("setId", &UIWidget::setId);
+    g_lua.bindClassMemberFunction<UIWidget>("setActionId", &UIWidget::setActionId);
     g_lua.bindClassMemberFunction<UIWidget>("setWidgetId", &UIWidget::setId);
     g_lua.bindClassMemberFunction<UIWidget>("setParent", &UIWidget::setParent);
     g_lua.bindClassMemberFunction<UIWidget>("setLayout", &UIWidget::setLayout);
@@ -564,6 +583,7 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("getDisplay", &UIWidget::getDisplay);
     g_lua.bindClassMemberFunction<UIWidget>("setConditionIf", &UIWidget::setResultConditionIf);
     g_lua.bindClassMemberFunction<UIWidget>("setOn", &UIWidget::setOn);
+    g_lua.bindClassMemberFunction<UIWidget>("setHighlight", &UIWidget::setHighlight);
     g_lua.bindClassMemberFunction<UIWidget>("setChecked", &UIWidget::setChecked);
     g_lua.bindClassMemberFunction<UIWidget>("setFocusable", &UIWidget::setFocusable);
     g_lua.bindClassMemberFunction<UIWidget>("setPhantom", &UIWidget::setPhantom);
@@ -623,6 +643,7 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("isAlternate", &UIWidget::isAlternate);
     g_lua.bindClassMemberFunction<UIWidget>("isChecked", &UIWidget::isChecked);
     g_lua.bindClassMemberFunction<UIWidget>("isOn", &UIWidget::isOn);
+    g_lua.bindClassMemberFunction<UIWidget>("isHighlighted", &UIWidget::isHighlighted);
     g_lua.bindClassMemberFunction<UIWidget>("isDragging", &UIWidget::isDragging);
     g_lua.bindClassMemberFunction<UIWidget>("isHidden", &UIWidget::isHidden);
     g_lua.bindClassMemberFunction<UIWidget>("isExplicitlyEnabled", &UIWidget::isExplicitlyEnabled);
@@ -643,6 +664,7 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("intersectsMargin", &UIWidget::intersectsMargin);
     g_lua.bindClassMemberFunction<UIWidget>("intersectsPadding", &UIWidget::intersectsPadding);
     g_lua.bindClassMemberFunction<UIWidget>("getId", &UIWidget::getId);
+    g_lua.bindClassMemberFunction<UIWidget>("getActionId", &UIWidget::getActionId);
     g_lua.bindClassMemberFunction<UIWidget>("getSource", &UIWidget::getSource);
     g_lua.bindClassMemberFunction<UIWidget>("getParent", &UIWidget::getParent);
     g_lua.bindClassMemberFunction<UIWidget>("getFocusedChild", &UIWidget::getFocusedChild);
@@ -814,6 +836,8 @@ void Application::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UIWidget>("getImageTextureWidth", &UIWidget::getImageTextureWidth);
     g_lua.bindClassMemberFunction<UIWidget>("getImageTextureHeight", &UIWidget::getImageTextureHeight);
     g_lua.bindClassMemberFunction<UIWidget>("resizeToText", &UIWidget::resizeToText);
+    g_lua.bindClassMemberFunction<UIWidget>("fitAllChildren", &UIWidget::fitAllChildren);
+    g_lua.bindClassMemberFunction<UIWidget>("fitAll", &UIWidget::fitAll);
     g_lua.bindClassMemberFunction<UIWidget>("clearText", &UIWidget::clearText);
     g_lua.bindClassMemberFunction<UIWidget>("setText", &UIWidget::setText);
     g_lua.bindClassMemberFunction<UIWidget>("setColoredText", &UIWidget::setColoredText);

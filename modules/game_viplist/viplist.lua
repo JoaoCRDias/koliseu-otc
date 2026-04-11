@@ -111,7 +111,14 @@ function controllerVip:onGameStart()
     else
         vipInfo = {}
     end
-    vipWindow:setupOnStart() -- load character window configuration
+
+    -- Restore vip window position from saved settings (with delay to ensure panels are ready)
+    scheduleEvent(function()
+        if vipWindow then
+            vipWindow:restorePosition()
+        end
+    end, 150)
+
     refresh()
     vipButton:setOn(vipButton:isOn())
 end
@@ -750,6 +757,15 @@ function onVipListLabelMousePress(widget, mousePos, mouseButton)
     local menu = g_ui.createWidget('PopupMenu')
     menu:setGameMenu(true)
     if not isGroup then
+        local playerName = widget:getText()
+        local find = menu:addOption(tr(string.format("Find %s", playerName)), function()
+            if playerName then
+                g_game.talk(string.format('exiva "%s"', playerName))
+            end
+        end)
+        find:setColor('white')
+        menu:addSeparator()
+
         menu:addOption(tr('Edit %s', widget:getText()), function()
             if widget then
                 createEditWindow(widget)

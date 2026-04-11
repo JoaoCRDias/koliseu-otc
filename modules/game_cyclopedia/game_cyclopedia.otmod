@@ -1,7 +1,7 @@
 Module
   name: game_cyclopedia
   description: game_cyclopedia
-  scripts: [ game_cyclopedia, tab/*, utils]
+  scripts: [ game_cyclopedia, tab/bestiary/bestiary, tab/bosstiary/bosstiary, tab/boss_slots/boss_slots, tab/character/character, tab/charms/charm_profile, tab/charms/charms, tab/house/house, tab/items/items, tab/map/map, tab/magical_archive/magical_archive, utils]
   sandboxed: true
   autoload: true
   @onLoad: controllerCyclopedia:init()

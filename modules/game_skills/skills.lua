@@ -92,7 +92,8 @@ function init()
         onDefenseInfoChange = onDefenseInfoChange,
         onCombatAbsorbValuesChange = onCombatAbsorbValuesChange,
         onForgeBonusesChange = onForgeBonusesChange,
-        onExperienceRateChange = onExperienceRateChange
+        onExperienceRateChange = onExperienceRateChange,
+        onStoreExpBoostTimeChange = onStoreExpBoostTimeChange
     })
     connect(g_game, {
         onGameStart = online,
@@ -151,7 +152,8 @@ function terminate()
         onDefenseInfoChange = onDefenseInfoChange,
         onCombatAbsorbValuesChange = onCombatAbsorbValuesChange,
         onForgeBonusesChange = onForgeBonusesChange,
-        onExperienceRateChange = onExperienceRateChange
+        onExperienceRateChange = onExperienceRateChange,
+        onStoreExpBoostTimeChange = onStoreExpBoostTimeChange
     })
     disconnect(g_game, {
         onGameStart = online,
@@ -301,22 +303,6 @@ local function hideOldClientStats()
     setSkillGroupVisibility('GameAdditionalSkills', features.additionalSkills)
     setSkillGroupVisibility('GameForgeSkillStats1332', features.forgeSkills and version >= 1332)
     setSkillGroupVisibility('GameForgeSkillStats', features.forgeSkills)
-    -- For very old clients (before 1098) the skills list fits without a slider.
-    -- Keep the scrollbar track visible but hide the draggable slider so it's not interactive.
-    if version < 1098 then
-        local scroll = skillsWindow:recursiveGetChildById('miniwindowScrollBar')
-        if scroll then
-            local slider = scroll:getChildById('sliderButton')
-            if slider then
-                slider:setVisible(false)
-            end
-        end
-         -- Also hide the offence info separator for old clients
-        local sep = skillsWindow:recursiveGetChildById('separadorOnOffenceInfoChange')
-        if sep then
-            sep:setVisible(false)
-        end
-    end
 end
 
 local function hideMenuOptionsForOldClients(menu)
@@ -797,7 +783,13 @@ function update()
 end
 
 function online()
-    skillsWindow:setupOnStart()
+    -- Restore skills window position from saved settings (with delay to ensure panels are ready)
+    scheduleEvent(function()
+        if skillsWindow then
+            skillsWindow:restorePosition()
+        end
+    end, 150)
+
     refresh()
 
     local newWindowButton = skillsWindow:recursiveGetChildById('newWindowButton')
@@ -1275,9 +1267,17 @@ local function updateExperienceRate(localPlayer)
     local baseRate = ExpRating[ExperienceRate.BASE] or 100
     local expRateTotal = baseRate
 
+    -- Get XP boost time to check if boost is still active
+    local xpBoostTime = localPlayer:getStoreExpBoostTime()
+
     for type, value in pairs(ExpRating) do
         if type ~= ExperienceRate.BASE and type ~= ExperienceRate.STAMINA_MULTIPLIER then
-            expRateTotal = expRateTotal + (value or 0)
+            -- Skip XP_BOOST if time has expired (time <= 0)
+            if type == ExperienceRate.XP_BOOST and xpBoostTime <= 0 then
+                -- Don't add expired XP boost to total
+            else
+                expRateTotal = expRateTotal + (value or 0)
+            end
         end
     end
 
@@ -1303,9 +1303,11 @@ local function updateExperienceRate(localPlayer)
         tooltip = tooltip .. string.format("\n- Voucher: %d%%", ExpRating[ExperienceRate.VOUCHER])
     end
 
-    if (ExpRating[ExperienceRate.XP_BOOST] or 0) > 0 then
-        tooltip = tooltip .. string.format("\n- XP Boost: %d%% (%s h remaining)", ExpRating[ExperienceRate.XP_BOOST],
-            formatTimeBySeconds(localPlayer:getStoreExpBoostTime()))
+    -- Only show XP Boost in tooltip if the server sent a value > 0 AND time remaining > 0
+    local xpBoostValue = ExpRating[ExperienceRate.XP_BOOST] or 0
+    if xpBoostValue > 0 and xpBoostTime > 0 then
+        tooltip = tooltip .. string.format("\n- XP Boost: %d%% (%s h remaining)", xpBoostValue,
+            formatTimeBySeconds(xpBoostTime))
     end
 
     if (ExpRating[ExperienceRate.LOW_LEVEL] or 0) > 0 then
@@ -1323,16 +1325,22 @@ local function updateExperienceRate(localPlayer)
         ["less"] = "#ff9429",
         ["equal"] = "#ffffff"
     }
-    
-    local colorKey = expRateTotal == 0 and 0 or 
-                     (expRateTotal > 100 and "greater" or 
+
+    local colorKey = expRateTotal == 0 and 0 or
+                     (expRateTotal > 100 and "greater" or
                       (expRateTotal < 100 and "less" or "equal"))
-    
+
     widget:setColor(colors[colorKey])
 end
 
 function onExperienceRateChange(localPlayer, type, value)
     ExpRating[type] = value
+    updateExperienceRate(localPlayer)
+end
+
+function onStoreExpBoostTimeChange(localPlayer, newTime, oldTime)
+    -- Update the experience rate display when XP boost time changes
+    -- This handles cases when boost is activated, expires, or time is updated
     updateExperienceRate(localPlayer)
 end
 

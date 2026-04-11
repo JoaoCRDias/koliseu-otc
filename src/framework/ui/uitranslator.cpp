@@ -133,6 +133,8 @@ Fw::WidgetState Fw::translateState(std::string state)
         return HiddenState;
     if (state == "mobile")
         return MobileState;
+    if (state == "highlight")
+        return HighlightState;
     return InvalidState;
 }
 

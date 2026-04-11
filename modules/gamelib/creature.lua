@@ -149,15 +149,13 @@ function Creature:onIconsChange(icon, category, count)
         local clipX = (icon - 1) * 11
         self:setIconsTexture(imagePath, torect(clipX .. ' 0 11 11'), count)
     end
-    -- Apply fiendish text shader only to monsters and only when the icon matches
     if type(self.isMonster) ~= 'function' or not self:isMonster() then
         return
     end
-    if category == 1 and icon == 5 then
-        self:setNameShader('Text - Gold Outline')
-    elseif self.getNameShader and self:getNameShader() == 'Text - Gold Outline' then
-        -- Reset only if we previously applied the fiendish shader
-        self:setNameShader('Text - Default')
+    if category == 1 and icon == MonsterIconFiendish then
+        self:setNameOutline('#EE8413')
+    elseif self.isNameOutlineEnabled and self:isNameOutlineEnabled() then
+        self:clearNameOutline()
     end
 end
 
@@ -194,6 +192,30 @@ function Creature:onIconChange(iconId)
     if imagePath then
         self:setIconTexture(imagePath)
     end
+end
+
+MonsterIconExposeWeakness = 1
+MonsterIconSapStrength = 2
+MonsterIconTurnedMelee = 3
+MonsterIconFiendish = 5
+
+-- Check if creature has a specific icon active
+-- iconId: the icon ID to check (e.g., 3 for turned_melee)
+-- category: optional category (default 1 for monster icons)
+-- Returns true if the creature has the specified icon
+function Creature:hasIcon(iconId, category)
+    category = category or 1
+    local icons = self:getIcons()
+    if not icons then return false end
+
+    for _, iconData in pairs(icons) do
+        local id = iconData[1]       -- icon ID
+        local cat = iconData[2]      -- category
+        if id == iconId and cat == category then
+            return true
+        end
+    end
+    return false
 end
 
 function Creature.isDruid(self)

@@ -210,6 +210,28 @@ void UIWidget::updateText()
     repaint();
 }
 
+void UIWidget::fitAllChildren()
+{
+    int totalHeight = 0;
+    for (const auto& child : m_children) {
+        if (child->isVisible()) {
+            totalHeight += child->getHeight() + child->getMarginTop() + child->getMarginBottom();
+        }
+    }
+    totalHeight += m_padding.top + m_padding.bottom;
+    if (totalHeight > 0) {
+        resize(getWidth(), totalHeight);
+    }
+}
+
+void UIWidget::fitAll()
+{
+    if (auto layout = getLayout()) {
+        layout->update();
+    }
+    updateLayout();
+}
+
 void UIWidget::resizeToText()
 {
     auto textSize = getTextSize();

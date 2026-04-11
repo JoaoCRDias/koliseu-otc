@@ -1,0 +1,32 @@
+StreamerTag < UIWidget
+  id: streamerTag
+  height: 14
+  width: 80
+  clipping: true
+  
+  Label
+    id: baseText
+    !text: 'STREAMER'
+    anchors.centerIn: parent
+    color: #A55EEA
+    font: $var-cip-font-mono-rounded
+    text-auto-resize: true
+    
+  UIWidget
+    id: shineMask
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    width: 15
+    clipping: true
+    margin-left: -20
+    
+    Label
+      id: brightText
+      !text: 'STREAMER'
+      color: #b98be7ff
+      opacity: 0.6
+      font: $var-cip-font-mono-rounded
+      text-auto-resize: true
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: parent.left

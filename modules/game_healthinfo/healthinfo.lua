@@ -55,6 +55,7 @@ function extendedView(extendedView)
             mainRightPanel:insertChild(2, healthManaController.ui)
         end
         healthManaController.ui:show()
+        modules.game_interface.fitMainRightPanel()
     end
     healthManaController.ui.moveOnlyToMain = not extendedView
 end

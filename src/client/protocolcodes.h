@@ -77,10 +77,13 @@ namespace Proto
         GameServerCreatureShader = 54,
         GameServerMapShader = 55,
         GameServerCreatureTyping = 56,
+        GameServerMiscAnalyser = 57,
+        GameServerActiveTimers = 58,
         GameServerAttachedPaperdoll = 60,
         GameServerDetachPaperdoll = 61,
         GameServerFeatures = 67,
         GameServerFloorDescription = 75,
+        GameServerTaskBoard = 91,
 
         // original tibia ONLY
         GameServerWeaponProficiencyExperience = 92,
@@ -223,6 +226,7 @@ namespace Proto
         GameServerChannelEvent = 243,
         GameServerItemInfo = 244,
         GameServerPlayerInventory = 245,
+        GameServerInventoryImbuements = 96, // 0x60 - Inventory Imbuements opcode from server
         GameServerMarketEnter = 246,
         GameServerMarketLeave = 247,
         GameServerMarketDetail = 248,
@@ -255,6 +259,7 @@ namespace Proto
 
         // NOTE: add any custom opcodes in this range
         // 51 - 99
+        ClientRequestActiveTimers = 62,
 
         // original tibia ONLY
         ClientImbuementDurations = 96,
@@ -326,6 +331,8 @@ namespace Proto
         ClientBosstiaryRequestSlotInfo = 175,
         ClientBosstiaryRequestSlotAction = 176,
         ClientRequestHighscore = 177,
+        ClientWeaponProficiency = 179,
+        ClientTaskHuntingAction = 186, // 0xBA
         ClientCancelAttackAndFollow = 190,
         ClientForgeEnter = 191,
         ClientForgeBrowseHistory = 192,

@@ -82,6 +82,7 @@ local UseTypeEquip = 4
 local UseTypeUse = 5
 local UseTypeChatText = 6
 local UseTypePassiveAbility = 7
+local UseTypeEquipmentPreset = 8
 
 UseTypes = {
     ["UseOnYourself"] = UseTypeUseOnYourself,
@@ -91,6 +92,7 @@ UseTypes = {
     ["Use"] = UseTypeUse,
     ["chatText"] = UseTypeChatText,
     ["passiveAbility"] = UseTypePassiveAbility,
+    ["equipmentPreset"] = UseTypeEquipmentPreset,
 }
 
 UseTypesTip = {
@@ -98,7 +100,8 @@ UseTypesTip = {
     [UseTypeUseOnTarget] = "Use %s on Attack Target",
     [UseTypeSelectUseTarget] = "Use %s with Crosshair",
     [UseTypeEquip] = "%s %s",
-    [UseTypeUse] = "Use %s"
+    [UseTypeUse] = "Use %s",
+    [UseTypeEquipmentPreset] = "Equipment Preset"
 }
 
 PassiveAbilities = {
@@ -109,4 +112,6 @@ PassiveAbilities = {
         icon = '/images/game/spells/passiveability-icons-32x32'
     }
 }
+
+EquipmentPresetSlots = { 1, 2, 4, 5, 6, 7, 8, 9, 10 }
 -- LuaFormatter on

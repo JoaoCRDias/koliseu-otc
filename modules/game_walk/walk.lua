@@ -5,6 +5,7 @@ local lastTurn = 0
 local nextWalkDir = nil
 local lastWalkDir = nil
 local lastCancelWalkTime = 0
+local turn
 
 
 local keys = {
@@ -108,15 +109,28 @@ local function walk(dir)
     nextWalkDir = nil
     lastWalkDir = dir
 
+    local alwaysTurnToMovement = modules.client_options.getOption('alwaysTurnToMovement')
+
     if g_game.getFeature(GameAllowPreWalk) then
         local toPos = Position.translatedToDirection(player:getPosition(), dir)
         local toTile = g_map.getTile(toPos)
         if not toTile or not toTile:isWalkable() then
             if not canChangeFloor(toPos, 1) and not canChangeFloor(toPos, -1) then
+                if alwaysTurnToMovement then
+                    turn(dir, false)
+                end
                 return false
             end
         else
             player:preWalk(dir)
+        end
+    elseif alwaysTurnToMovement then
+        -- Without pre-walk feature, mimic Tibia behavior by turning even if the tile is blocked.
+        local toPos = Position.translatedToDirection(player:getPosition(), dir)
+        local toTile = g_map.getTile(toPos)
+        if toTile and not toTile:isWalkable() and not canChangeFloor(toPos, 1) and not canChangeFloor(toPos, -1) then
+            turn(dir, false)
+            return false
         end
     end
 
@@ -179,7 +193,7 @@ local function changeWalkDir(dir, pop)
 end
 
 --- Handles turning the player.
-local function turn(dir, repeated)
+turn = function(dir, repeated)
     local player = g_game.getLocalPlayer()
     if player:isWalking() and player:getDirection() == dir then
         return

@@ -355,6 +355,29 @@ DisplayContents              = 19
 DisplayInitial               = 20
 DisplayInherit               = 21
 
+AssignBlockedKeys            = {
+    'Up',
+    'Left',
+    'Right',
+    'Down',
+    'NumLock',
+    'NumEnter',
+    'Alt+F4'
+}
+
+-- Numpad navigation keys that are blocked when NumLock is OFF
+-- Only directional keys are blocked to avoid conflicts with movement
+NumpadNavigationBlockedKeys  = {
+    'NumHome',     -- 7
+    'NumUp',       -- 8
+    'NumPgUp',     -- 9
+    'NumLeft',     -- 4
+    'NumRight',    -- 6
+    'NumEnd',      -- 1
+    'NumDown',     -- 2
+    'NumPgDn'      -- 3
+}
+
 EVENT_TEXT_NONE = 0
 EVENT_TEXT_CLICK = 1
 EVENT_TEXT_HOVER = 2

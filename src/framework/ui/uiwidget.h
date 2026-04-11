@@ -329,6 +329,7 @@ protected:
     std::string m_source;
     int16_t m_childIndex{ -1 };
     int8_t m_events{ 0 };
+    int32_t m_actionId{ 0 };
 
     Rect m_rect;
     Point m_virtualOffset;
@@ -420,6 +421,7 @@ public:
     void showChildren();
 
     void setId(std::string_view id);
+    void setActionId(int32_t actionId) { m_actionId = actionId; }
     void setParent(const UIWidgetPtr& parent);
     void setLayout(const UILayoutPtr& layout);
     bool setRect(const Rect& rect);
@@ -429,6 +431,7 @@ public:
     void setDisabled(bool disabled) { setEnabled(!disabled); }
     void setVisible(bool visible);
     void setOn(bool on);
+    void setHighlight(bool highlight);
     void setChecked(bool checked);
     void setFocusable(bool focusable);
     void setPhantom(bool phantom);
@@ -673,6 +676,7 @@ public:
     bool isAlternate() { return hasState(Fw::AlternateState); }
     bool isChecked() { return hasState(Fw::CheckedState); }
     bool isOn() { return hasState(Fw::OnState); }
+    bool isHighlighted() { return hasState(Fw::HighlightState); }
     bool isDragging() { return hasState(Fw::DraggingState); }
     bool isVisible() { return !hasState(Fw::HiddenState); }
     bool isHidden() { return hasState(Fw::HiddenState); }
@@ -703,6 +707,7 @@ public:
     bool intersectsPadding(const Rect rect) { return getPaddingRect().intersects(rect); }
 
     std::string getId() { return m_id; }
+    int32_t getActionId() { return m_actionId; }
     std::string getSource() { return m_source; }
     UIWidgetPtr getParent() { return m_parent; }
     UIWidgetPtr getFocusedChild() { return m_focusedChild; }
@@ -771,6 +776,8 @@ public:
     void setWidth_px(const int width) { resize(width, getHeight()); }
     void setHeight_px(const int height) { resize(getWidth(), height); }
     void setSize(const Size& size) { resize(size.width(), size.height()); }
+    void fitAllChildren();
+    void fitAll();
     void setMinWidth(const int minWidth) { m_minSize.setWidth(minWidth); setRect(m_rect); }
     void setMaxWidth(const int maxWidth) { m_maxSize.setWidth(maxWidth); setRect(m_rect); }
     void setMinHeight(const int minHeight) { m_minSize.setHeight(minHeight); setRect(m_rect); }

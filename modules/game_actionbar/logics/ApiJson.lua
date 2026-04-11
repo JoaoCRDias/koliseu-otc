@@ -636,6 +636,21 @@ function ApiJson.createOrUpdatePassive(barId, buttonId, passiveId)
     }
 end
 
+function ApiJson.createOrUpdatePreset(barId, buttonId, equipmentPreset, iconFilename)
+    barId = tonumber(barId)
+    buttonId = tonumber(buttonId)
+    if not barId or not buttonId then
+        return
+    end
+
+    local entry = getOrCreateMappingEntry(barId, buttonId)
+    if not entry["actionsetting"] then
+        entry["actionsetting"] = {}
+    end
+    entry["actionsetting"]["equipmentPreset"] = equipmentPreset
+    entry["actionsetting"]["equipmentPresetIcon"] = iconFilename
+end
+
 function ApiJson.removeAction(barId, buttonId)
     barId = tonumber(barId)
     buttonId = tonumber(buttonId)

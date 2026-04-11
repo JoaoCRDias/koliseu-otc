@@ -85,13 +85,14 @@ UIWidget
           image-source: /game_cyclopedia/images/monster-icon-bonuspoints
 
       QtButton
-        id: ClearButton
+        id: check
         anchors.top: prev.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        text: Addon 1
+        margin-top:3
         text: Clear Charm
-        margin-top: 3
-        @onClick: modules.game_cyclopedia.Cyclopedia.clearCharm()
+        @onClick: modules.game_cyclopedia.Cyclopedia.actionClearCharmButton(self)
 
 
       UIWidget
@@ -121,12 +122,11 @@ UIWidget
       width: 140
       margin-left: 5
       Panel
-        id: SearchPanel
+        id: SearchEdit
         height: 20
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-
         TextEdit
           id: SearchEdit
           anchors.fill: parent
@@ -134,8 +134,7 @@ UIWidget
           height: 17
           placeholder: Type to search
           placeholder-color: #6E706F
-          @onTextChange: modules.game_cyclopedia.Cyclopedia.onSearchTextChange(self:getText(), self:getParent():getParent())
-
+          @onTextChange: modules.game_cyclopedia.Cyclopedia.searchCharmMonster(self:getText())
         UIWidget
           id: SearchClearButton
           anchors.right: SearchEdit.right
@@ -223,46 +222,126 @@ UIWidget
     margin-left: 5
 
     QtButton
-      id: resetAllButton
+      id: ResetAllCharmsButton
       text: Reset all charms
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
       margin-top: -15
-      @onClick: modules.game_cyclopedia.Cyclopedia.resetAllCharms()
+      @onClick: modules.game_cyclopedia.Cyclopedia.actionResetAllCharms()
 
     UIWidget
-      id: CharmsBase1410
+      id: ResetAllCharms
       anchors.left: parent.left
       anchors.right: parent.right
-      anchors.verticalCenter: parent.verticalCenter
+      anchors.top: ResetAllCharmsButton.bottom
       image-source: /images/ui/item
       image-border: 10
-      margin-top: 15
+      margin-top: 5
       size: 100 20
-      !tooltip: tr("Minor Charm echoes\nEarned by unlocking or upgrading major charm and promotion your character")
-      UIWidget
-        id: Icon
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-        margin-right: 4
-        image-source: /game_cyclopedia/images/icon_gold
       Label
         id: Value
-        anchors.right: Icon.left
-        anchors.verticalCenter: parent.verticalCenter
-        margin-right: 4
+        anchors.centerIn: parent
         !text: tr('0')
         text-auto-resize: true
-        color: #BDBDBD
+        color: #c0c0c0
+      UIWidget
+        id: Icon
+        anchors.left: Value.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 2
+        size: 12 12
+        image-source: /game_cyclopedia/images/icon_gold
+
+  Panel
+    id: charmProfilesPanel
+    height: 28
+    anchors.top: InformationBase.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 3
+
+    Label
+      id: profilesLabel
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: parent.left
+      margin-left: 5
+      !text: tr('Profiles:')
+      font: verdana-11px-antialised
+      color: #dfdfdf
+      text-auto-resize: true
+
+    ComboBox
+      id: charmProfilesCombo
+      height: 20
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: profilesLabel.right
+      width: 150
+      margin-left: 5
+      color: #dfdfdf
+      text-offset: 5 0
+      text-align: left
+
+    SmallApplyButton
+      id: charmProfileApplyBtn
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: charmProfilesCombo.right
+      margin-left: 4
+
+    SmallNewButton
+      id: charmProfileNewBtn
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: charmProfileApplyBtn.right
+      margin-left: 3
+
+    SmallRenameButton
+      id: charmProfileRenameBtn
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: charmProfileNewBtn.right
+      margin-left: 3
+
+    UIButton
+      id: charmProfileDeleteBtn
+      size: 25 20
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: charmProfileRenameBtn.right
+      margin-left: 3
+      image-source: /images/ui/rmv-button
+      image-clip: 0 0 25 20
+      !tooltip: tr('Delete Profile')
+      $hover !pressed:
+        image-clip: 0 0 25 20
+      $pressed:
+        image-clip: 0 20 25 20
+
+    Label
+      id: charmProfileApplyCostLabel
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: charmProfileDeleteBtn.right
+      margin-left: 8
+      !text: tr('Apply cost: —')
+      font: verdana-11px-antialised
+      color: #c0c0c0
+      text-auto-resize: true
+
+    Label
+      id: charmProfileNotAppliedLabel
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: charmProfileApplyCostLabel.right
+      margin-left: 8
+      !text: tr('Not Applied')
+      font: verdana-11px-antialised
+      color: #ff4444
+      text-auto-resize: true
+      visible: false
 
   QtPanel
     id: mainPanelCharmsType
     height: 299
-    anchors.top: prev.bottom
+    anchors.top: charmProfilesPanel.bottom
     anchors.left: parent.left
     anchors.right: parent.right
-    margin-top: 5
+    margin-top: 3
 
     Panel
       id: typeCharmPanel

@@ -1,0 +1,9 @@
+Module
+  name: client_ui_inspector
+  description: Simple UI hover inspector tooltip
+  author: otclient@otclient.ovh
+  sandboxed: true
+  scripts: [ ui_inspector ]
+  dependencies: [ client_topmenu ]
+  @onLoad: init()
+  @onUnload: terminate()

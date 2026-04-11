@@ -1,0 +1,14 @@
+Module
+  name: game_autoloot
+  description: Auto Loot indicator and control
+  author: OTClient
+  sandboxed: true
+  scripts: [ game_autoloot ]
+  @onLoad: |
+    if AutoLoot and AutoLoot.init then
+      AutoLoot.init()
+    end
+  @onUnload: |
+    if AutoLoot and AutoLoot.terminate then
+      AutoLoot.terminate()
+    end

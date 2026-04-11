@@ -1,0 +1,201 @@
+BotMenuButton < Button
+  height: 24
+  margin-bottom: 2
+  text-align: left
+  text-offset: 22 0
+  font: verdana-11px-rounded
+  color: #c0c0c0
+  icon-offset: 4 0
+  icon-align: left
+  
+  $hover:
+    color: #ffffff
+  
+  $pressed:
+    color: #ffffff
+  
+  $on:
+    color: #00ff88
+  
+  $on hover:
+    color: #00ffaa
+
+BotMenuCategory < Label
+  height: 18
+  margin-top: 8
+  margin-bottom: 4
+  text-align: left
+  font: verdana-11px-rounded
+  color: #888888
+
+BotSettingRow < Panel
+  height: 22
+  margin-bottom: 4
+  layout: horizontalBox
+
+  Label
+    id: label
+    text-align: left
+    font: verdana-11px-rounded
+    color: #c0c0c0
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    width: 200
+
+BotCheckBox < CheckBox
+  font: verdana-11px-rounded
+  text-offset: 18 0
+  color: #c0c0c0
+  margin-bottom: 4
+  
+  $hover:
+    color: #ffffff
+  
+  $checked:
+    color: #00ff88
+
+BotModalWindow < MainWindow
+  id: botModalWindow
+  !text: tr('BTC Bot')
+  size: 565 480
+  @onEscape: modules.game_bot.hideModal()
+
+  $mobile:
+    size: 565 480
+
+  Button
+    id: closeButton
+    !text: tr('Fechar')
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    width: 60
+    margin-bottom: 5
+    @onClick: modules.game_bot.hideModal()
+
+  Label
+    id: versionLabel
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    margin-bottom: 8
+    text: Build 1.0.0
+    font: verdana-11px-rounded
+    color: #666666
+
+  Button
+    id: toggleBotButton
+    anchors.bottom: versionLabel.top
+    anchors.left: parent.left
+    width: 123
+    height: 22
+    margin-bottom: 5
+    @onClick: modules.game_bot.toggleBotEnabled()
+    
+    $on:
+      !text: tr('Bot: ON')
+      color: #00AA00
+    
+    $!on:
+      !text: tr('Bot: OFF')
+      color: #FF0000
+
+  Panel
+    id: leftPanel
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.bottom: toggleBotButton.top
+    width: 128
+    margin-top: 5
+    margin-bottom: 5
+    margin-right: 5
+    image-source: /images/ui/panel_flat
+    image-border: 4
+
+    ScrollablePanel
+      id: menuContent
+      anchors.fill: parent
+      margin: 5
+      vertical-scrollbar: menuScrollBar
+      layout:
+        type: verticalBox
+
+    VerticalScrollBar
+      id: menuScrollBar
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      step: 16
+      pixels-scroll: true
+      margin-top: 3
+      margin-bottom: 3
+
+  Panel
+    id: rightPanel
+    anchors.top: parent.top
+    anchors.left: leftPanel.right
+    anchors.right: parent.right
+    anchors.bottom: closeButton.top
+    margin-top: 5
+    margin-left: 5
+    margin-bottom: 10
+    image-source: /images/ui/panel_flat
+    image-border: 4
+
+    Panel
+      id: statusPanel
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 25
+      margin: 8
+      margin-bottom: 0
+
+      Label
+        id: sectionTitle
+        anchors.left: parent.left
+        anchors.right: sectionToggleBtn.left
+        anchors.verticalCenter: parent.verticalCenter
+        font: verdana-11px-rounded
+        color: #00ff88
+        text: Engine
+        margin-right: 5
+
+      Button
+        id: sectionToggleBtn
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        width: 40
+        height: 18
+        font: verdana-11px-rounded
+        text: OFF
+        color: #ff4444
+        visible: false
+
+    HorizontalSeparator
+      anchors.top: statusPanel.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-left: 5
+      margin-right: 5
+      margin-top: 5
+
+    ScrollablePanel
+      id: contentPanel
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin: 8
+      vertical-scrollbar: contentScrollBar
+      layout:
+        type: verticalBox
+
+    VerticalScrollBar
+      id: contentScrollBar
+      anchors.top: prev.top
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      step: 16
+      pixels-scroll: true
+      margin-top: 3
+      margin-bottom: 3
+      margin-right: 2

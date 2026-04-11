@@ -1,0 +1,72 @@
+ScriptEditorWindow < NewHeadlessWindow
+  id: scriptEditorWindow
+  anchors.horizontalCenter: parent.horizontalCenter
+  anchors.verticalCenter: parent.verticalCenter
+  size: 500 400
+  @onEscape: modules.game_helper.scripts.closeEditor()
+  Panel
+    id: editorContent
+    anchors.fill: parent
+    margin: 10
+    Label
+      id: editorTitle
+      anchors.top: parent.top
+      anchors.left: parent.left
+      !text: tr('Lua Script')
+      font: verdana-11px-antialised
+      color: #AAAAAA
+      text-auto-resize: true
+    Label
+      id: scriptNameLabel
+      anchors.top: editorTitle.bottom
+      anchors.left: parent.left
+      margin-top: 6
+      !text: tr('Name:')
+      font: verdana-11px-antialised
+      color: #dfdfdf
+      text-auto-resize: true
+    TextEdit
+      id: scriptNameEdit
+      height: 22
+      anchors.top: scriptNameLabel.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 2
+      font: verdana-11px-antialised
+      color: #dfdfdf
+      placeholder: tr('Script name')
+    TextEdit
+      id: scriptCode
+      anchors.top: scriptNameEdit.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: editorButtons.top
+      margin-top: 5
+      margin-bottom: 8
+      font: verdana-11px-antialised
+      color: #dfdfdf
+      text-wrap: false
+      multiline: true
+      placeholder: tr('-- Lib: say("text"), wait(ms), useItem(id), moveItem/moveItemById, gotoid(id)\n-- getFreeCapacity(), hasEnoughCap(min), npcTradeBuy/Sell, simulateKey(KeyEnter), clickSelectButton()')
+    Panel
+      id: editorButtons
+      height: 28
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+    Button
+      id: okEditorButton
+      anchors.verticalCenter: editorButtons.verticalCenter
+      anchors.left: parent.left
+      size: 70 22
+      !text: tr('OK')
+      font: verdana-11px-antialised
+      @onClick: modules.game_helper.scripts.okFromEditor()
+    Button
+      id: closeEditorButton
+      anchors.verticalCenter: editorButtons.verticalCenter
+      anchors.right: parent.right
+      size: 55 22
+      !text: tr('Close')
+      font: verdana-11px-antialised
+      @onClick: modules.game_helper.scripts.closeEditor()

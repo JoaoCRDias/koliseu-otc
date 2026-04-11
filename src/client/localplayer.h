@@ -33,7 +33,7 @@ public:
     bool isWalkLocked();
     void stopAutoWalk();
 
-    bool autoWalk(const Position& destination, bool retry = false);
+    bool autoWalk(const Position& destination, bool retry = false, bool cancelFollowBeforeWalk = true);
     bool canWalk(bool ignoreLock = false);
 
     void setStates(uint64_t states);
@@ -195,6 +195,7 @@ private:
     std::map<std::pair<uint16_t, uint8_t>, uint32_t> m_inventoryCountCache;
 
     uint8_t m_autoWalkRetries{ 0 };
+    bool m_autoWalkCancelFollowOnSend{ true };
 
     uint64_t m_states{ 0 };
     uint8_t m_vocation{ 0 };

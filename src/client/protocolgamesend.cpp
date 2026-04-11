@@ -722,6 +722,13 @@ void ProtocolGame::sendPartyAnalyzerAction(const uint8_t action, const std::vect
     send(msg);
 }
 
+void ProtocolGame::sendRequestActiveTimers()
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientRequestActiveTimers);
+    send(msg);
+}
+
 void ProtocolGame::sendOpenOwnChannel()
 {
     const auto& msg = std::make_shared<OutputMessage>();
@@ -1424,6 +1431,57 @@ void ProtocolGame::sendPreyAction(const uint8_t slot, const uint8_t actionType, 
     send(msg);
 }
 
+void ProtocolGame::sendTaskHuntingAction(const uint8_t slot, const uint8_t actionType, const bool upgrade, const uint16_t raceId)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskHuntingAction);
+    msg->addU8(slot);
+    msg->addU8(actionType);
+    msg->addU8(upgrade ? 1 : 0);
+    msg->addU16(raceId);
+    send(msg);
+}
+
+void ProtocolGame::sendTaskBoardCommand(const std::string& action, const std::string& data)
+{
+    std::string payload = "{\"action\":\"" + action + "\",\"data\":" + data + "}";
+    sendExtendedOpcode(205, payload);
+}
+
+void ProtocolGame::sendBountyTaskAction(const uint8_t actionType, const uint16_t param)
+{
+    sendTaskBoardCommand("bountyTaskAction",
+        "{\"actionType\":" + std::to_string(actionType) + ",\"param\":" + std::to_string(param) + "}");
+}
+
+void ProtocolGame::sendWeeklyTaskAction(const uint8_t actionType, const uint16_t param)
+{
+    sendTaskBoardCommand("weeklyTaskAction",
+        "{\"actionType\":" + std::to_string(actionType) + ",\"param\":" + std::to_string(param) + "}");
+}
+
+void ProtocolGame::sendTaskHuntingShopRequest()
+{
+    sendTaskBoardCommand("taskShopRequest");
+}
+
+void ProtocolGame::sendTaskHuntingShopPurchase(const uint16_t itemId)
+{
+    sendTaskBoardCommand("taskShopPurchase", "{\"itemId\":" + std::to_string(itemId) + "}");
+}
+
+void ProtocolGame::sendBountyPreferredAction(const uint8_t actionType, const uint8_t slot, const uint16_t raceId)
+{
+    sendTaskBoardCommand("bountyPreferredAction",
+        "{\"actionType\":" + std::to_string(actionType) + ",\"slot\":" + std::to_string(slot) +
+        ",\"raceId\":" + std::to_string(raceId) + "}");
+}
+
+void ProtocolGame::sendBountyTalismanUpgrade(const uint8_t statType)
+{
+    sendTaskBoardCommand("bountyTalismanUpgrade", "{\"statType\":" + std::to_string(statType) + "}");
+}
+
 void ProtocolGame::sendPreyRequest()
 {
     const auto& msg = std::make_shared<OutputMessage>();
@@ -1526,6 +1584,21 @@ void ProtocolGame::sendCloseImbuingWindow()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientCloseImbuingWindow);
+    send(msg);
+}
+
+void ProtocolGame::sendImbuementWindowAction(const uint8_t type, const uint16_t itemId, const Position& pos, const uint8_t stackpos)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(0xB2);  // same opcode as parseImbuementWindow on server
+    msg->addU8(type);  // 1 = SELECT_ITEM, 2 = SCROLL
+
+    if (type == 1) {  // SELECT_ITEM
+        addPosition(msg, pos);
+        msg->addU16(itemId);
+        msg->addU8(stackpos);
+    }
+
     send(msg);
 }
 
@@ -1682,6 +1755,38 @@ void ProtocolGame::openContainerQuickLoot(const uint8_t action, const uint8_t ca
     }
     send(msg);
 }
+
+void ProtocolGame::sendWeaponProficiencyAction(const uint8_t actionType, const uint16_t itemId)
+{
+    // Opcode 0xB3 (179) - Weapon Proficiency Action
+    // actionType: 0 = request item info, 1 = request all items, 2 = reset perks, 3 = apply perks
+    const auto msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientWeaponProficiency);
+    msg->addU8(actionType);
+    if (actionType == 0 || actionType == 2) {
+        msg->addU16(itemId);
+    }
+    send(msg);
+}
+
+void ProtocolGame::sendWeaponProficiencyApply(const uint16_t itemId, const std::vector<std::pair<uint8_t, uint8_t>>& perks)
+{
+    // Opcode 0xB3 (179) - Weapon Proficiency Apply Perks
+    // Structure: byte actionType (3), uint16 itemId, uint8 perksCount, [perksCount * {uint8 level, uint8 perkPosition}]
+    const auto msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientWeaponProficiency);
+    msg->addU8(3); // WEAPON_PROFICIENCY_APPLY_PERKS
+    msg->addU16(itemId);
+    msg->addU8(static_cast<uint8_t>(perks.size()));
+    for (const auto& perk : perks) {
+        // Server expects 0-indexed values and adds +1 internally
+        // Lua sends 0-indexed values, so we pass them directly
+        msg->addU8(perk.first);   // level (0-indexed)
+        msg->addU8(perk.second);  // perkPosition (0-indexed)
+    }
+    send(msg);
+}
+
 void ProtocolGame::sendOpenWheel(uint32_t playerId) {  
     const auto& msg = std::make_shared<OutputMessage>();  
     msg->addU8(Proto::ClientOpenWheel); // 0x61  

@@ -1,13 +1,47 @@
 -- this is the first file executed when the application starts
 -- we have to load the first modules form here
 
--- updater
+local function getConfigValue(functionName, defaultValue)
+    if g_configs and type(g_configs[functionName]) == "function" then
+        local ok, value = pcall(g_configs[functionName])
+        if ok and value ~= nil and value ~= "" then
+            return value
+        end
+    end
+    return defaultValue
+end
+
+-- updater/services loaded from config.ini via C++
 Services = {
-    --updater = "http://localhost/api/updater.php", --./updater
-    --status = "http://localhost/login.php", --./client_entergame | ./client_topmenu
-    --websites = "http://localhost/?subtopic=accountmanagement", --./client_entergame "Forgot password and/or email"
-    --createAccount = "http://localhost/clientcreateaccount.php", --./client_entergame -- createAccount.lua
-    --getCoinsUrl = "http://localhost/?subtopic=shop&step=terms", --./game_market
+    updater = getConfigValue("getServiceUpdater", ""),
+    updaterConfig = {
+        remoteConfigUrl = getConfigValue("getServiceUpdaterRemoteConfigUrl", ""),
+        zipUrl = getConfigValue("getServiceUpdaterZipUrl", ""),
+        localConfigFile = getConfigValue("getServiceUpdaterLocalConfigFile", "/otc_config.json")
+    },
+    status = getConfigValue("getServiceStatus", ""),
+    websites = getConfigValue("getServiceWebsites", ""),
+    createAccount = getConfigValue("getServiceCreateAccount", ""),
+    logUpload = getConfigValue("getServiceLogUpload", ""),
+    polopag = getConfigValue("getServicePolopag", ""),
+    polopagConfig = getConfigValue("getServicePolopagConfig", ""),
+    getCoinsUrl = getConfigValue("getGameStoreGetCoins", ""),
+    polopagOffers = {}
+}
+
+-- GameStoreLinks loaded from config.ini via C++
+GameStoreLinks = {
+    getCoins = getConfigValue("getGameStoreGetCoins", Services.getCoinsUrl or ""),
+    images = getConfigValue("getGameStoreImages", "")
+}
+
+-- TibiaHintsUrl loaded from config.ini via C++
+TibiaHintsUrl = getConfigValue("getTibiaHintsUrl", "")
+
+-- Helper links loaded from config.ini via C++
+Helpers = {
+    Wiki = getConfigValue("getHelperWiki", ""),
+    Info = getConfigValue("getHelperInfo", "")
 }
 
 --- Enables or disables the entire server configuration block.
@@ -62,7 +96,7 @@ if ENABLE_SERVERS then
         --
         ["http://127.0.0.1/login.php"] = {
             port = 80,
-            protocol = 1412,
+            protocol = 1511,
             httpLogin = true,
             useAuthenticator = false
         },
@@ -76,10 +110,11 @@ if ENABLE_SERVERS then
         -- @field protocol Protocol identifier used by the server
         -- @field httpLogin Indicates if the server allows HTTP login
         --
-        ["ip.net"] = {
-            port = 7171,
-            protocol = 860,
-            httpLogin = false
+        ["http://127.0.0.1/login.php"] = {
+            port = 80,
+            protocol = 1511,
+            httpLogin = true,
+            useAuthenticator = false
         }
     }
 end
@@ -90,6 +125,74 @@ g_app.setOrganizationName("otcr");
 
 g_app.hasUpdater = function()
     return (Services.updater and Services.updater ~= "" and g_modules.getModule("updater"))
+end
+
+
+
+FoodIds = {
+    3577, 3578, 3579, 3581, 3582, 3583, 3585, 3586, 3587,
+    3588, 3589, 3592, 3595, 3597, 3600, 3601, 3602, 3606,
+    3607, 3723, 3724, 3725, 3728, 3731, 3732, 8011, 8014,
+    8016, 8017, 12310, 14085, 17457, 17820, 17821, 21143,
+    21144, 21146, 23535, 23545, 62069
+}
+
+InfiniteFoodIds = {
+    61615, 61672, 61930, 62184, 62267, 62268, 63235, 63314,
+    63723, 62069
+}
+
+ExerciseDummies = {
+    28558, 28559, 28560, 28561, 28562, 28563, 28564, 28565,
+	62021, 62022, 62023, 62024, 62071, 62072, 62085, 62086,
+	62131, 62132, 62133, 62134, 62148, 62149, 62150, 62151,
+	62152, 62153, 62922, 62923, 62924, 62925, 62926, 62927,
+	63065, 63066, 63072, 63073
+}
+
+ExerciseIds = {
+	28552, 28553, 28554, 28555, 28556, 28557, 35279, 35280,
+	35281, 35282, 35283, 35284, 35285, 35286, 35287, 35288,
+	35289, 35290, 44065, 44066, 44067, 50293, 50294, 50295,
+	62641, 62642, 62643, 62644, 62645, 62646, 62647, 63224
+}
+
+CustomPotionIds = {
+    { id = 63319, name = "Enhanced Supreme Health Potion",  type = "health" },
+    { id = 63320, name = "Enhanced Ultimate Mana Potion",   type = "mana" },
+    { id = 63318, name = "Enhanced Great Mana Potion",   type = "mana" },
+    { id = 63321, name = "Enhanced Ultimate Spirit Potion", type = "health" }
+}
+
+CustomQuiverItemIds = {
+      [63323] = true, -- enhanced spectral bolt.
+      [63322] = true, -- enhanced diamond arrow.
+}
+
+-- Custom Rune IDs - Bypass Spells.getRuneSpellByItem validation
+-- Add custom runes here to use them in the magic shooter/helper
+-- Format: [itemId] = { group = 1, name = "Rune Name", exhaustion = 2000, area = "AREA_CIRCLE1X1"/"AREA_CIRCLE3X3" or false }
+-- group: 1 = attack, 2 = healing, 3 = support
+-- area: true for area runes, false/nil for single target
+CustomRuneIds = {
+     [63298] = { group = 1, name = "enhanced explosion rune", exhaustion = 2000, area = "AREA_CIRCLE1X1" },
+     [63314] = { group = 2, name = "enhanced ultimate healing rune", exhaustion = 2000, area = false },
+     [63313] = { group = 1, name = "enhanced thunderstorm rune", exhaustion = 2000, area = "AREA_CIRCLE3X3" },
+     [63312] = { group = 1, name = "enhanced sudden death rune", exhaustion = 2000, area = false },
+     [63311] = { group = 1, name = "enhanced stone shower rune", exhaustion = 2000, area = "AREA_CIRCLE3X3" },
+     [63310] = { group = 1, name = "enhanced great fireball rune", exhaustion = 2000, area = "AREA_CIRCLE3X3" },
+     [63309] = { group = 1, name = "enhanced avalanche rune", exhaustion = 2000, area = "AREA_CIRCLE3X3" }
+}
+
+local script = '/' .. g_app.getCompactName() .. 'rc.lua'
+
+if g_resources.fileExists(script) then
+    dofile(script)
+end
+
+
+if g_client and g_client.setEffectAlphaIgnoreIds then
+    g_client.setEffectAlphaIgnoreIds({ 56, 173, 230, 231, 232, 244, 533 })
 end
 
 -- setup logger
@@ -167,7 +270,7 @@ local function loadModules()
     end
 
     -- uncomment the line below so that modules are reloaded when modified. (Note: Use only mod dev)
-    -- g_modules.enableAutoReload()
+     g_modules.enableAutoReload()
 end
 
 -- run updater, must use data.zip

@@ -1,0 +1,8 @@
+Module
+  name: game_sidebars
+  description: Saves and restores sidebar widget positions per character
+  author: Custom
+  sandboxed: true
+  scripts: [ sidebars ]
+  @onLoad: init()
+  @onUnload: terminate()

@@ -33,6 +33,8 @@ public:
 
     void setCreature(const CreaturePtr& creature);
     void setOutfit(const Outfit& outfit);
+    void setRaceID(uint32_t raceId) { m_raceId = raceId; }
+    uint32_t getRaceID() const { return m_raceId; }
 
     CreaturePtr getCreature() { return m_creature; }
     uint8_t getCreatureSize() { return m_creatureSize; }
@@ -57,5 +59,6 @@ protected:
     uint8_t m_creatureSize{ 0 };
     Otc::Direction m_direction{ Otc::South };
     Outfit m_outfit;
+    uint32_t m_raceId{ 0 };
     bool m_center{ true };
 };

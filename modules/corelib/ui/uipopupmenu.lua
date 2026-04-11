@@ -79,6 +79,7 @@ function UIPopupMenu:addOption(optionName, optionCallback, shortcut, disabled)
     end
     optionWidget:setEnabled(not disabled)
     self:setWidth(math.max(190, math.max(self:getWidth(), width)))
+    return optionWidget
 end
 
 function UIPopupMenu:addSeparator()

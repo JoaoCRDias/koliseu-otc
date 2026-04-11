@@ -108,6 +108,9 @@ public:
 
     uint8_t getSkull() { return m_skull; }
     uint8_t getShield() { return m_shield; }
+    bool isPartyMember() {
+        return m_shield >= Otc::ShieldWhiteYellow && m_shield <= Otc::ShieldYellowNoSharedExp;
+    }
     uint8_t getEmblem() { return m_emblem; }
     uint8_t getType() { return m_type; }
     uint8_t getIcon() { return m_icon; }
@@ -183,9 +186,18 @@ minHeight,
     void setNameShader(const std::string& name) { m_nameShader = name; }
     std::string getNameShader() { return m_nameShader; }
 
+    void setNameOutline(const Color& color) { m_nameOutlineColor = color; m_nameOutlineEnabled = true; }
+    void clearNameOutline() { m_nameOutlineEnabled = false; }
+    bool isNameOutlineEnabled() const { return m_nameOutlineEnabled; }
+    Color getNameOutlineColor() const { return m_nameOutlineColor; }
+
     void setText(const std::string& text, const Color& color);
     std::string getText();
     void clearText() { setText("", Color::white); }
+    void setNameHighlight(const Color& color1, const Color& color2, float position, float width);
+    void clearNameHighlight();
+    void setCustomNameColor(const Color& color);
+    void clearCustomNameColor();
     bool canShoot(int distance);
 
     const auto& getIcons() {
@@ -203,6 +215,9 @@ minHeight,
 
     void setVocation(uint8_t vocation) { m_vocation = vocation; }
     uint8_t getVocation() { return m_vocation; }
+
+    void setGroupType(uint8_t groupType);
+    uint8_t getGroupType() { return m_groupType; }
 
     void attachPaperdoll(const PaperdollPtr& obj);
     void clearPaperdolls();
@@ -370,6 +385,19 @@ private:
     StaticTextPtr m_text;
 
     uint8_t m_vocation{ 0 };
+    uint8_t m_groupType{ 0 };
+
+    bool m_nameHighlightEnabled{ false };
+    Color m_nameHighlightC1;
+    Color m_nameHighlightC2;
+    float m_nameHighlightPos{ 0.f };
+    float m_nameHighlightWidth{ 2.f };
+
+    bool m_customNameColorEnabled{ false };
+    Color m_customNameColor;
+
+    bool m_nameOutlineEnabled{ false };
+    Color m_nameOutlineColor;
 };
 
 // @bindclass

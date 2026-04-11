@@ -1,8 +1,27 @@
 local UI = nil
 local virtualFloor = 7
 
+Cyclopedia.Map = Cyclopedia.Map or {}
+
+-- Cleanup function to be called before tab switch
+function Cyclopedia.Map.cleanup()
+    -- Unregister events
+    if controllerCyclopedia then
+        pcall(function()
+            controllerCyclopedia:unregisterEvents(LocalPlayer)
+        end)
+    end
+
+    -- IMPORTANT: Clear minimap flag widgets BEFORE the container is destroyed
+    -- This prevents flag.onDestroy from removing flags from globalUserFlags
+    if UI and UI.MapBase and UI.MapBase.minimap then
+        UI.MapBase.minimap:clearUserFlagWidgets()
+    end
+
+    UI = nil
+end
+
 function showMap()
-    g_minimap.saveOtmm('/minimap.otmm')
     UI = g_ui.loadUI("map", contentContainer)
     UI:show()
     controllerCyclopedia:registerEvents(LocalPlayer, {
@@ -18,37 +37,30 @@ function showMap()
     if g_game.getClientVersion() >= 1410 then
         controllerCyclopedia.ui.CharmsBase1410:setVisible(false)
     end
+
+    -- Center map on player position after loading
+    scheduleEvent(function()
+        local player = g_game.getLocalPlayer()
+        if player and UI and UI.MapBase and UI.MapBase.minimap then
+            local pos = player:getPosition()
+            if pos then
+                virtualFloor = pos.z
+                UI.MapBase.minimap:setCameraPosition(pos)
+                UI.MapBase.minimap:setCrossPosition(pos)
+            end
+        end
+    end, 150)
 end
 
 function Cyclopedia.loadMap()
-    local clientVersion = g_game.getClientVersion()
     local minimapWidget = UI.MapBase.minimap
 
-    g_minimap.clean()
-
-    local loaded = false
-    local minimapFile = "/minimap.otmm"
-    local dataMinimapFile = "/data" .. minimapFile
-    local versionedMinimapFile = "/minimap" .. clientVersion .. ".otmm"
-
-    if g_resources.fileExists(dataMinimapFile) then
-        loaded = g_minimap.loadOtmm(dataMinimapFile)
-    end
-
-    if not loaded and g_resources.fileExists(versionedMinimapFile) then
-        loaded = g_minimap.loadOtmm(versionedMinimapFile)
-    end
-
-    if not loaded and g_resources.fileExists(minimapFile) then
-        loaded = g_minimap.loadOtmm(minimapFile)
-    end
-
-    if not loaded then
-        print("Minimap couldn't be loaded, file missing?")
-    end
+    -- Note: We do NOT call g_minimap.clean() or reload the minimap file here.
+    -- The minimap is already loaded by the game_minimap module when the game starts.
+    -- Cleaning and reloading here would destroy user-created markers that haven't been saved yet.
+    -- The cyclopedia map tab should just use the existing minimap data.
 
     minimapWidget:load()
-    -- minimapWidget:hideFlags()
 end
 
 function Cyclopedia.CreateMarkItem(Data)
@@ -138,13 +150,15 @@ function Cyclopedia.onUpdateCameraPosition()
         return
     end
 
+    -- Check if UI and minimap widget are still valid
+    if not UI or not UI.MapBase or not UI.MapBase.minimap then
+        return
+    end
+
     local minimapWidget = UI.MapBase.minimap
     if not minimapWidget:isDragging() then
-        if not fullmapView then
-            minimapWidget:setCameraPosition(player:getPosition())
-        end
-
-        minimapWidget:setCrossPosition(player:getPosition(), true)
+        minimapWidget:setCameraPosition(pos)
+        minimapWidget:setCrossPosition(pos)
     end
 
     virtualFloor = pos.z

@@ -1,0 +1,90 @@
+Panel  
+  id: tooltipRoot  
+  size: 180 220  
+  background-color: #000000bb  
+  border-width: 2  
+  border-color: #552300cc  
+  
+  Label  
+    id: tooltipName  
+    anchors.horizontalCenter: parent.horizontalCenter  
+    anchors.top: parent.top  
+    margin-top: 13  
+    width: 220  
+    height: 12  
+    color: white  
+    font: verdana-11px-antialised  
+    text-align: center  
+    word-wrap: false  
+  
+  Label  
+    id: tooltipVocation  
+    anchors.horizontalCenter: parent.horizontalCenter  
+    anchors.top: tooltipName.bottom  
+    margin-top: 5  
+    width: 220  
+    height: 12  
+    color: white  
+    font: verdana-10px  
+    text-align: center  
+    word-wrap: false  
+  
+  Label  
+    id: tooltipRare  
+    anchors.horizontalCenter: parent.horizontalCenter  
+    anchors.top: tooltipVocation.bottom  
+    margin-top: 4  
+    width: 220  
+    height: 20  
+    color: white  
+    font: terminus-10px  
+    text-align: center  
+    word-wrap: false  
+      
+  Label  
+    id: tooltipLevel  
+    anchors.horizontalCenter: parent.horizontalCenter  
+    anchors.top: tooltipVocation.bottom  
+    margin: 5 0 0 0  
+    width: 220  
+    height: 20  
+    color: red  
+    text-align: center  
+    word-wrap: false  
+      
+  HorizontalSeparator  
+    anchors.horizontalCenter: parent.horizontalCenter  
+    anchors.top: tooltipRare.bottom  
+    margin-top: 5  
+    height: 2  
+    width: 160  
+    color: #552200cc  
+  
+  Panel  
+    id: tooltipIconBorder  
+    anchors.top: tooltipRare.bottom  
+    anchors.horizontalCenter: parent.horizontalCenter  
+    margin-top: 20  
+    size: 40 40  
+    background-color: #120000AA  
+    border-width: 1  
+    border-color: #552300cc  
+  
+  UIItem  
+    id: tooltipIcon  
+    anchors.top: tooltipRare.bottom  
+    anchors.horizontalCenter: parent.horizontalCenter  
+    margin: 20 0 0 0  
+    size: 38 38
+  
+  Label  
+    id: tooltipText  
+    anchors.horizontalCenter: parent.horizontalCenter  
+    anchors.top: tooltipIconBorder.bottom  
+    margin-top: 10  
+    width: 280  
+    height: 100  
+    color: white  
+    font: verdana-11px-antialised  
+    text-align: top  
+    word-wrap: true

@@ -93,6 +93,17 @@ StashItemBox < UICheckBox
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
     margin: 1
+    
+  Label
+    id: amount
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-right: 2
+    margin-bottom: 1
+    text-align: right
+    font: verdana-11px-rounded
+    color: #ffffff
+    phantom: true
 
   $checked:
     border-color: #ffffff

@@ -1,6 +1,8 @@
 -- /*=============================================
 -- =            util             =
 -- =============================================*/
+local activePresetButton = nil
+
 local function string_empty(str)
     return #str == 0
 end
@@ -229,6 +231,41 @@ function onExecuteAction(button, isPress)
         end
     end
 
+    if action == UseTypes["equipmentPreset"] then
+        local preset = button.cache.equipmentPreset
+        if preset then
+            local itemData = {}
+            for _, slotId in pairs(EquipmentPresetSlots) do
+                local slotKey = "equipSlot" .. slotId
+                local slotData = preset[slotKey]
+                local sItemId = tonumber(slotData and slotData.itemId) or 0
+                local sTier = tonumber(slotData and slotData.tier) or 0
+                if sItemId > 0 then
+                    table.insert(itemData, sItemId)
+                    table.insert(itemData, sTier)
+                end
+            end
+
+            if #itemData > 0 then
+                executeEquipmentPreset(itemData)
+
+                if activePresetButton and activePresetButton ~= button and not activePresetButton:isDestroyed() then
+                    local oldFrame = activePresetButton:recursiveGetChildById('presetFrame')
+                    if oldFrame then
+                        oldFrame:setVisible(false)
+                    end
+                end
+
+                local presetFrame = button:recursiveGetChildById('presetFrame')
+                if presetFrame then
+                    presetFrame:setVisible(true)
+                end
+                activePresetButton = button
+            end
+        end
+        return
+    end
+
     if action == UseTypes["chatText"] and button.cache.sendAutomatic then
         if button.cache.isSpell then
             spellGroupPressed[tostring(button.cache.primaryGroup)] = true
@@ -337,7 +374,9 @@ function getButtonCache(button)
             isDragging = false,
             buttonIndex = 0,
             buttonParent = nil,
-            itemId = 0
+            itemId = 0,
+            equipmentPreset = {},
+            equipmentPresetIcon = ""
         }
     end
 
@@ -360,7 +399,9 @@ function getButtonCache(button)
             isDragging = false,
             buttonIndex = 0,
             buttonParent = nil,
-            itemId = 0
+            itemId = 0,
+            equipmentPreset = {},
+            equipmentPresetIcon = ""
         }
     end
 
@@ -413,6 +454,14 @@ function resetButtonCache(button)
         end
     end
 
+    local presetFrame = button:recursiveGetChildById('presetFrame')
+    if presetFrame then
+        presetFrame:setVisible(false)
+    end
+    if activePresetButton == button then
+        activePresetButton = nil
+    end
+
     button.cache = {
         cooldownEvent = nil,
         cooldownTime = 0,
@@ -432,7 +481,9 @@ function resetButtonCache(button)
         isDragging = false,
         buttonIndex = 0,
         buttonParent = nil,
-        itemId = 0
+        itemId = 0,
+        equipmentPreset = {},
+        equipmentPresetIcon = ""
     }
 end
 -- /*=============================================
@@ -468,6 +519,8 @@ function setupButtonTooltip(button, isEmpty)
         end
     elseif cache.actionType == UseTypes["passiveAbility"] then
         actionDesc = "Gift of Life"
+    elseif cache.actionType == UseTypes["equipmentPreset"] then
+        actionDesc = tr(UseTypesTip[UseTypes["equipmentPreset"]] or "Equipment Preset")
     else
         actionDesc = UseTypesTip[cache.actionType]
         if actionDesc == nil then
@@ -493,6 +546,9 @@ function setupButtonTooltip(button, isEmpty)
     if cache.actionType == UseTypes["passiveAbility"] then
         tooltip = tooltip .. "\n\n Passive Ability:  " .. actionDesc
         tooltip = tooltip .. "\n            Hotkeys:  " .. hotkeyDesc
+    elseif cache.actionType == UseTypes["equipmentPreset"] then
+        tooltip = tooltip .. "\n\n       Action:  " .. actionDesc
+        tooltip = tooltip .. "\n   Hotkeys:  " .. hotkeyDesc
     else
         tooltip = tooltip .. "\n\n       Action:  " .. actionDesc
         tooltip = tooltip .. "\n   Hotkeys:  " .. hotkeyDesc
@@ -633,6 +689,9 @@ function configureButtonMouseRelease(button)
             menu:addOption(button.cache.hotkey and tr('Edit Hotkey') or tr('Assign Hotkey'), function()
                 assignHotkey(button)
             end)
+            menu:addOption(tr('Equipment Preset'), function()
+                assignEquipment(button)
+            end)
             if button.cache.actionType > 0 then
                 menu:addSeparator()
                 menu:addOption(tr('Clear Action'), function()
@@ -733,16 +792,19 @@ function updateButton(button)
     if sendText then
         local spellData, param = Spells.getSpellDataByParamWords(sendText:lower())
         if spellData then
-            local spellId = spellData.clientId
+            local spellId = spellData.id
             if not spellId then
                 print("Warning Spell ID not found L734 modules/game_actionbar/logics/ActionButtonLogic.lua")
                 return
             end
-            local source = SpelllistSettings['Default'].iconFile
-            local clip = Spells.getImageClip(spellId, 'Default')
-
-            button.item.text:setImageSource(source)
-            button.item.text:setImageClip(clip)
+            local profile = 'Default'
+            local settings = SpelllistSettings[profile]
+            if settings and settings.iconFile then
+                local source = settings.iconFile
+                local clip = Spells.getImageClip(spellId, profile)
+                button.item.text:setImageSource(source)
+                button.item.text:setImageClip(clip)
+            end
             button.cache.isSpell = true
             button.cache.spellID = spellData.id
             button.cache.spellData = spellData
@@ -776,6 +838,18 @@ function updateButton(button)
         button.cache.actionType = UseTypes["passiveAbility"]
         button.cache.isPassive = true
         updateActionPassive(button)
+    end
+
+    local savedPreset = buttonData["actionsetting"]["equipmentPreset"]
+    local savedPresetIcon = buttonData["actionsetting"]["equipmentPresetIcon"]
+    if savedPreset then
+        button.cache.equipmentPreset = savedPreset
+        button.cache.equipmentPresetIcon = savedPresetIcon or ""
+        if savedPresetIcon and savedPresetIcon ~= "" then
+            button.item.text:setImageSource("/images/game/actionbar/equip-preset/" .. savedPresetIcon)
+            button.item:setOn(true)
+        end
+        button.cache.actionType = UseTypes["equipmentPreset"]
     end
 
     button.item:setDraggable(true)
@@ -1010,6 +1084,9 @@ function onDragItemLeave(self, mousePos, button)
     if button.cache.actionType == UseTypes["chatText"] then
         ApiJson.createOrUpdateText(tonumber(destBarID), tonumber(destButtonID), button.cache.param,
             button.cache.sendAutomatic)
+    elseif button.cache.actionType == UseTypes["equipmentPreset"] then
+        ApiJson.createOrUpdatePreset(tonumber(destBarID), tonumber(destButtonID),
+            button.cache.equipmentPreset, button.cache.equipmentPresetIcon)
     elseif itemId ~= 0 then
         ApiJson.createOrUpdateAction(tonumber(destBarID), tonumber(destButtonID),
             getActionName(button.cache.actionType), itemId, button.cache.upgradeTier)
@@ -1025,6 +1102,9 @@ function onDragItemLeave(self, mousePos, button)
         if destButtonCache.actionType == UseTypes["chatText"] then
             ApiJson.createOrUpdateText(tonumber(draggedBarID), tonumber(draggedButtonID), destButtonCache.param,
                 destButtonCache.sendAutomatic)
+        elseif destButtonCache.actionType == UseTypes["equipmentPreset"] then
+            ApiJson.createOrUpdatePreset(tonumber(draggedBarID), tonumber(draggedButtonID),
+                destButtonCache.equipmentPreset, destButtonCache.equipmentPresetIcon)
         elseif destButtonCache.itemId ~= 0 then
             ApiJson.createOrUpdateAction(tonumber(draggedBarID), tonumber(draggedButtonID),
                 getActionName(destButtonCache.actionType), destButtonCache.itemId, destButtonCache.upgradeTier)

@@ -1,0 +1,11 @@
+Module
+  name: game_streamertag
+  description: Adds a streamer tag above character names
+  author: Antigravity
+  website: www.otclient.info
+  sandboxed: true
+  autoload: true
+  autoload-priority: 1000
+  scripts: [ streamertag ]
+  @onLoad: init()
+  @onUnload: terminate()

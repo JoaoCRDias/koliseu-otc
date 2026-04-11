@@ -25,6 +25,13 @@ local tabStack = {}
 local previousType = nil
 local windowTypes = {}
 local magicalArchives = nil
+
+-- Discovery highlight state for Bestiary (normal monsters)
+Cyclopedia.pendingDiscoveryRaceId = nil
+
+-- Discovery highlight state for Bosstiary (boss monsters)
+Cyclopedia.pendingDiscoveryBossId = nil
+
 function toggle(defaultWindow)
     if not controllerCyclopedia.ui then
         return
@@ -32,6 +39,12 @@ function toggle(defaultWindow)
     if controllerCyclopedia.ui:isVisible() then
         return hide()
     end
+
+    -- If there's a pending bestiary discovery, open bestiary tab instead of default
+    if Cyclopedia.pendingDiscoveryRaceId and defaultWindow == "items" then
+        defaultWindow = "bestiary"
+    end
+
     show(defaultWindow)
 end
 
@@ -44,12 +57,12 @@ end
 function controllerCyclopedia:onGameStart()
     if g_game.getClientVersion() >= 1310 then
         CyclopediaButton = modules.game_mainpanel.addToggleButton('CyclopediaButton', tr('Cyclopedia'),
-            '/images/options/cooldowns', function() toggle("items") end, false, 7)
+            '/images/options/cooldowns', function() toggle("items") end, false, 4)
         ButtonBossSlot = modules.game_mainpanel.addToggleButton("bossSlot", tr("Open Boss Slots dialog"),
-            "/images/options/ButtonBossSlot", function() toggle("bossSlot") end, false, 20)
+            "/images/options/ButtonBossSlot", function() toggle("bossSlot") end, false, 13)
         CyclopediaButton:setOn(false)
         ButtonBestiary = modules.game_mainpanel.addToggleButton("bosstiary", tr("Open Bosstiary dialog"),
-            "/images/options/ButtonBosstiary", function() toggle("bosstiary") end, false, 17)
+            "/images/options/ButtonBosstiary", function() toggle("bosstiary") end, false, 12)
 
         contentContainer = controllerCyclopedia.ui:recursiveGetChildById('contentContainer')
         buttonSelection = controllerCyclopedia.ui:recursiveGetChildById('buttonSelection')
@@ -78,16 +91,17 @@ function controllerCyclopedia:onGameStart()
         g_ui.importStyle("cyclopedia_widgets")
         g_ui.importStyle("cyclopedia_pages")
 
-        controllerCyclopedia:registerEvents(g_game, {
-            onResourcesBalanceChange = Cyclopedia.onResourcesBalanceChange,
+        connect(g_game, {
             -- bestiary
             onParseBestiaryRaces = Cyclopedia.loadBestiaryCategories,
             onParseBestiaryOverview = Cyclopedia.loadBestiaryOverview,
             onUpdateBestiaryMonsterData = Cyclopedia.loadBestiarySelectedCreature,
+            onBestiaryEntryChanged = Cyclopedia.onBestiaryEntryChanged,
             -- bosstiary // bestiary
             onParseCyclopediaTracker = Cyclopedia.onParseCyclopediaTracker,
             -- bosstiary
             onParseSendBosstiary = Cyclopedia.LoadBosstiaryCreatures,
+            onBosstiaryEntryChanged = Cyclopedia.onBosstiaryEntryChanged,
             -- boss_slot
             onParseBosstiarySlots = Cyclopedia.loadBossSlots,
             -- character
@@ -103,12 +117,12 @@ function controllerCyclopedia:onGameStart()
             onCyclopediaCharacterOffenceStats = Cyclopedia.onCyclopediaCharacterOffenceStats,
             onCyclopediaCharacterDefenceStats = Cyclopedia.onCyclopediaCharacterDefenceStats,
             onCyclopediaCharacterMiscStats = Cyclopedia.onCyclopediaCharacterMiscStats,
-
-
             -- charms
             onUpdateBestiaryCharmsData = Cyclopedia.loadCharms,
             -- items
-            onParseItemDetail = Cyclopedia.loadItemDetail
+            onParseItemDetail = Cyclopedia.loadItemDetail,
+            -- resource balance (gold updates)
+            onResourcesBalanceChange = Cyclopedia.onResourcesBalanceChange
         })
 
         --[[===================================================
@@ -118,11 +132,11 @@ function controllerCyclopedia:onGameStart()
         -- Only create if it doesn't exist
         if not trackerButton then
             trackerButton = modules.game_mainpanel.addToggleButton("trackerButton", tr("Bestiary Tracker"),
-                "/images/options/bestiaryTracker", Cyclopedia.toggleBestiaryTracker, false, 17)
+                "/images/options/bestiaryTracker", Cyclopedia.toggleBestiaryTracker, false, 14)
         end
-        
+
         trackerButton:setOn(false)
-        
+
         -- Only create if it doesn't exist
         if not trackerMiniWindow then
             trackerMiniWindow = g_ui.createWidget('BestiaryTracker', modules.game_interface.getRightPanel())
@@ -141,10 +155,10 @@ function controllerCyclopedia:onGameStart()
             local contextMenuButton = trackerMiniWindow:recursiveGetChildById('contextMenuButton')
             local newWindowButton = trackerMiniWindow:recursiveGetChildById('newWindowButton')
             local minimizeButton = trackerMiniWindow:recursiveGetChildById('minimizeButton')
-            
+
             if contextMenuButton then
                 contextMenuButton:setVisible(true)
-                
+
                 -- Position contextMenuButton like in ImbuementTracker
                 if minimizeButton then
                     contextMenuButton:breakAnchors()
@@ -153,7 +167,7 @@ function controllerCyclopedia:onGameStart()
                     contextMenuButton:setMarginRight(7)
                     contextMenuButton:setMarginTop(0)
                 end
-                
+
                 contextMenuButton.onClick = function(widget, mousePos, mouseButton)
                     return Cyclopedia.createTrackerContextMenu("bestiary", mousePos)
                 end
@@ -176,7 +190,7 @@ function controllerCyclopedia:onGameStart()
                     if char and #char > 0 then
                         -- Always ensure data is initialized
                         Cyclopedia.initializeTrackerData()
-                        
+
                         -- Force refresh if no data is visible
                         if not Cyclopedia.storedTrackerData or #Cyclopedia.storedTrackerData == 0 then
                             -- Try to load from cache first
@@ -186,13 +200,13 @@ function controllerCyclopedia:onGameStart()
                                 Cyclopedia.onParseCyclopediaTracker(0, Cyclopedia.storedTrackerData)
                             end
                         end
-                        
+
                         -- Always try to refresh, regardless of cached data
                         Cyclopedia.refreshBestiaryTracker()
-                        
+
                         -- Request fresh data from server
                         g_game.requestBestiary()
-                        
+
                         -- Additional fallback check
                         scheduleEvent(function()
                             if trackerMiniWindow:isVisible() and trackerMiniWindow.contentsPanel:getChildCount() == 0 then
@@ -219,15 +233,15 @@ function controllerCyclopedia:onGameStart()
         -- Only create if it doesn't exist
         if not trackerButtonBosstiary then
             trackerButtonBosstiary = modules.game_mainpanel.addToggleButton("bosstiarytrackerButton",
-                tr("Bosstiary Tracker"), "/images/options/bosstiaryTracker", Cyclopedia.toggleBosstiaryTracker, false, 17)
+                tr("Bosstiary Tracker"), "/images/options/bosstiaryTracker", Cyclopedia.toggleBosstiaryTracker, false, 15)
         end
-        
+
         trackerButtonBosstiary:setOn(false)
-        
+
         -- Only create if it doesn't exist
         if not trackerMiniWindowBosstiary then
             trackerMiniWindowBosstiary = g_ui.createWidget('BestiaryTracker', modules.game_interface.getRightPanel())
-            
+
             -- Set the title with length limit like in containers
             local titleWidgetBosstiary = trackerMiniWindowBosstiary:getChildById('miniwindowTitle')
             if titleWidgetBosstiary then
@@ -248,10 +262,10 @@ function controllerCyclopedia:onGameStart()
             local contextMenuButtonBosstiary = trackerMiniWindowBosstiary:recursiveGetChildById('contextMenuButton')
             local newWindowButtonBosstiary = trackerMiniWindowBosstiary:recursiveGetChildById('newWindowButton')
             local minimizeButtonBosstiary = trackerMiniWindowBosstiary:recursiveGetChildById('minimizeButton')
-            
+
             if contextMenuButtonBosstiary then
                 contextMenuButtonBosstiary:setVisible(true)
-                
+
                 -- Position contextMenuButton like in ImbuementTracker
                 if minimizeButtonBosstiary then
                     contextMenuButtonBosstiary:breakAnchors()
@@ -260,7 +274,7 @@ function controllerCyclopedia:onGameStart()
                     contextMenuButtonBosstiary:setMarginRight(7)
                     contextMenuButtonBosstiary:setMarginTop(0)
                 end
-                
+
                 contextMenuButtonBosstiary.onClick = function(widget, mousePos, mouseButton)
                     return Cyclopedia.createTrackerContextMenu("bosstiary", mousePos)
                 end
@@ -283,7 +297,7 @@ function controllerCyclopedia:onGameStart()
                     if char and #char > 0 then
                         -- Always ensure data is initialized
                         Cyclopedia.initializeTrackerData()
-                        
+
                         -- Force refresh if no data is visible
                         if not Cyclopedia.storedBosstiaryTrackerData or #Cyclopedia.storedBosstiaryTrackerData == 0 then
                             -- Try to load from cache first
@@ -293,13 +307,13 @@ function controllerCyclopedia:onGameStart()
                                 Cyclopedia.onParseCyclopediaTracker(1, Cyclopedia.storedBosstiaryTrackerData)
                             end
                         end
-                        
+
                         -- Always try to refresh, regardless of cached data
                         Cyclopedia.refreshBosstiaryTracker()
-                        
+
                         -- Request fresh data from server
                         g_game.requestBestiary()
-                        
+
                         -- Additional fallback check
                         scheduleEvent(function()
                             if trackerMiniWindowBosstiary:isVisible() and trackerMiniWindowBosstiary.contentsPanel:getChildCount() == 0 then
@@ -322,10 +336,10 @@ function controllerCyclopedia:onGameStart()
         trackerMiniWindowBosstiary:setupOnStart()
         Cyclopedia.loadTrackerFilters("bestiary")
         Cyclopedia.loadTrackerFilters("bosstiary")
-        
+
         -- Populate any visible trackers with cached data after windows are set up
         Cyclopedia.populateVisibleTrackersWithCachedData()
-        
+
         -- Also set up proper tracker button states based on window visibility
         if trackerMiniWindow:isVisible() then
             trackerButton:setOn(true)
@@ -333,21 +347,21 @@ function controllerCyclopedia:onGameStart()
         if trackerMiniWindowBosstiary:isVisible() then
             trackerButtonBosstiary:setOn(true)
         end
-        
+
         Cyclopedia.BossSlots.UnlockBosses = {}
         Keybind.new("Windows", "Show/hide Bosstiary Tracker", "", "")
 
-        Keybind.bind("Windows", "Show/hide Bosstiary Tracker", {{
+        Keybind.bind("Windows", "Show/hide Bosstiary Tracker", { {
             type = KEY_DOWN,
             callback = Cyclopedia.toggleBosstiaryTracker
-        }})
+        } })
 
         Keybind.new("Windows", "Show/hide Bestiary Tracker", "", "")
-        Keybind.bind("Windows", "Show/hide Bestiary Tracker", {{
+        Keybind.bind("Windows", "Show/hide Bestiary Tracker", { {
             type = KEY_DOWN,
             callback = Cyclopedia.toggleBestiaryTracker
-        }})
-        
+        } })
+
         -- Initialize cached tracker data for immediate loading with delay to ensure character name is available
         scheduleEvent(function()
             local char = g_game.getCharacterName()
@@ -358,29 +372,34 @@ function controllerCyclopedia:onGameStart()
                         Cyclopedia.clearTrackerDataForCharacterChange()
                     end
                 end
-                
+
                 -- Update current character
                 currentCharacter = char
-                
+
                 -- Initialize tracker data for current character
                 Cyclopedia.initializeTrackerData()
-                
+
                 -- Populate any visible trackers with cached data
                 Cyclopedia.populateVisibleTrackersWithCachedData()
-                
+
                 -- Request fresh bestiary data from server
                 g_game.requestBestiary()
-                
+
                 -- Additional refresh after delays to ensure everything is loaded
                 scheduleEvent(function()
                     Cyclopedia.populateVisibleTrackersWithCachedData()
                     Cyclopedia.refreshAllVisibleTrackers()
                 end, 500)
-                
+
                 -- Final fallback check
                 scheduleEvent(function()
                     Cyclopedia.refreshAllVisibleTrackers()
                 end, 2000)
+            end
+
+            -- Load and send MagicalArchive aim target configuration on login
+            if MagicalArchive and MagicalArchive.loadJson then
+                MagicalArchive.loadJson()
             end
         end, 500)
     end
@@ -388,7 +407,6 @@ function controllerCyclopedia:onGameStart()
         controllerCyclopedia.ui.CharmsBase.Icon:setImageSource("/game_cyclopedia/images/monster-icon-bonuspoints")
     end
 end
-
 
 function controllerCyclopedia:onGameEnd()
     if trackerMiniWindow then
@@ -398,13 +416,18 @@ function controllerCyclopedia:onGameEnd()
         trackerMiniWindowBosstiary.contentsPanel:destroyChildren()
     end
     hide()
-    
+
+    -- Clear items cache to support character switching
+    if Cyclopedia.Items and Cyclopedia.Items.clearCache then
+        Cyclopedia.Items.clearCache()
+    end
+
     -- Save tracker filters and data for current character
     if Cyclopedia.saveTrackerFilters then
         Cyclopedia.saveTrackerFilters("bestiary")
         Cyclopedia.saveTrackerFilters("bosstiary")
     end
-    
+
     -- Save current tracker data for current character
     if Cyclopedia.saveTrackerData then
         if Cyclopedia.storedTrackerData then
@@ -414,9 +437,14 @@ function controllerCyclopedia:onGameEnd()
             Cyclopedia.saveTrackerData("bosstiary", Cyclopedia.storedBosstiaryTrackerData)
         end
     end
-    
+
     -- Don't clear currentCharacter here - keep it for character change detection
-    
+
+    -- Save MagicalArchive aim target configuration on logout
+    if MagicalArchive and MagicalArchive.saveJson then
+        MagicalArchive.saveJson()
+    end
+
     Keybind.delete("Windows", "Show/hide Bosstiary Tracker")
     Keybind.delete("Windows", "Show/hide Bestiary Tracker")
 end
@@ -454,16 +482,86 @@ function controllerCyclopedia:onTerminate()
         ButtonBestiary:destroy()
         ButtonBestiary = nil
     end
-    
+
     -- Clear character tracking on module termination
     currentCharacter = nil
-    
+
     -- Save items data if available
     if Cyclopedia and Cyclopedia.Items and Cyclopedia.Items.terminate then
         Cyclopedia.Items.terminate()
     end
-    
+
+    disconnect(g_game, {
+        onParseBestiaryRaces = Cyclopedia.loadBestiaryCategories,
+        onParseBestiaryOverview = Cyclopedia.loadBestiaryOverview,
+        onUpdateBestiaryMonsterData = Cyclopedia.loadBestiarySelectedCreature,
+        onBestiaryEntryChanged = Cyclopedia.onBestiaryEntryChanged,
+        -- bosstiary // bestiary
+        onParseCyclopediaTracker = Cyclopedia.onParseCyclopediaTracker,
+        -- bosstiary
+        onParseSendBosstiary = Cyclopedia.LoadBosstiaryCreatures,
+        onBosstiaryEntryChanged = Cyclopedia.onBosstiaryEntryChanged,
+        -- boss_slot
+        onParseBosstiarySlots = Cyclopedia.loadBossSlots,
+        -- character
+        onParseCyclopediaCharacterGeneralStats = Cyclopedia.loadCharacterGeneralStats,
+        onParseCyclopediaCharacterCombatStats = Cyclopedia.loadCharacterCombatStats,
+        onParseCyclopediaCharacterBadges = Cyclopedia.loadCharacterBadges,
+        onCyclopediaCharacterRecentDeaths = Cyclopedia.loadCharacterRecentDeaths,
+        onCyclopediaCharacterRecentKills = Cyclopedia.loadCharacterRecentKills,
+        onUpdateCyclopediaCharacterItemSummary = Cyclopedia.loadCharacterItems,
+        onParseCyclopediaCharacterAppearances = Cyclopedia.loadCharacterAppearances,
+        onParseCyclopediaStoreSummary = Cyclopedia.onParseCyclopediaStoreSummary,
+        -- character 14.10
+        onCyclopediaCharacterOffenceStats = Cyclopedia.onCyclopediaCharacterOffenceStats,
+        onCyclopediaCharacterDefenceStats = Cyclopedia.onCyclopediaCharacterDefenceStats,
+        onCyclopediaCharacterMiscStats = Cyclopedia.onCyclopediaCharacterMiscStats,
+        -- charms
+        onUpdateBestiaryCharmsData = Cyclopedia.loadCharms,
+        -- items
+        onParseItemDetail = Cyclopedia.loadItemDetail,
+        -- resource balance (gold updates)
+        onResourcesBalanceChange = Cyclopedia.onResourcesBalanceChange
+    })
+
     onTerminateCharm()
+end
+
+-- Cleanup function to call tab-specific cleanup before destroying children
+local function cleanupCurrentTab(tabType)
+    if not tabType then return end
+
+    local cleanupFunctions = {
+        items = function() if Cyclopedia.Items and Cyclopedia.Items.cleanup then Cyclopedia.Items.cleanup() end end,
+        bestiary = function() if Cyclopedia.Bestiary and Cyclopedia.Bestiary.cleanup then Cyclopedia.Bestiary.cleanup() end end,
+        charms = function() if Cyclopedia.Charms and Cyclopedia.Charms.cleanup then Cyclopedia.Charms.cleanup() end end,
+        character = function()
+            if Cyclopedia.Character and Cyclopedia.Character.cleanup then
+                Cyclopedia.Character
+                    .cleanup()
+            end
+        end,
+        bosstiary = function()
+            if Cyclopedia.Bosstiary and Cyclopedia.Bosstiary.cleanup then
+                Cyclopedia.Bosstiary
+                    .cleanup()
+            end
+        end,
+        bossSlot = function() if Cyclopedia.BossSlots and Cyclopedia.BossSlots.cleanup then Cyclopedia.BossSlots.cleanup() end end,
+        houses = function() if Cyclopedia.House and Cyclopedia.House.cleanup then Cyclopedia.House.cleanup() end end,
+        map = function() if Cyclopedia.Map and Cyclopedia.Map.cleanup then Cyclopedia.Map.cleanup() end end,
+        magicalArchives = function()
+            if Cyclopedia.MagicalArchives and Cyclopedia.MagicalArchives.cleanup then
+                Cyclopedia
+                    .MagicalArchives.cleanup()
+            end
+        end,
+    }
+
+    local cleanupFunc = cleanupFunctions[tabType]
+    if cleanupFunc then
+        pcall(cleanupFunc)
+    end
 end
 
 function hide()
@@ -481,6 +579,7 @@ function resetCyclopediaTabs()
         local previousWindow = windowTypes[previousType]
         previousWindow.obj:enable()
         previousWindow.obj:setOn(false)
+        cleanupCurrentTab(previousType)
         previousType = nil;
     end
 end
@@ -490,11 +589,109 @@ function show(defaultWindow)
         return
     end
 
+    -- Clear discovery highlight when Cyclopedia is opened (any tab)
+    Cyclopedia.clearBestiaryDiscoveryHighlight()
+
     controllerCyclopedia.ui:show()
     controllerCyclopedia.ui:raise()
     controllerCyclopedia.ui:focus()
     SelectWindow(defaultWindow, false)
-    controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(g_game.getLocalPlayer():getTotalMoney()))
+    controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(Cyclopedia.getPlayerTotalGold()))
+end
+
+-- Function to get player total gold (equipped + bank)
+function Cyclopedia.getPlayerTotalGold()
+    local player = g_game.getLocalPlayer()
+    if not player then
+        return 0
+    end
+    local goldEquipped = player:getResourceBalance(ResourceTypes.GOLD_EQUIPPED) or 0
+    local bankBalance = player:getResourceBalance(ResourceTypes.BANK_BALANCE) or 0
+    return goldEquipped + bankBalance
+end
+
+-- Called when any resource balance changes (gold, charm points, etc.)
+function Cyclopedia.onResourcesBalanceChange(value, oldValue, resource)
+    if not controllerCyclopedia.ui then
+        return
+    end
+
+    local player = g_game.getLocalPlayer()
+    if not player then
+        return
+    end
+
+    if resource == ResourceTypes.BANK_BALANCE then
+        local text = "0"
+        if value then
+            text = value
+        else
+            text = Cyclopedia.getPlayerTotalGold()
+        end
+
+        -- Update GoldBase if the window is visible
+        if controllerCyclopedia.ui:isVisible() and controllerCyclopedia.ui.GoldBase then
+            controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(text))
+        end
+    end
+
+    -- Update Major Charm points (CHARM / MAX_CHARM)
+    if resource == ResourceTypes.CHARM or resource == ResourceTypes.MAX_CHARM then
+        if controllerCyclopedia.ui:isVisible() and controllerCyclopedia.ui.CharmsBase then
+            local charm = player:getResourceBalance(ResourceTypes.CHARM)
+            local maxCharm = player:getResourceBalance(ResourceTypes.MAX_CHARM)
+            controllerCyclopedia.ui.CharmsBase.Value:setText(string.format("%d/%d", charm, maxCharm))
+        end
+    end
+
+    -- Update Minor Charm points (MINOR_CHARM / MAX_MINOR_CHARM)
+    if resource == ResourceTypes.MINOR_CHARM or resource == ResourceTypes.MAX_MINOR_CHARM then
+        if controllerCyclopedia.ui:isVisible() and controllerCyclopedia.ui.CharmsBase1410 then
+            local minorCharm = player:getResourceBalance(ResourceTypes.MINOR_CHARM)
+            local maxMinorCharm = player:getResourceBalance(ResourceTypes.MAX_MINOR_CHARM)
+            controllerCyclopedia.ui.CharmsBase1410.Value:setText(string.format("%d/%d", minorCharm, maxMinorCharm))
+        end
+    end
+end
+
+-- Called when a new bestiary entry is discovered (monster killed for the first time)
+function Cyclopedia.onBestiaryEntryChanged(raceId)
+    if not raceId then return end
+
+    -- Store the discovered raceId for navigation when Cyclopedia is opened
+    Cyclopedia.pendingDiscoveryRaceId = raceId
+
+    -- Highlight the Cyclopedia button to indicate new discovery
+    if CyclopediaButton then
+        CyclopediaButton:setHighlight(true)
+    end
+end
+
+-- Clears the bestiary discovery highlight (called when Cyclopedia/Bestiary is opened)
+function Cyclopedia.clearBestiaryDiscoveryHighlight()
+    if CyclopediaButton then
+        CyclopediaButton:setHighlight(false)
+    end
+end
+
+-- Called when a new bosstiary entry is discovered (boss killed for the first time)
+function Cyclopedia.onBosstiaryEntryChanged(bossId)
+    if not bossId then return end
+
+    -- Store the discovered bossId for navigation when Bosstiary is opened
+    Cyclopedia.pendingDiscoveryBossId = bossId
+
+    -- Highlight the Bosstiary button to indicate new boss discovery
+    if ButtonBestiary then
+        ButtonBestiary:setHighlight(true)
+    end
+end
+
+-- Clears the bosstiary discovery highlight (called when Bosstiary is opened)
+function Cyclopedia.clearBosstiaryDiscoveryHighlight()
+    if ButtonBestiary then
+        ButtonBestiary:setHighlight(false)
+    end
 end
 
 function toggleBack()
@@ -514,6 +711,7 @@ function SelectWindow(type, isBackButtonPress)
             table.insert(tabStack, previousType)
             controllerCyclopedia.ui.BackButton:setEnabled(true)
         end
+        cleanupCurrentTab(previousType)
     end
     contentContainer:destroyChildren()
 
@@ -525,31 +723,5 @@ function SelectWindow(type, isBackButtonPress)
         if window.func then
             window.func(contentContainer)
         end
-    end
-end
-
-function Cyclopedia.onResourcesBalanceChange()
-    if not controllerCyclopedia.ui or not controllerCyclopedia.ui:isVisible() then
-        return
-    end
-
-    local player = g_game.getLocalPlayer()
-    if not player then
-        return
-    end
-
-    controllerCyclopedia.ui.GoldBase.Value:setText(Cyclopedia.formatGold(player:getTotalMoney()))
-
-    local formatResourceBalance = function(resourceType, maxResourceType)
-        return string.format("%d/%d", player:getResourceBalance(resourceType),
-            player:getResourceBalance(maxResourceType))
-    end
-
-    controllerCyclopedia.ui.CharmsBase.Value:setText(formatResourceBalance(ResourceTypes.CHARM,
-        ResourceTypes.MAX_CHARM))
-
-    if controllerCyclopedia.ui.CharmsBase1410:isVisible() then
-        controllerCyclopedia.ui.CharmsBase1410.Value:setText(formatResourceBalance(
-            ResourceTypes.MINOR_CHARM, ResourceTypes.MAX_MINOR_CHARM))
     end
 end

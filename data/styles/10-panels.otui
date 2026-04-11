@@ -7,7 +7,7 @@ ScrollablePanel < UIScrollArea
   auto-focus: first
 
 FlatPanel < Panel
-  image-source: /images/ui/panel_flat
+  image-source: /images/ui/panel-1-pixel
   image-border: 1
 
 ScrollableFlatPanel < ScrollablePanel

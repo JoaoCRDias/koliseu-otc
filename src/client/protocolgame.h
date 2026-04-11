@@ -93,6 +93,7 @@ public:
     void sendLeaveParty();
     void sendShareExperience(bool active);
     void sendPartyAnalyzerAction(uint8_t action, const std::vector<std::tuple<uint16_t, uint64_t>>& items = {});
+    void sendRequestActiveTimers();
     void sendOpenOwnChannel();
     void sendInviteToOwnChannel(std::string_view name);
     void sendExcludeFromOwnChannel(std::string_view name);
@@ -135,6 +136,14 @@ public:
     void sendMarketCancelOffer(uint32_t timestamp, uint16_t counter);
     void sendMarketAcceptOffer(uint32_t timestamp, uint16_t counter, uint16_t amount);
     void sendPreyAction(uint8_t slot, uint8_t actionType, uint16_t index);
+    void sendTaskHuntingAction(uint8_t slot, uint8_t actionType, bool upgrade, uint16_t raceId);
+    void sendTaskBoardCommand(const std::string& action, const std::string& data = "{}");
+    void sendBountyTaskAction(uint8_t actionType, uint16_t param);
+    void sendWeeklyTaskAction(uint8_t actionType, uint16_t param);
+    void sendTaskHuntingShopRequest();
+    void sendTaskHuntingShopPurchase(uint16_t itemId);
+    void sendBountyPreferredAction(uint8_t actionType, uint8_t slot, uint16_t raceId);
+    void sendBountyTalismanUpgrade(uint8_t statType);
     void sendPreyRequest();
     void sendOpenPortableForge();
     void sendForgeRequest(Otc::ForgeAction_t actionType, bool convergence = false, uint16_t firstItemid = 0, uint8_t firstItemTier = 0, uint16_t secondItemId = 0, bool improveChance = false, bool tierLoss = false);
@@ -148,6 +157,7 @@ public:
     void sendApplyImbuement(uint8_t slot, uint32_t imbuementId, bool protectionCharm);
     void sendClearImbuement(uint8_t slot);
     void sendCloseImbuingWindow();
+    void sendImbuementWindowAction(uint8_t type, uint16_t itemId = 0, const Position& pos = Position(), uint8_t stackpos = 0);
     void sendOpenRewardWall();
     void sendOpenRewardHistory();
     void sendGetRewardDaily(const uint8_t bonusShrine, const std::map<uint16_t, uint8_t>& items);
@@ -155,8 +165,8 @@ public:
     void sendStashStow(const Position& position, const uint16_t itemId, const uint32_t count, const uint8_t stackpos, const uint8_t action);
     void sendHighscoreInfo(uint8_t action, uint8_t category, uint32_t vocation, std::string_view world, uint8_t worldType, uint8_t battlEye, uint16_t page, uint8_t totalPages);
     void sendImbuementDurations(bool isOpen = false);
-    void sendOpenWheelOfDestiny(uint32_t playerId);
-    void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
+    void sendWeaponProficiencyAction(uint8_t actionType, uint16_t itemId = 0);
+    void sendWeaponProficiencyApply(uint16_t itemId, const std::vector<std::pair<uint8_t, uint8_t>>& perks);
     void sendRequestBestiary();
     void sendRequestBestiaryOverview(std::string_view catName, bool search = false, std::vector<uint16_t> raceIds = {});
     void sendRequestBestiarySearch(uint16_t raceId);
@@ -177,6 +187,8 @@ public:
     void sendOpenWheel(uint32_t playerId);
     void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
     void sendWheelGemAction(const uint8_t actionType, const uint8_t param, const uint8_t pos);
+    void sendOpenWheelOfDestiny(uint32_t playerId);
+    void sendApplyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
 
     // otclient only
     void sendChangeMapAwareRange(uint8_t xrange, uint8_t yrange);
@@ -331,6 +343,7 @@ private:
     void parseBestiaryTracker(const InputMessagePtr& msg);
     void parseTaskHuntingBasicData(const InputMessagePtr& msg);
     void parseTaskHuntingData(const InputMessagePtr& msg);
+    void parseTaskBoardData(const InputMessagePtr& msg);
     void parseExperienceTracker(const InputMessagePtr& msg);
     void parseLootContainers(const InputMessagePtr& msg);
     void parseMonkData(const InputMessagePtr& msg);
@@ -351,6 +364,8 @@ private:
     void parseItemsPrice(const InputMessagePtr& msg);
     void parseUpdateSupplyTracker(const InputMessagePtr& msg);
     void parseUpdateLootTracker(const InputMessagePtr& msg);
+    void parseMiscAnalyser(const InputMessagePtr& msg);
+    void parseActiveTimers(const InputMessagePtr& msg);
     void parseBestiaryEntryChanged(const InputMessagePtr& msg);
     void parseCyclopediaCharacterInfo(const InputMessagePtr& msg);
     void parseDailyRewardCollectionState(const InputMessagePtr& msg);
@@ -380,7 +395,6 @@ private:
     void parseBestiaryCharmsData(const InputMessagePtr& msg);
 
     // 15x
-    void parseWeaponProficiencyExperience(const InputMessagePtr& msg);
     void parseWeaponProficiencyInfo(const InputMessagePtr& msg);
 
     void parseHighscores(const InputMessagePtr& msg);

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2010-2026 OTClient <https://github.com/edubart/otclient>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -40,12 +40,28 @@
 #include "framework/core/clock.h"
 #include "framework/core/eventdispatcher.h"
 #include "framework/core/scheduledevent.h"
+#include "framework/graphics/bitmapfont.h"
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/graphics/painter.h"
 #include "framework/graphics/shadermanager.h"
 #include "framework/ui/uiwidget.h"
 #include <framework/core/graphicalapplication.h>
 #include <framework/util/stats.h>
+
+#include <algorithm>
+#include <cmath>
+
+namespace {
+Color mixNameHighlightColor(const Color& a, const Color& b, float t)
+{
+    t = std::clamp(t, 0.f, 1.f);
+    return Color(
+        a.rF() + (b.rF() - a.rF()) * t,
+        a.gF() + (b.gF() - a.gF()) * t,
+        a.bF() + (b.bF() - a.bF()) * t,
+        a.aF() + (b.aF() - a.aF()) * t);
+}
+} // namespace
 
 double Creature::speedA = 0;
 double Creature::speedB = 0;
@@ -66,6 +82,12 @@ Creature::~Creature() {
 
 void Creature::onCreate() {
     callLuaField("onCreate");
+}
+
+void Creature::setGroupType(const uint8_t groupType)
+{
+    if (m_groupType != groupType)
+        callLuaField("onGroupTypeChange", m_groupType = groupType);
 }
 
 void Creature::draw(const Point& dest, const bool drawThings, LightView* /*lightView*/)
@@ -294,6 +316,11 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
         }
     }
 
+    Color nameFillColor = fillColor;
+    if (m_customNameColorEnabled && !isCovered()) {
+        nameFillColor = m_customNameColor;
+    }
+
     g_drawPool.setDrawOrder(DrawOrder::SECOND);
 
     if (drawFlags & Otc::DrawNames) {
@@ -304,7 +331,66 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
         if (nameProgram)
             g_drawPool.setShaderProgram(nameProgram);
 
-        m_name.draw(textRect, fillColor);
+        if (m_nameHighlightEnabled && m_name.hasText()) {
+            if (const auto& font = m_name.getFont()) {
+                if (font->getTexture()) {
+                    const std::string_view nameView = m_name.getText();
+                    static thread_local std::vector<Point> s_glyphPos;
+                    static thread_local std::vector<std::pair<int, Color>> s_textColors;
+                    static thread_local std::vector<std::pair<Color, CoordsBufferPtr>> s_colorCoords;
+
+                    Size textBoxSize;
+                    font->calculateGlyphsPositions(nameView, m_name.getAlign(), s_glyphPos, &textBoxSize);
+
+                    const int nameLen = static_cast<int>(nameView.length());
+                    if (nameLen > 0) {
+                        s_textColors.resize(nameLen);
+                        const float period = static_cast<float>(nameLen);
+                        float hlPos = std::fmod(m_nameHighlightPos, period);
+                        if (hlPos < 0.f)
+                            hlPos += period;
+                        const float hlW = std::max(m_nameHighlightWidth, 0.01f);
+
+                        for (int i = 0; i < nameLen; ++i) {
+                            const float fi = static_cast<float>(i);
+                            const float d = std::fabs(fi - hlPos);
+                            const float circ = std::min(d, period - d);
+                            float t = 1.f - std::min(circ / hlW, 1.f);
+                            t = t * t * (3.f - 2.f * t);
+                            s_textColors[i] = { i, mixNameHighlightColor(m_nameHighlightC1, m_nameHighlightC2, t) };
+                        }
+
+                        font->fillTextColorCoords(s_colorCoords, nameView, s_textColors, textBoxSize, m_name.getAlign(), textRect, s_glyphPos);
+
+                        const auto& texture = font->getTexture();
+                        for (const auto& [col, coordsBuf] : s_colorCoords) {
+                            if (coordsBuf && coordsBuf->getVertexCount() > 0)
+                                g_drawPool.addTexturedCoordsBuffer(texture, coordsBuf, col);
+                        }
+                    } else {
+                        if (m_nameOutlineEnabled)
+for (const auto& off : { Point(-1, 0), Point(1, 0), Point(0, -1), Point(0, 1) })
+                            m_name.draw(textRect.translated(off), m_nameOutlineColor);
+                        m_name.draw(textRect, nameFillColor);
+                    }
+                } else {
+                    if (m_nameOutlineEnabled)
+                        for (const auto& off : { Point(-1, 0), Point(1, 0), Point(0, -1), Point(0, 1) })
+                            m_name.draw(textRect.translated(off), m_nameOutlineColor);
+                    m_name.draw(textRect, nameFillColor);
+                }
+            } else {
+                if (m_nameOutlineEnabled)
+                    for (const auto& off : { Point(-1, 0), Point(1, 0), Point(0, -1), Point(0, 1) })
+                        m_name.draw(textRect.translated(off), m_nameOutlineColor);
+                m_name.draw(textRect, nameFillColor);
+            }
+        } else {
+            if (m_nameOutlineEnabled)
+                for (const auto& off : { Point(-1, 0), Point(1, 0), Point(0, -1), Point(0, 1) })
+                    m_name.draw(textRect.translated(off), m_nameOutlineColor);
+            m_name.draw(textRect, nameFillColor);
+        }
 
         if (nameProgram)
             g_drawPool.resetShaderProgram();
@@ -1372,6 +1458,31 @@ std::string Creature::getText()
         return "";
     }
     return m_text->getText();
+}
+
+void Creature::setNameHighlight(const Color& color1, const Color& color2, const float position, const float width)
+{
+    m_nameHighlightEnabled = true;
+    m_nameHighlightC1 = color1;
+    m_nameHighlightC2 = color2;
+    m_nameHighlightPos = position;
+    m_nameHighlightWidth = std::max(width, 0.01f);
+}
+
+void Creature::clearNameHighlight()
+{
+    m_nameHighlightEnabled = false;
+}
+
+void Creature::setCustomNameColor(const Color& color)
+{
+    m_customNameColorEnabled = true;
+    m_customNameColor = color;
+}
+
+void Creature::clearCustomNameColor()
+{
+    m_customNameColorEnabled = false;
 }
 
 bool Creature::canShoot(int distance)

@@ -670,7 +670,7 @@ bool Game::walk(const Otc::Direction direction)
     return true;
 }
 
-void Game::autoWalk(const std::vector<Otc::Direction>& dirs, const Position& startPos)
+void Game::autoWalk(const std::vector<Otc::Direction>& dirs, const Position& startPos, const bool cancelFollowBeforeWalk)
 {
     if (!canPerformGameAction())
         return;
@@ -684,8 +684,8 @@ void Game::autoWalk(const std::vector<Otc::Direction>& dirs, const Position& sta
         return;
     }
 
-    // must cancel follow before any new walk
-    if (isFollowing()) {
+    // must cancel follow before any new walk (Smart Follow passes false so follow state stays for UI/sync)
+    if (cancelFollowBeforeWalk && isFollowing()) {
         cancelFollow();
     }
 
@@ -765,12 +765,12 @@ void Game::turn(const Otc::Direction direction)
     }
 }
 
-void Game::stop()
+void Game::stop(const bool cancelFollowIfFollowing)
 {
     if (!canPerformGameAction())
         return;
 
-    if (isFollowing())
+    if (cancelFollowIfFollowing && isFollowing())
         cancelFollow();
 
     m_protocolGame->sendStop();
@@ -1167,6 +1167,14 @@ void Game::sendPartyAnalyzerAction(const uint8_t action, const std::vector<std::
         return;
 
     m_protocolGame->sendPartyAnalyzerAction(action, items);
+}
+
+void Game::requestActiveTimers()
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendRequestActiveTimers();
 }
 
 void Game::requestOutfit()
@@ -1808,6 +1816,81 @@ void Game::preyAction(const uint8_t slot, const uint8_t actionType, const uint16
     m_protocolGame->sendPreyAction(slot, actionType, index);
 }
 
+void Game::taskHuntingAction(const uint8_t slot, const uint8_t actionType, const bool upgrade, const uint16_t raceId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendTaskHuntingAction(slot, actionType, upgrade, raceId);
+}
+
+void Game::bountyTaskAction(const uint8_t actionType, const uint16_t param)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendBountyTaskAction(actionType, param);
+}
+
+void Game::weeklyTaskAction(const uint8_t actionType, const uint16_t param)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendWeeklyTaskAction(actionType, param);
+}
+
+void Game::taskHuntingShopRequest()
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendTaskHuntingShopRequest();
+}
+
+void Game::taskHuntingShopPurchase(const uint16_t itemId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendTaskHuntingShopPurchase(itemId);
+}
+
+void Game::bountyPreferredAction(const uint8_t actionType, const uint8_t slot, const uint16_t raceId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendBountyPreferredAction(actionType, slot, raceId);
+}
+
+void Game::bountyTalismanUpgrade(const uint8_t statType)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendBountyTalismanUpgrade(statType);
+}
+
+void Game::soulsealRequest()
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendTaskBoardCommand("soulsealRequest");
+}
+
+void Game::soulsealFightAction(const std::string_view name)
+{
+    if (!canPerformGameAction())
+        return;
+
+    std::string escapedName{ name };
+    stdext::replace_all(escapedName, "\\", "\\\\");
+    stdext::replace_all(escapedName, "\"", "\\\"");
+    m_protocolGame->sendTaskBoardCommand("soulsealFight", "{\"name\":\"" + escapedName + "\"}");
+}
+
 void Game::preyRequest()
 {
     if (!canPerformGameAction())
@@ -1878,12 +1961,59 @@ void Game::closeImbuingWindow()
     m_protocolGame->sendCloseImbuingWindow();
 }
 
+void Game::selectImbuementItem(const uint16_t itemId, const Position& pos, const uint8_t stackpos)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendImbuementWindowAction(1, itemId, pos, stackpos);
+}
+
+void Game::selectImbuementScroll()
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendImbuementWindowAction(2);
+}
+
 void Game::imbuementDurations(const bool isOpen)
 {
     if (!canPerformGameAction())
         return;
 
     m_protocolGame->sendImbuementDurations(isOpen);
+}
+
+void Game::sendWeaponProficiencyAction(const uint8_t actionType, const uint16_t itemId)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendWeaponProficiencyAction(actionType, itemId);
+}
+
+void Game::sendWeaponProficiencyApply(const uint16_t itemId, const std::vector<std::pair<uint8_t, uint8_t>>& perks)
+{
+    if (!canPerformGameAction())
+        return;
+
+    m_protocolGame->sendWeaponProficiencyApply(itemId, perks);
+}
+
+void Game::sendWeaponProficiencyApplyLua(const uint16_t itemId, const std::vector<uint8_t>& levels, const std::vector<uint8_t>& perkPositions)
+{
+    if (!canPerformGameAction())
+        return;
+
+    // Convert two parallel arrays to vector of pairs
+    std::vector<std::pair<uint8_t, uint8_t>> perks;
+    size_t count = std::min(levels.size(), perkPositions.size());
+    for (size_t i = 0; i < count; ++i) {
+        perks.emplace_back(levels[i], perkPositions[i]);
+    }
+    
+    m_protocolGame->sendWeaponProficiencyApply(itemId, perks);
 }
 
 void Game::openWheelOfDestiny(uint32_t playerId)

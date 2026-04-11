@@ -145,11 +145,26 @@ function UIMiniWindow:setupOnStart()
     if selfSettings then
         if selfSettings.parentId then
             local parent = rootWidget:recursiveGetChildById(selfSettings.parentId)
-            if parent and parent:isVisible() then
-                if parent:getClassName() == 'UIMiniWindowContainer' and selfSettings.index and parent:isOn() then
-                    self.miniIndex = selfSettings.index
-                    parent:scheduleInsert(self, selfSettings.index)
-                    newParentSet = true
+            if parent then
+                local isVisible = parent:isVisible()
+                local isOn = parent.isOn and parent:isOn() or true  -- Default to true if isOn doesn't exist
+
+                if parent:getClassName() == 'UIMiniWindowContainer' and selfSettings.index then
+                    -- For docked widgets in UIMiniWindowContainer
+                    if isVisible and isOn then
+                        self.miniIndex = selfSettings.index
+                        parent:scheduleInsert(self, selfSettings.index)
+                        newParentSet = true
+                    elseif isVisible or isOn then
+                        -- Try to insert even if not fully visible/on (panel might become visible later)
+                        self.miniIndex = selfSettings.index
+                        local currentParent = self:getParent()
+                        if currentParent and currentParent ~= parent then
+                            currentParent:removeChild(self)
+                        end
+                        parent:insertChild(selfSettings.index, self)
+                        newParentSet = true
+                    end
                 elseif selfSettings.position then
                     self:setParent(parent, true)
                     self:setPosition(topoint(selfSettings.position))
@@ -174,6 +189,10 @@ function UIMiniWindow:setupOnStart()
             self:close(true)
         else
             self:open(true)
+        end
+
+        if selfSettings.locked then
+            self:lock(true)
         end
     else
         if self:getId() == "battleWindow" then
@@ -208,9 +227,10 @@ function UIMiniWindow:setupOnStart()
         local parent = self:getParent()
         local parentId = parent:getId()
 
-        if parentId == "gameLeftPanel" or
-            parentId == "gameLeftExtraPanel" or
-            parentId == "gameRightExtraPanel" then
+        if parentId == "gameLeftPanel" or parentId == "gameLeftExtraPanel" or
+            parentId == "gameLeftExtraPanel2" or parentId == "gameLeftExtraPanel3" or
+            parentId == "gameRightExtraPanel" or parentId == "gameRightExtraPanel2" or
+            parentId == "gameRightExtraPanel3" then
             if parent:isVisible() then
                 parent:setWidth(190)
             end
@@ -244,10 +264,40 @@ function UIMiniWindow:onDragEnter(mousePos)
     }
     self:setPosition(oldPos)
     self.free = true
+
+    self.dragStarted = true
+    self.highlightedPanel = nil -- Track which panel is currently highlighted
     return true
 end
 
+local function isInArray(table, value)
+    for v = 1, #table do
+        if table[v] == value then
+            return true
+        end
+    end
+    return false
+end
+
 function UIMiniWindow:onDragLeave(droppedWidget, mousePos)
+    -- Clear any highlighted panel border
+    if self.highlightedPanel then
+        self.highlightedPanel:setBorderWidth(0)
+        self.highlightedPanel = nil
+    end
+
+    local lockButton = self:getChildById('lockButton')
+    if lockButton and lockButton:isOn() then
+        return false
+    end
+
+    if not self.dragStarted then
+        return false
+    end
+
+    self.dragStarted = false
+
+    -- Normal drag & drop flow - clean up moved widget state
     if self.movedWidget then
         self.setMovedChildMargin(self.movedOldMargin or 0)
         self.movedWidget = nil
@@ -256,25 +306,134 @@ function UIMiniWindow:onDragLeave(droppedWidget, mousePos)
         self.movedIndex = nil
     end
 
-    self:saveParent(self:getParent())
-
-    -- Note: It seems to prevent the minimap, inventory, and health widgets from moving off the interface panel.
-    if self.moveOnlyToMain or droppedWidget and droppedWidget.onlyPhantomDrop then
-        if not (droppedWidget) or (self.moveOnlyToMain and not (droppedWidget.onlyPhantomDrop)) or
-            (not (self.moveOnlyToMain) and droppedWidget.onlyPhantomDrop) then
-            local virtualParent = self:getParent()
-            virtualParent:removeChild(self)
-            self.oldParentDrag:insertChild(self.oldParentDragIndex, self)
-            self.movedWidget = nil
-        end
+    -- Handle height adjustment for horizontal panels
+    local currentParent = self:getParent()
+    if currentParent and isInArray({ "horizontalLeftPanel", "horizontalRightPanel" }, currentParent:getId()) then
+        currentParent:setHeight(currentParent:getHeight() - 5)
     end
-    return true
+
+    UIWindow:onDragLeave(self, droppedWidget, mousePos)
+
+    local finalParent = self:getParent()
+    local finalParentId = finalParent and finalParent:getId() or "nil"
+    local finalParentClass = finalParent and finalParent:getClassName() or "nil"
+
+    -- Check if widget should return to original parent:
+    -- 1. If it ended up outside a valid MiniWindowContainer
+    -- 2. If it has moveOnlyToMain and ended up outside gameMainRightPanel
+    local shouldReturn = false
+    if finalParentClass ~= "UIMiniWindowContainer" then
+        shouldReturn = true
+    elseif self.moveOnlyToMain and finalParentId ~= "gameMainRightPanel"
+        and finalParentId ~= "horizontalLeftPanel" and finalParentId ~= "horizontalRightPanel" then
+        shouldReturn = true
+    end
+
+    if shouldReturn and self.oldParentDrag then
+        self.oldParentDrag:insertChild(self.oldParentDragIndex or 1, self)
+        finalParent = self.oldParentDrag
+        finalParentId = finalParent:getId()
+    end
+
+    if finalParent and isInArray({ "horizontalLeftPanel", "horizontalRightPanel" }, finalParentId) then
+        finalParent:setHeight(finalParent:getHeight() + 5)
+    end
+
+    if finalParent and self:getHeight() > finalParent:getHeight() then
+        self:setHeight(finalParent:getHeight() - 5)
+    end
+
+    -- Auto-fit old parent height if widget moved to a different panel
+    local oldParentDrag = self.oldParentDrag
+    if oldParentDrag and oldParentDrag ~= finalParent then
+        scheduleEvent(function()
+            if oldParentDrag and oldParentDrag.fitAllChildren then
+                oldParentDrag:fitAllChildren()
+            end
+        end, 50)
+    end
+
+    -- Auto-fit new parent height
+    if finalParent and finalParent.fitAllChildren and finalParent:getId() == "gameMainRightPanel" then
+        scheduleEvent(function()
+            if finalParent and finalParent.fitAllChildren then
+                finalParent:fitAllChildren()
+            end
+        end, 50)
+    end
+
+    self.oldParentDrag = nil
+    self.oldParentDragIndex = nil
 end
 
 function UIMiniWindow:onDragMove(mousePos, mouseMoved)
     local oldMousePosY = mousePos.y - mouseMoved.y
-    local children = rootWidget:recursiveGetChildrenByMarginPos(mousePos)
+    -- Mesmo critério que UIManager::updateDraggingWidget (onDrop): evita borda branca num painel e soltar outro
+    local children = rootWidget:recursiveGetChildrenByPos(mousePos)
     local overAnyWidget = false
+    local widgetId = self:getId()
+
+    -- Define valid drop target panels
+    local availablePanels = { "gameLeftPanel", "gameRightPanel", "gameLeftExtraPanel", "gameLeftExtraPanel2",
+        "gameLeftExtraPanel3", "gameRightExtraPanel", "gameRightExtraPanel2", "gameRightExtraPanel3", "rightPanel2",
+        "rightPanel3", "rightPanel4", "leftPanel1",
+        "leftPanel2", "leftPanel3", "leftPanel4", "horizontalLeftPanel", "horizontalRightPanel" }
+
+    -- Faixas horizontais: escolher pela posição do rato (evita destacar/soltar na faixa errada).
+    local hl, hr = nil, nil
+    for i = 1, #children do
+        local child = children[i]
+        local childId = child:getId()
+        if childId == "horizontalLeftPanel" then
+            hl = child
+        elseif childId == "horizontalRightPanel" then
+            hr = child
+        end
+    end
+    local targetPanel = nil
+    if hl and hr then
+        if hl:containsPoint(mousePos) then
+            targetPanel = hl
+        elseif hr:containsPoint(mousePos) then
+            targetPanel = hr
+        else
+            local mid = mousePos.x
+            if rootWidget then
+                mid = rootWidget:getX() + rootWidget:getWidth() / 2
+            end
+            targetPanel = mousePos.x < mid and hl or hr
+        end
+    elseif hl then
+        targetPanel = hl
+    elseif hr then
+        targetPanel = hr
+    end
+    if not targetPanel then
+        for i = 1, #children do
+            local child = children[i]
+            local childId = child:getId()
+            if isInArray(availablePanels, childId) then
+                targetPanel = child
+                break
+            end
+        end
+    end
+
+    -- Update visual border feedback
+    if targetPanel ~= self.highlightedPanel then
+        -- Remove border from previous panel
+        if self.highlightedPanel then
+            self.highlightedPanel:setBorderWidth(0)
+        end
+        -- Add border to new panel
+        if targetPanel then
+            targetPanel:setBorderColor('#ffffff')
+            targetPanel:setBorderWidth(2)
+        end
+        self.highlightedPanel = targetPanel
+    end
+
+    -- Handle widget margin adjustments for insertion preview
     for i = 1, #children do
         local child = children[i]
         if child:getParent():getClassName() == 'UIMiniWindowContainer' then
@@ -313,6 +472,9 @@ function UIMiniWindow:onDragMove(mousePos, mouseMoved)
     if not overAnyWidget and self.movedWidget then
         self.setMovedChildMargin(self.movedOldMargin or 0)
         self.movedWidget = nil
+        self.setMovedChildMargin = nil
+        self.movedOldMargin = nil
+        self.movedIndex = nil
     end
 
     return UIWindow.onDragMove(self, mousePos, mouseMoved)
@@ -359,9 +521,11 @@ function UIMiniWindow:getSettings(name)
 
     local settings = g_settings.getNode('CharMiniWindows')
     if settings then
-        local selfSettings = settings[char][self:getId()]
-        if selfSettings then
-            return selfSettings[name]
+        if settings[char] then
+            local selfSettings = settings[char][self:getId()]
+            if selfSettings then
+                return selfSettings[name]
+            end
         end
     end
 
@@ -448,6 +612,10 @@ function UIMiniWindow:saveParentIndex(parentId, index)
     local selfSettings = {}
     selfSettings.parentId = parentId
     selfSettings.index = index
+    selfSettings.height = self:getHeight()
+    selfSettings.minimized = self.minimized or false
+    selfSettings.locked = self.isLocked and self:isLocked() or false
+    selfSettings.closed = not self:isVisible()
     self:setSettings(selfSettings)
     self.miniIndex = index
 end
@@ -509,16 +677,28 @@ end
 
 function UIMiniWindow:getMinimumHeight()
     local resizeBorder = self:getChildById('bottomResizeBorder')
+    if not resizeBorder then
+        -- Fallback for widgets without resize border (like minimap)
+        return 100
+    end
     return resizeBorder:getMinimum()
 end
 
 function UIMiniWindow:getMaximumHeight()
     local resizeBorder = self:getChildById('bottomResizeBorder')
+    if not resizeBorder then
+        -- Fallback for widgets without resize border (like minimap)
+        return 9999
+    end
     return resizeBorder:getMaximum()
 end
 
 function UIMiniWindow:modifyMaximumHeight(height)
     local resizeBorder = self:getChildById('bottomResizeBorder')
+    if not resizeBorder then
+        -- Widgets without resize border cannot have maximum height modified
+        return
+    end
     local newHeight = resizeBorder:getMaximum() + height
     local curHeight = self:getHeight()
     resizeBorder:setMaximum(newHeight)
@@ -541,7 +721,16 @@ function UIMiniWindow:lock(dontSave)
         lockButton:setOn(true)
     end
     self:setDraggable(false)
-    if not dontsave then
+    self:setBorderWidth(1)
+    self:setBorderColor('#ff0000')
+    local header = self:getChildById('miniwindowHeader')
+    if header then
+        header:setBorderWidthTop(1)
+        header:setBorderWidthLeft(1)
+        header:setBorderWidthRight(1)
+        header:setBorderColor('#ff0000')
+    end
+    if not dontSave then
         self:setSettings({
             locked = true
         })
@@ -556,10 +745,126 @@ function UIMiniWindow:unlock(dontSave)
         lockButton:setOn(false)
     end
     self:setDraggable(true)
-    if not dontsave then
+    self:setBorderWidth(0)
+    local header = self:getChildById('miniwindowHeader')
+    if header then
+        header:setBorderWidthTop(0)
+        header:setBorderWidthLeft(0)
+        header:setBorderWidthRight(0)
+    end
+    if not dontSave then
         self:setSettings({
             locked = false
         })
     end
     signalcall(self.onLockChange, self)
+end
+
+-- Restore widget position from saved settings (more robust than setupOnStart)
+function UIMiniWindow:restorePosition()
+    if not self.save then
+        return false
+    end
+
+    local char = g_game.getCharacterName()
+    if not char or #char == 0 then
+        return false
+    end
+
+    local settings = g_settings.getNode('CharMiniWindows')
+    if not settings or not settings[char] then
+        return false
+    end
+
+    local selfSettings = settings[char][self:getId()]
+    if not selfSettings or not selfSettings.parentId then
+        return false
+    end
+
+    local targetPanel = rootWidget:recursiveGetChildById(selfSettings.parentId)
+    if not targetPanel then
+        return false
+    end
+
+    if targetPanel:getId() == 'horizontalRightPanel' and modules.client_options and not modules.client_options.getOption('showHorizontalRightPanel') then
+        return false
+    end
+
+    local currentParent = self:getParent()
+
+    -- Skip if already in correct panel
+    if currentParent == targetPanel then
+        -- Just restore height and state
+        if selfSettings.height and self:isResizeable() then
+            self:setHeight(selfSettings.height)
+        end
+        if selfSettings.minimized then
+            self:minimize(true)
+        end
+        return true
+    end
+
+    -- Remove from current parent
+    if currentParent then
+        currentParent:removeChild(self)
+        if currentParent.fitAllChildren then
+            currentParent:fitAllChildren()
+        end
+    end
+
+    -- Handle horizontal panels specially
+    local panelId = targetPanel:getId()
+    if panelId == 'horizontalLeftPanel' or panelId == 'horizontalRightPanel' then
+        targetPanel:addChild(self)
+        targetPanel:setPhantom(false)
+
+        if panelId == 'horizontalLeftPanel' then
+            if modules.game_interface and modules.game_interface.showLeftHorizontalPanel then
+                modules.game_interface.showLeftHorizontalPanel(true)
+            end
+        else
+            if modules.game_interface and modules.game_interface.showRightHorizontalPanel then
+                modules.game_interface.showRightHorizontalPanel(true)
+            end
+        end
+
+        -- Resize for horizontal panel
+        addEvent(function()
+            if self and targetPanel then
+                self:setWidth(targetPanel:getWidth())
+                self:setHeight(targetPanel:getHeight())
+            end
+        end)
+    else
+        -- Normal panel - insert at saved index
+        local index = selfSettings.index or 1
+        if index > targetPanel:getChildCount() + 1 then
+            index = targetPanel:getChildCount() + 1
+        end
+        targetPanel:insertChild(index, self)
+
+        -- Restore height
+        if selfSettings.height and self:isResizeable() then
+            self:setHeight(selfSettings.height)
+        end
+    end
+
+    -- Restore minimized state
+    if selfSettings.minimized then
+        self:minimize(true)
+    end
+
+    -- Restore locked state
+    if selfSettings.locked then
+        self:lock(true)
+    end
+
+    -- Restore open/closed state
+    if selfSettings.closed then
+        self:close(true)
+    else
+        self:open(true)
+    end
+
+    return true
 end

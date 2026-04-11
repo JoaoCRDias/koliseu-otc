@@ -224,6 +224,7 @@ GameCharacterSkillStats = 127
 GameCreaturePaperdoll = 128
 GameMultiSpr = 129
 GameVocationMonk = 130
+GameCreatureGroupType = 131
 
 TextColors = {
     red = '#f55e5e',    -- '#c83200'
@@ -341,7 +342,9 @@ PathFindFlags = {
     AllowNullTiles = 1,
     AllowCreatures = 2,
     AllowNonPathable = 4,
-    AllowNonWalkable = 8
+    AllowNonWalkable = 8,
+    -- Alinha com Otc::PathFindIgnoreCreatures (tile objectivo com criatura)
+    IgnoreCreatures = 16,
 }
 
 VipState = {
@@ -358,7 +361,9 @@ ExtendedIds = {
     Game = 4,
     Particles = 5,
     MapShader = 6,
-    NeedsUpdate = 7
+    NeedsUpdate = 7,
+    -- Balrorg/Hylian usa 212; ajusta se o teu servidor esperar outro ID
+    SmartFollow = 8
 }
 
 PreviewState = {
@@ -445,7 +450,10 @@ ResourceTypes = {
     COIN_NORMAL = 90,
     COIN_TRANSFERRABLE = 91,
     COIN_AUCTION = 92,
-    COIN_TOURNAMENT = 93
+    COIN_TOURNAMENT = 93,
+    BOUNTY_TASK_POINTS = 94,
+    BOUNTY_REROLL_POINTS = 95,
+    SOULSEAL_POINTS = 96
 }
 
 CyclopediaCharacterInfoTypes = {
