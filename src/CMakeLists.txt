@@ -282,6 +282,7 @@ set(SOURCE_FILES
         client/creatures.cpp
         client/effect.cpp
         client/game.cpp
+        client/helpercore.cpp
         client/gameconfig.cpp
         client/houses.cpp
         client/item.cpp

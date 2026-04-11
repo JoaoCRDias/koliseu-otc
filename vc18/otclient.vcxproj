@@ -355,6 +355,7 @@
     <ClCompile Include="..\src\client\creatures.cpp" />
     <ClCompile Include="..\src\client\effect.cpp" />
     <ClCompile Include="..\src\client\game.cpp" />
+    <ClCompile Include="..\src\client\helpercore.cpp" />
     <ClCompile Include="..\src\client\houses.cpp" />
     <ClCompile Include="..\src\client\item.cpp" />
     <ClCompile Include="..\src\client\itemtype.cpp" />
@@ -528,6 +529,7 @@
     <ClInclude Include="..\src\client\declarations.h" />
     <ClInclude Include="..\src\client\effect.h" />
     <ClInclude Include="..\src\client\game.h" />
+    <ClInclude Include="..\src\client\helpercore.h" />
     <ClInclude Include="..\src\client\global.h" />
     <ClInclude Include="..\src\client\houses.h" />
     <ClInclude Include="..\src\client\item.h" />

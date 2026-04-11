@@ -20,6 +20,7 @@ for i = 1, 100 do reusableEntries[i] = { position = { x = 0, y = 0, z = 0 }, cre
 local auxiliadorPreCooldown = 200
 local activeBuffs = {} -- spellId -> expiration timestamp (ms)
 local OPCODE_CAST_ON_FOOT = 211
+local lastCastIndex = 0
 
 -- spells that can be cast on both targets and self (CAST ON FOOT)
 local bothCastTypeSpells = {
@@ -199,6 +200,7 @@ end
 -- Rebuild the cache of unified spells/runes
 _Helper.MagicShooter.rebuildCache = function()
   unifiedListCache = {}
+  lastCastIndex = 0
 
   local getShooterProfile = _Helper.getShooterProfile
   local profile = getShooterProfile and getShooterProfile()
@@ -444,9 +446,22 @@ _Helper.MagicShooter.check = function()
   -- block lower-priority spells from stealing the turn
   local runeWaitingForObjectUse = false
 
-  for _, entry in ipairs(unifiedList) do
+  local forceSkillOrder = helperConfig.forceSkillOrder or false
+  local hasCastThisCycle = false
+
+  local listLen = #unifiedList
+  local startIndex = (lastCastIndex % listLen) + 1
+
+  for i = 1, listLen do
+    local idx = ((startIndex + i - 2) % listLen) + 1
+    local entry = unifiedList[idx]
+
     if autoTargetOnHold then
       goto continue
+    end
+
+    if forceSkillOrder and hasCastThisCycle then
+      break
     end
 
     local target = g_game.getAttackingCreature()
@@ -816,6 +831,8 @@ _Helper.MagicShooter.check = function()
           end
         end
         g_game.talk(spell.words)
+        hasCastThisCycle = true
+        lastCastIndex = idx
         if _Helper.safeDoThing then _Helper.safeDoThing(true) end
 
         -- Track buff expiration for spells with buff duration
@@ -937,6 +954,8 @@ _Helper.MagicShooter.check = function()
           end
           if _Helper.safeDoThing then _Helper.safeDoThing(false) end
           g_game.useInventoryItemWith(config.id, bestTarget, 0, true)
+          hasCastThisCycle = true
+          lastCastIndex = idx
           if _Helper.safeDoThing then _Helper.safeDoThing(true) end
 
           -- Set shared object use cooldown so potions know a rune was just used

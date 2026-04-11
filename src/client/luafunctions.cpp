@@ -60,6 +60,7 @@
 #include "uisprite.h"
 #include "paperdoll.h"
 #include "paperdollmanager.h"
+#include "helpercore.h"
 
 #ifdef FRAMEWORK_EDITOR
 #include "houses.h"
@@ -1310,4 +1311,27 @@ void Client::registerLuaFunctions()
 #endif
 
     g_lua.registerClass<UIMapAnchorLayout, UIAnchorLayout>();
+
+    // HelperCore
+    g_lua.registerSingletonClass("g_helperCore");
+    g_lua.bindSingletonFunction("g_helperCore", "clearCooldowns", &HelperCore::clearCooldowns, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "setSpellCooldown", &HelperCore::setSpellCooldown, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "setSpellCooldownEndTime", &HelperCore::setSpellCooldownEndTime, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "getSpellCooldown", &HelperCore::getSpellCooldown, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "isSpellOnCooldown", &HelperCore::isSpellOnCooldown, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "setGroupCooldown", &HelperCore::setGroupCooldown, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "getGroupCooldown", &HelperCore::getGroupCooldown, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "isGroupOnCooldown", &HelperCore::isGroupOnCooldown, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "setMultiUseCooldown", &HelperCore::setMultiUseCooldown, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "isMultiUseOnCooldown", &HelperCore::isMultiUseOnCooldown, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "translateVocation", &HelperCore::translateVocation, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "getClientVocationsForServerVoc", &HelperCore::getClientVocationsForServerVoc, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "canUseByServerVoc", &HelperCore::canUseByServerVoc, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "getDistanceBetween", &HelperCore::getDistanceBetween, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "positionCompare", &HelperCore::positionCompare, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "getDirectionTo", &HelperCore::getDirectionTo, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "numberToOrdinal", &HelperCore::numberToOrdinal, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "isWithinReach", &HelperCore::isWithinReach, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "getAutoTargetModeId", &HelperCore::getAutoTargetModeId, &g_helperCore);
+    g_lua.bindSingletonFunction("g_helperCore", "getAutoTargetModesTable", &HelperCore::getAutoTargetModesTable, &g_helperCore);
 }

@@ -169,19 +169,32 @@ local function getHarmonyCountSafe(p)
   return 0
 end
 
+local ServerToClientVocationMap = {
+  [1] = { 4, 8 },
+  [11] = { 4, 8 },
+  [2] = { 3, 7 },
+  [12] = { 3, 7 },
+  [3] = { 1, 5 },
+  [13] = { 1, 5 },
+  [4] = { 2, 6 },
+  [14] = { 2, 6 },
+  [5] = { 9, 10 },
+  [15] = { 9, 10 },
+}
+
 local function canUseByServerVoc(spellVocations, serverVocId)
   if not serverVocId then return false end
-  if not g_helperCore or not g_helperCore.canUseByServerVoc then return false end
-  if type(spellVocations) ~= "table" then return false end
-  local clean = {}
-  for _, v in ipairs(spellVocations) do
-    local n = tonumber(v)
-    if n and math.floor(n) == n then
-      clean[#clean + 1] = math.floor(n)
+
+  local mapped = ServerToClientVocationMap[serverVocId]
+  if not mapped or table.empty(mapped) then
+    return false
+  end
+  for _, clientVoc in ipairs(mapped) do
+    if table.contains(spellVocations, clientVoc) then
+      return true
     end
   end
-  if #clean == 0 then return false end
-  return g_helperCore.canUseByServerVoc(clean, serverVocId)
+  return false
 end
 
 -- Helper function to get spell by client ID
@@ -351,20 +364,12 @@ local eventTable = {
   checkAvoidWaves = { interval = 150, action = nil }     -- Avoid Waves: evita ficar de frente para criatura
 }
 
-local spellsCooldown = {}
 local function getSpellCooldown(spellId)
-  if g_helperCore and g_helperCore.getSpellCooldown then
-    return g_helperCore.getSpellCooldown(spellId)
-  end
-  return spellsCooldown[spellId] or 0
+  return g_helperCore.getSpellCooldown(spellId)
 end
 
-local groupsCooldown = {}
 local function getGroupSpellCooldown(groupId)
-  if g_helperCore and g_helperCore.getGroupCooldown then
-    return g_helperCore.getGroupCooldown(groupId)
-  end
-  return groupsCooldown[groupId] or 0
+  return g_helperCore.getGroupCooldown(groupId)
 end
 
 -- Optimization Caches
@@ -532,6 +537,7 @@ helperConfig = {
   magicShooterEnabled = false,
   magicShooterOnHold = false,
   disableInProtectZone   = true,
+  forceSkillOrder        = false,
   disableShooterOnFollow = false,
   autoTargetEnabled      = false,
   autoTargetMode         = (g_helperCore and g_helperCore.getAutoTargetModeId and g_helperCore.getAutoTargetModeId('F')) or 6,
@@ -644,11 +650,32 @@ local bothCastTypeSpells = {
 --             HelperSpellData.getHasteWhiteList()
 
 function translateVocation(v)
-  if g_helperCore and g_helperCore.translateVocation then
-    return g_helperCore.translateVocation(v)
+  local map = {
+    [0] = 0,
+    [1] = 1,
+    [11] = 1,
+    [2] = 2,
+    [12] = 2,
+    [3] = 3,
+    [13] = 3,
+    [4] = 4,
+    [14] = 4,
+    [5] = 5,
+    [15] = 5,
+    [9] = 9,
+  }
+  if type(v) == 'number' then
+    return map[v] or v
   end
-  if type(v) == 'number' then return (v == 0 or (v >= 1 and v <= 5) or v == 9 or v == 11 or v == 12 or v == 13 or v == 14 or v == 15) and v or 0 end
-  if type(v) == 'string' then return 0 end
+  if type(v) == 'string' then
+    local s = v:lower()
+    if s:find('knight') or s == 'ek' then return 1 end
+    if s:find('paladin') or s == 'rp' then return 2 end
+    if s:find('sorcerer') or s == 'ms' then return 3 end
+    if s:find('druid') or s == 'ed' then return 4 end
+    if s:find('monk') then return 5 end
+    if s == 'rook' or s == 'none' then return 0 end
+  end
   return 0
 end
 
@@ -1384,12 +1411,7 @@ function offline()
     end
   end
 
-  if g_helperCore and g_helperCore.clearCooldowns then
-    g_helperCore.clearCooldowns()
-  else
-    for k in pairs(spellsCooldown) do spellsCooldown[k] = nil end
-    for k in pairs(groupsCooldown) do groupsCooldown[k] = nil end
-  end
+  g_helperCore.clearCooldowns()
 
   -- Limpar spectators cache
   for k in pairs(lastEngineSpectators) do lastEngineSpectators[k] = nil end
@@ -1494,11 +1516,7 @@ end
 
 -- HELPER AUTO FOOD: Funcao setter para acesso externo ao cooldown (usada por _Helper.AutoFood)
 _Helper.setSpellCooldown = function(spellId, value)
-  if g_helperCore and g_helperCore.setSpellCooldownEndTime then
-    g_helperCore.setSpellCooldownEndTime(spellId, value)
-  else
-    spellsCooldown[spellId] = value
-  end
+  g_helperCore.setSpellCooldownEndTime(spellId, value)
 end
 
 -- HELPER AUTO TARGET: Funcoes getter/setter para acesso externo (usadas por _Helper.AutoTarget)
@@ -1748,21 +1766,15 @@ function onShortcutButtonChange(button)
 end
 
 function onSpellCooldown(spellId, delay)
-  if g_helperCore and g_helperCore.setSpellCooldown then
-    g_helperCore.setSpellCooldown(spellId, delay)
-  end
+  g_helperCore.setSpellCooldown(spellId, delay)
 end
 
 function onSpellGroupCooldown(groupId, delay)
-  if g_helperCore and g_helperCore.setGroupCooldown then
-    g_helperCore.setGroupCooldown(groupId, delay)
-  end
+  g_helperCore.setGroupCooldown(groupId, delay)
 end
 
 function onMultiUseCooldown(time)
-  if g_helperCore and g_helperCore.setMultiUseCooldown then
-    g_helperCore.setMultiUseCooldown(time)
-  end
+  g_helperCore.setMultiUseCooldown(time)
 end
 
 function onUpdateSpellArea(energyWaveEnlarged)
@@ -3016,11 +3028,7 @@ function usePotion(potionId)
     safeDoThing(false)
     g_game.useInventoryItemWith(potionId, player, 0, true)
     safeDoThing(true)
-    if g_helperCore and g_helperCore.setSpellCooldown then
-      g_helperCore.setSpellCooldown(potionConfig.id, potionConfig.exhaustion)
-    else
-      spellsCooldown[potionConfig.id] = g_clock.millis() + potionConfig.exhaustion
-    end
+    g_helperCore.setSpellCooldown(potionConfig.id, potionConfig.exhaustion)
     return true
   end
 
@@ -3428,12 +3436,7 @@ function useSpecialFood(foodId)
     safeDoThing(false)
     g_game.useInventoryItem(foodId)
     safeDoThing(true)
-    local now = g_clock.millis()
-    if g_helperCore and g_helperCore.setSpellCooldown then
-      g_helperCore.setSpellCooldown(specialFoodConfig.id, specialFoodConfig.exhaustion)
-    else
-      spellsCooldown[specialFoodConfig.id] = now + specialFoodConfig.exhaustion
-    end
+    g_helperCore.setSpellCooldown(specialFoodConfig.id, specialFoodConfig.exhaustion)
     specialFoodLocalCooldowns[foodId] = now + (15 * 60 * 1000)
     return true
   end
@@ -3935,6 +3938,13 @@ function toggleDisableInProtectZone(checked)
   end
 end
 
+function toggleForceSkillOrder(widget)
+  if helperConfig then
+    helperConfig.forceSkillOrder = widget:isChecked()
+    saveSettings()
+  end
+end
+
 -- HELPER AUTO TARGET: Funções movidas para classes/auto_target.lua
 -- Wrapper functions para compatibilidade com OTUI e código existente
 
@@ -4295,6 +4305,15 @@ end
 
 _Helper.onSpellGroupCooldown = function(groupId, delay)
   onSpellGroupCooldown(groupId, delay)
+end
+
+_Helper.isObjectUseOnCooldown = function()
+  return g_helperCore.isMultiUseOnCooldown()
+end
+
+_Helper.setObjectUseCooldown = function(duration)
+  duration = duration or 1000
+  g_helperCore.setMultiUseCooldown(duration)
 end
 
 _Helper.findBestTarget = function(position, direction, area, creatureList, minCreatures)
@@ -5037,6 +5056,9 @@ function onLoadHelperData()
   local disableInProtectZone = enableButtons:recursiveGetChildById("disableInProtectZone")
   if disableInProtectZone then disableInProtectZone:setChecked(helperConfig.disableInProtectZone) end
 
+  local forceSkillOrderWidget = enableButtons:recursiveGetChildById("forceSkillOrder")
+  if forceSkillOrderWidget then forceSkillOrderWidget:setChecked(helperConfig.forceSkillOrder or false) end
+
   botStatus()
 
   -- Carregar configuração do equip panel
@@ -5261,6 +5283,7 @@ function loadSettings()
       magicShooterEnabled    = false,
       magicShooterOnHold     = false,
       disableInProtectZone   = true,
+      forceSkillOrder        = false,
       disableShooterOnFollow = false,
       autoTargetEnabled      = false,
       autoTargetMode         = (g_helperCore and g_helperCore.getAutoTargetModeId and g_helperCore.getAutoTargetModeId("F")) or 6,
@@ -5375,6 +5398,7 @@ function loadSettings()
       magicShooterEnabled    = false,
       magicShooterOnHold     = false,
       disableInProtectZone   = true,
+      forceSkillOrder        = false,
       disableShooterOnFollow = false,
       autoTargetEnabled      = false,
       autoTargetMode         = (g_helperCore and g_helperCore.getAutoTargetModeId and g_helperCore.getAutoTargetModeId("F")) or 6,
@@ -5607,6 +5631,9 @@ function loadSettings()
   end
   if helperConfig.disableInProtectZone == nil then
     helperConfig.disableInProtectZone = true
+  end
+  if helperConfig.forceSkillOrder == nil then
+    helperConfig.forceSkillOrder = false
   end
   if helperConfig.autoTargetEnabled == nil then
     helperConfig.autoTargetEnabled = false

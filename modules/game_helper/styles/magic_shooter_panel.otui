@@ -615,9 +615,22 @@ MagicShooterPanel < Panel
         @onClick: manageHotkeys("Enable/Disable Auto Target")
 
       CheckBox
-        id: enableMagicShooter
+        id: forceSkillOrder
         width: 140
         anchors.top: enableAutoTarget.bottom
+        anchors.left: parent.left
+        !text: tr('Force Skill Order')
+        margin-top: 5
+        font: $var-main-font
+        color: $var-text-color
+        text-offset: 13 0
+        !tooltip: tr('When enabled, strictly respects the order of skills in the rule list.\nWith delay at 0, uses each spell/rune natural cooldown.\nSkills are cast one at a time in sequence.')
+        @onCheckChange: toggleForceSkillOrder(self)
+
+      CheckBox
+        id: enableMagicShooter
+        width: 140
+        anchors.top: forceSkillOrder.bottom
         anchors.left: parent.left
         !text: tr('Enable Shooter')
         margin-top: 8
