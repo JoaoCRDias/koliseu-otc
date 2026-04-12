@@ -143,6 +143,36 @@ function MACHINE_UTILS.getPing()
   return MACHINE_UTILS.lastPing
 end
 
+local DIR_OFFSETS = {
+  [North]     = { x = 0, y = -1 },
+  [East]      = { x = 1, y = 0 },
+  [South]     = { x = 0, y = 1 },
+  [West]      = { x = -1, y = 0 },
+  [NorthEast] = { x = 1, y = -1 },
+  [SouthEast] = { x = 1, y = 1 },
+  [SouthWest] = { x = -1, y = 1 },
+  [NorthWest] = { x = -1, y = -1 },
+}
+
+local function applyDirection(pos, dir)
+  local off = DIR_OFFSETS[dir]
+  if not off then return pos end
+  return { x = pos.x + off.x, y = pos.y + off.y, z = pos.z }
+end
+
+local function hasCreatureBlocking(pos)
+  local tile = g_map.getTile(pos)
+  if not tile then return false end
+  local creatures = tile:getCreatures()
+  if not creatures then return false end
+  for _, c in ipairs(creatures) do
+    if c and not c:isLocalPlayer() and not c:isDead() then
+      return true
+    end
+  end
+  return false
+end
+
 -- Minimap icon constants
 local cavebotMap = nil
 local editingIndex = nil
@@ -492,8 +522,8 @@ local function onCreatureDisappearForAutoloot(creature)
   local cPos = creature:getPosition()
   if not cPos or cPos.z ~= playerPos.z then return end
   local dist = math.max(math.abs(playerPos.x - cPos.x), math.abs(playerPos.y - cPos.y))
-  local deathRange = g_helperCore and g_helperCore.getCavebotAutolootDeathRange() or AUTOLOOT_DEATH_RANGE
-  local deathCooldown = g_helperCore and g_helperCore.getCavebotAutolootDeathCooldown() or AUTOLOOT_DEATH_COOLDOWN
+  local deathRange = (g_helperCore and g_helperCore.getCavebotAutolootDeathRange and g_helperCore.getCavebotAutolootDeathRange()) or AUTOLOOT_DEATH_RANGE
+  local deathCooldown = (g_helperCore and g_helperCore.getCavebotAutolootDeathCooldown and g_helperCore.getCavebotAutolootDeathCooldown()) or AUTOLOOT_DEATH_COOLDOWN
   if dist > deathRange then return end
   local now = os.clock()
   if MACHINE_STATE.lastAutolootDeathAt > 0 and (now - MACHINE_STATE.lastAutolootDeathAt) < deathCooldown then return end
@@ -2242,12 +2272,12 @@ function cavebot.toggle(state)
     _Helper.Shortcut.syncButton('shortcutCavebot', MACHINE_STATE.isRunning)
   end
 
-  cavebot.refreshList()
+  cavebot.updateListColors()
   if MACHINE_STATE.isRunning then
     cavebot.resetState()
     -- Encontra o waypoint mais próximo ao iniciar
     MACHINE_STATE.currentIndex = cavebot.findNearestWaypoint()
-    cavebot.refreshList()
+    cavebot.updateListColors()
     cavebot.updateMinimapProgress()
     if defaultConfig.autoExplorer and #waypoints == 0 then
       local p = g_game.getLocalPlayer()
@@ -2415,7 +2445,7 @@ function cavebot.calculateWalkDelay(isMapClick)
   local minMonstersToWait = defaultConfig.minMonstersToWait or 2
 
   local delay
-  if g_helperCore then
+  if g_helperCore and g_helperCore.getCavebotWalkDelay then
     delay = g_helperCore.getCavebotWalkDelay(ping, monsterCount, tileSpeed, isMapClick, walkDelay, minMonstersToWait)
   else
     if isMapClick then
@@ -2466,7 +2496,6 @@ function cavebot.registerWalkStep()
   MACHINE_STATE.autoWalkSentCount = 0
 end
 
--- Um passo de movimento em direção a effectiveTarget (Map Click / Keyboard, mesma lógica do walker)
 local function executeWalkMovement(player, playerPos, effectiveTarget)
   if player.canWalk and not player:canWalk() then
     return
@@ -2491,63 +2520,62 @@ local function executeWalkMovement(player, playerPos, effectiveTarget)
 
   local useKeyboard = (walkMethod == 'Keyboard') or MACHINE_STATE.autoWalkFailed or forceKeyboardForDelay
 
-  if useKeyboard then
-    local pathFlags = 7
-    local usePathfind = MACHINE_STATE.walkAttempts.pathfind < MACHINE_STATE.walkAttempts.maxPathfind
+  local pathFlags = 53
 
-    if usePathfind then
-      local success, path = pcall(function()
+  if useKeyboard then
+    local strictFlags = bit.band(pathFlags, bit.bnot(16))
+    local dir = nil
+
+    local success, path = pcall(function()
+      return g_map.findPath(playerPos, effectiveTarget, 1000, strictFlags)
+    end)
+    if success and path and #path > 0 then
+      dir = path[1]
+    end
+
+    if not dir then
+      success, path = pcall(function()
         return g_map.findPath(playerPos, effectiveTarget, 40000, pathFlags)
       end)
-
       if success and path and #path > 0 then
-        local dir = path[1]
-        g_game.walk(dir)
-        cavebot.registerWalkStep()
-        return
-      else
-        MACHINE_STATE.walkAttempts.pathfind = MACHINE_STATE.walkAttempts.pathfind + 1
+        local nextPos = applyDirection(playerPos, path[1])
+        if not hasCreatureBlocking(nextPos) then
+          dir = path[1]
+        end
       end
     end
 
-    if MACHINE_STATE.walkAttempts.autoWalk < MACHINE_STATE.walkAttempts.maxAutoWalk then
-      MACHINE_STATE.walkAttempts.autoWalk = MACHINE_STATE.walkAttempts.autoWalk + 1
-      g_logger.debug("[Cavebot] Keyboard failed, fallback autoWalk (" ..
-        MACHINE_STATE.walkAttempts.autoWalk .. "/" .. MACHINE_STATE.walkAttempts.maxAutoWalk .. ")")
-
-      if player.autoWalk then
-        player:autoWalk(effectiveTarget)
-      else
-        g_game.autoWalk(effectiveTarget)
-      end
-      return
-    end
-
-    MACHINE_STATE.walkAttempts.pathfind = 0
-    MACHINE_STATE.walkAttempts.autoWalk = 0
-    if player.autoWalk then
-      player:autoWalk(effectiveTarget)
-    else
-      g_game.autoWalk(effectiveTarget)
+    if dir then
+      g_game.walk(dir)
+      cavebot.registerWalkStep()
     end
     return
   else
     local isWalking = player.isAutoWalking and player:isAutoWalking()
 
-    if not isWalking then
-      MACHINE_STATE.autoWalkSentCount = MACHINE_STATE.autoWalkSentCount + 1
+    local creatureInPath = false
+    local success, path = pcall(function()
+      return g_map.findPath(playerPos, effectiveTarget, 40000, pathFlags)
+    end)
+    if success and path and #path > 0 then
+      local checkPos = { x = playerPos.x, y = playerPos.y, z = playerPos.z }
+      local maxCheck = math.min(#path, 3)
+      for step = 1, maxCheck do
+        checkPos = applyDirection(checkPos, path[step])
+        if hasCreatureBlocking(checkPos) then
+          creatureInPath = true
+          break
+        end
+      end
+    end
 
-      if MACHINE_STATE.autoWalkSentCount >= 4 then
-        g_logger.debug("[Cavebot] MapClick autoWalk failed " ..
-          MACHINE_STATE.autoWalkSentCount .. "x without movement, switching to keyboard (2s cooldown)")
-        MACHINE_STATE.autoWalkFailed = true
-        MACHINE_STATE.autoWalkFailedAt = os.clock()
-        MACHINE_STATE.autoWalkSentCount = 0
-        return
+    if not isWalking or creatureInPath then
+      if creatureInPath and isWalking then
+        player:stopAutoWalk()
       end
 
       if player.autoWalk then
-        player:autoWalk(effectiveTarget)
+        player:autoWalk(effectiveTarget, false, false, pathFlags)
       else
         g_game.autoWalk(effectiveTarget)
       end
@@ -2653,7 +2681,7 @@ function cavebot.explorerWalkerTick()
     if MACHINE_STATE.lureWaitStart == 0 then
       MACHINE_STATE.lureWaitStart = nowLure
     end
-    local lureMax = g_helperCore and g_helperCore.getCavebotLureWaitMaxTime() or MACHINE_STATE.lureWaitMaxTime
+    local lureMax = (g_helperCore and g_helperCore.getCavebotLureWaitMaxTime and g_helperCore.getCavebotLureWaitMaxTime()) or MACHINE_STATE.lureWaitMaxTime
     if (nowLure - MACHINE_STATE.lureWaitStart) < lureMax then
       MACHINE_STATE.lastStatus = 'Waiting monsters'
       player:stopAutoWalk()
@@ -2832,32 +2860,26 @@ function cavebot.updateFreezeState(currentPos, targetPos)
 
   local freezeTime = now - MACHINE_STATE.lastFreeze
 
-  -- Se está em andar errado, considera stuck mais rápido
   if wrongFloor then
     if freezeTime >= 5 then
       MACHINE_STATE.isStuck = true
       return true, "wrong_floor"
-    elseif freezeTime >= (g_helperCore and g_helperCore.getCavebotFreezeSlowSec() or 2) then
+    elseif freezeTime >= 2 then
       return true, "floor_change"
     end
   end
 
-  local stuckMax = g_helperCore and g_helperCore.getCavebotStuckMaxTime() or MACHINE_STATE.stuckMaxTime
-  local freezeSlow = g_helperCore and g_helperCore.getCavebotFreezeSlowSec() or 2
-  local freezeFreezing = g_helperCore and g_helperCore.getCavebotFreezeFreezingSec() or 5
-  local trappedTimeout = g_helperCore and g_helperCore.getCavebotTrappedTimeoutSec() or 30
-
   if canMove then
-    if freezeTime >= stuckMax then
+    if freezeTime >= MACHINE_STATE.stuckMaxTime then
       MACHINE_STATE.isStuck = true
       return true, "stuck"
-    elseif freezeTime >= freezeFreezing then
+    elseif freezeTime >= 5 then
       return true, "freezing"
-    elseif freezeTime >= freezeSlow then
+    elseif freezeTime >= 2 then
       return true, "slow"
     end
   else
-    if freezeTime >= trappedTimeout then
+    if freezeTime >= 30 then
       MACHINE_STATE.isStuck = true
       return true, "trapped_timeout"
     end
@@ -2987,7 +3009,7 @@ end
 -- ============================================================================
 function cavebot.getDistance(pos1, pos2)
   if not pos1 or not pos2 then return 99999 end
-  if g_helperCore then
+  if g_helperCore and g_helperCore.getDistanceBetween then
     return g_helperCore.getDistanceBetween(pos1, pos2)
   end
   return math.max(math.abs(pos1.x - pos2.x), math.abs(pos1.y - pos2.y))
@@ -3125,7 +3147,7 @@ function cavebot.avoidLostInMonsters(playerPos, monsters, minMonsters, avoidTrap
       local distX = monsterPos.x - playerPos.x
 
       local isLost
-      if g_helperCore then
+      if g_helperCore and g_helperCore.isMonsterLost then
         isLost = g_helperCore.isMonsterLost(playerDir, distX, distY)
       else
         isLost = false
@@ -3180,7 +3202,7 @@ end
 
 function cavebot.findNearestPosition(from, positions, extras)
   extras = extras or {}
-  if g_helperCore then
+  if g_helperCore and g_helperCore.findNearestPosition then
     local idx, dist = g_helperCore.findNearestPosition(from, positions, extras)
     local nextPath = (idx and idx > 0) and positions[idx] or nil
     return idx or 0, nextPath, dist or 999999
@@ -3448,7 +3470,7 @@ function cavebot.walkerTick()
         MACHINE_STATE.lureWaitStart = now
       end
 
-      local lureMax = g_helperCore and g_helperCore.getCavebotLureWaitMaxTime() or MACHINE_STATE.lureWaitMaxTime
+      local lureMax = (g_helperCore and g_helperCore.getCavebotLureWaitMaxTime and g_helperCore.getCavebotLureWaitMaxTime()) or MACHINE_STATE.lureWaitMaxTime
       local waitTime = now - MACHINE_STATE.lureWaitStart
       if waitTime < lureMax then
         MACHINE_STATE.lastStatus = "Waiting monsters"
@@ -3612,7 +3634,7 @@ function cavebot.walkerTick()
     local tile = g_map.getTile(targetPos)
     local isBlocked = false
 
-    if not tile or not tile:isWalkable() then
+    if not tile or not tile:isWalkable() or tile:hasFloorChange() then
       isBlocked = true
     else
       local creatures = tile:getCreatures()
@@ -3637,7 +3659,7 @@ function cavebot.walkerTick()
       for _, n in ipairs(neighbors) do
         local candidate = { x = targetPos.x + n.x, y = targetPos.y + n.y, z = targetPos.z }
         local cTile = g_map.getTile(candidate)
-        if cTile and cTile:isWalkable() then
+        if cTile and cTile:isWalkable() and not cTile:hasFloorChange() then
           local d = cavebot.getDistance(playerPos, candidate)
           if d < bestDist then
             bestDist = d
@@ -3661,7 +3683,11 @@ function cavebot.startWalking()
     removeEvent(walkEvent)
     walkEvent = nil
   end
-  walkEvent = cycleEvent(cavebot.walkerTick, 25)
+  walkEvent = cycleEvent(cavebot.walkerTick, cavebot.getTickInterval())
+end
+
+function cavebot.getTickInterval()
+  return 10
 end
 
 function cavebot.stopWalking()
