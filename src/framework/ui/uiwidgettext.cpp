@@ -506,7 +506,12 @@ void UIWidget::setColoredText(const std::string_view coloredText, bool dontFireL
             m_textColors.emplace_back(text.size(), baseColor);
             text.append(processedPrefix);
         }
-        auto color = Color(res[2].str());
+        std::string colorStr = res[2].str();
+        if (!colorStr.empty() && colorStr.front() == '$') {
+            if (auto resolved = g_ui.resolveOtuiGlobalAlias(colorStr))
+                colorStr = *resolved;
+        }
+        auto color = Color(colorStr);
         std::string colorContent = res[1].str();
         std::string processedColorContent = processTextEvents(colorContent, text.size());
         m_textColors.emplace_back(text.size(), color);

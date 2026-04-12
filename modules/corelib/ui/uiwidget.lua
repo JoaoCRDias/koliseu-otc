@@ -25,17 +25,30 @@ function UIWidget:setTitle(title)
     self:setColor("#c0c0c0")
 end
 
+local _setColoredText = UIWidget.setColoredText
+function UIWidget:setColoredText(textOrTable)
+    if type(textOrTable) == "table" then
+        local parts = {}
+        for i = 1, #textOrTable, 2 do
+            parts[#parts + 1] = "{" .. textOrTable[i] .. ", " .. textOrTable[i + 1] .. "}"
+        end
+        _setColoredText(self, table.concat(parts))
+    else
+        _setColoredText(self, textOrTable)
+    end
+end
+
 function UIWidget:parseColoredText(text, default_color)
-    default_color = default_color or "#ffffff"
+    default_color = default_color or "$var-text-cip-color-white"
     local result, last_pos = "", 1
-    for start, stop in text:gmatch("()%[color=#?%x+%]()") do
+    for start, stop in text:gmatch("()%[color=[^%]]+%]()") do
         if start > last_pos then
             result = result .. "{" .. text:sub(last_pos, start - 1) .. ", " .. default_color .. "}"
         end
         local closing_tag_start = text:find("%[/color%]", stop)
         if not closing_tag_start then break end
         local content = text:sub(stop, closing_tag_start - 1)
-        local color = text:match("#%x+", start) or default_color
+        local color = text:match("%[color=([^%]]+)%]", start) or default_color
         result = result .. "{" .. content .. ", " .. color .. "}"
         last_pos = closing_tag_start + 8
     end

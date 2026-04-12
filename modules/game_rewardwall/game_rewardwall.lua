@@ -34,8 +34,8 @@ local actualUsed = {}
 local bonusShrine = 0
 -- @ const
 local COLORS = {
-    BASE_1 = "#484848",
-    BASE_2 = "#414141"
+    BASE_1 = "$var-textlist-odd",
+    BASE_2 = "$var-textlist-even"
 }
 local ZONE = {
     LAST_ZONE = -99,
@@ -81,9 +81,13 @@ local BOX_CONFIGS = {
     },
     [CONST_WINDOWS_BOX.CONFIRMATION_IRA] = {
         title = "Confirmation of using Instant Reward Access",
-        content = "Remember! You can always collect your daily reward for free by visiting a reward shrine!\n\nYou Currently own 3x Instant Reward Access. Do you really want to use one to claim your daily reward now?",
+        content =
+        "Remember! You can always collect your daily reward for free by visiting a reward shrine!\n\nYou Currently own 3x Instant Reward Access. Do you really want to use one to claim your daily reward now?",
         okCallback = function()
-            g_game.requestGetRewardDaily(bonusShrine, actualUsed)
+            -- Server expects: 0 = shrine (free), 1 = panel (costs token)
+            -- Client receives: 1 = shrine, 0 = panel (inverted by server)
+            local shrineValue = bonusShrine == OPEN_WINDOWS.SHRINE and 0 or 1
+            g_game.requestGetRewardDaily(shrineValue, actualUsed)
             if windowsPickWindow then
                 windowsPickWindow:destroy()
                 windowsPickWindow = nil
@@ -97,7 +101,8 @@ local BOX_CONFIGS = {
     },
     [CONST_WINDOWS_BOX.NO_IRA] = {
         title = "Warning: No Sufficient Instant Reward Access",
-        content = "Remember! you can always collect your daily reward for free by visiting a reward shrine!\nyou do not have an Instant Reward Access.\nVisit the store to buy more!"
+        content =
+        "Remember! you can always collect your daily reward for free by visiting a reward shrine!\nyou do not have an Instant Reward Access.\nVisit the store to buy more!"
     }
 }
 
@@ -121,11 +126,13 @@ end
 
 local function premiumStatusWindwos(isPremium)
     rewardWallController.ui.premiumStatus.premiumMessage:setText(isPremium and
-                                                                     "Great! You benefit from the best possible rewards and bonuses due to your premium status." or
-                                                                     "With a Premium account, you would benefit from even better rewards and bonuses.")
+        "Great! You benefit from the best possible rewards and bonuses due to your premium status." or
+        "With a Premium account, you would benefit from even better rewards and bonuses.")
     rewardWallController.ui.premiumStatus.premiumButton:setOn(not isPremium)
-    rewardWallController.ui.infoPanel.free:setColor(isPremium and "#909090" or "#FFFFFF")
-    rewardWallController.ui.infoPanel.premium:setColor(isPremium and "#FFFFFF" or "#909090")
+    rewardWallController.ui.infoPanel.free:setColor(isPremium and "$var-text-cip-color-grey" or
+    "$var-text-cip-color-white")
+    rewardWallController.ui.infoPanel.premium:setColor(isPremium and "$var-text-cip-color-white" or
+    "$var-text-cip-color-grey")
     if isPremium then
         for i, widget in pairs(rewardWallController.ui.restingAreaPanel.bonusIcons:getChildren()) do
             if widget then
@@ -234,9 +241,11 @@ local function getBonusDescription(bonusName, streakCount, activeBonuses)
     local isPremium = g_game.getLocalPlayer():isPremium()
 
     return string.format(
-        "Allow [color=#909090]%s[/color]%s\nThis bonus is active because you are [color=%s]Premium[/color] and reached a reward streak of at least [color=#44AD25]%d[/color].%s",
-        bonusName, isPremium and "" or "[color=#ff0000](Locked)[/color]", isPremium and "#44AD25" or "#ff0000",
-        streakCount, isPremium and ("\n\nActive bonuses: [color=#909090]%s[/color]."):format(activeBonuses) or "")
+        "Allow [color=$var-text-cip-color-grey]%s[/color]%s\nThis bonus is active because you are [color=%s]Premium[/color] and reached a reward streak of at least [color=$var-text-cip-color-green]%d[/color].%s",
+        bonusName, isPremium and "" or "[color=#ff0000](Locked)[/color]",
+        isPremium and "$var-text-cip-color-green" or "#ff0000",
+        streakCount,
+        isPremium and ("\n\nActive bonuses: [color=$var-text-cip-color-grey]%s[/color]."):format(activeBonuses) or "")
 end
 
 local function checkRewards(data)
@@ -257,17 +266,17 @@ local function checkRewards(data)
             iconWidget:setIcon("game_rewardwall/images/icon-reward-pickitems")
             rewardButton.bundleType = bundleType.ITEMS
             rewardButton.rewardItem = reward.selectableItems
-            rewardButton.itemsToSelect = {reward.itemsToSelect or 0, altReward and altReward.itemsToSelect or 0}
+            rewardButton.itemsToSelect = { reward.itemsToSelect or 0, altReward and altReward.itemsToSelect or 0 }
         elseif reward.bundleItems[1] and reward.bundleItems[1].bundleType == bundleType.XPBOOST then
             iconWidget:setIcon("game_rewardwall/images/icon-reward-xpboost")
             rewardButton.bundleType = bundleType.XPBOOST
-            rewardButton.itemsToSelect = {reward.bundleItems[1].itemId or 0,
-                                          altReward and altReward.bundleItems[1].itemId or 0}
+            rewardButton.itemsToSelect = { reward.bundleItems[1].itemId or 0,
+                altReward and altReward.bundleItems[1].itemId or 0 }
         else
             iconWidget:setIcon("game_rewardwall/images/icon-reward-fixeditems")
             rewardButton.bundleType = bundleType.PREY
-            rewardButton.itemsToSelect = {reward.bundleItems[1].count or 0,
-                                          altReward and altReward.bundleItems[1].count or 0}
+            rewardButton.itemsToSelect = { reward.bundleItems[1].count or 0,
+                altReward and altReward.bundleItems[1].count or 0 }
         end
     end
 end
@@ -283,11 +292,11 @@ local function onDailyRewardCollectionState(state)
 
     local text = {
         [DailyRewardStatus.DAILY_REWARD_COLLECTED] = "you did not claim your daily reward in time. too bad, you do not have enough Daily Reward Jokers.",
-        [DailyRewardStatus.DAILY_REWARD_NOTCOLLECTED] = "You did not claim your daily reward in time. If you don't claim your reward now, your [color=#D33C3C]streak will be reset.[/color]",
+        [DailyRewardStatus.DAILY_REWARD_NOTCOLLECTED] = "You did not claim your daily reward in time. If you don't claim your reward now, your [color=$var-text-cip-store-red]streak will be reset.[/color]",
         [DailyRewardStatus.DAILY_REWARD_NOTAVAILABLE] ="idk",
     }
-    rewardWallController.ui.restingAreaPanel.streakWarning:parseColoredText(text[state],"#c0c0c0")
-end 
+    rewardWallController.ui.restingAreaPanel.streakWarning:parseColoredText(text[state],"$var-text-cip-color")
+end
 ]]
 
 local function onRestingAreaState(zone, state, message)
@@ -321,10 +330,10 @@ local function onServerError(code, error)
         rewardWallController.ui:focus()
     end
 
-    local standardButtons = {{
+    local standardButtons = { {
         text = "ok",
         callback = cancelCallback
-    }}
+    } }
 
     generalBox = displayGeneralBox3(rewardWallController.ui:getText(), error, standardButtons)
 end
@@ -342,7 +351,7 @@ local function disconnectOnServerError()
 end
 
 local function onOpenRewardWall(bonusShrines, nextRewardTime, dayStreakDay, wasDailyRewardTaken, errorMessage, tokens,
-    timeLeft, dayStreakLevel)
+                                timeLeft, dayStreakLevel)
     if bonusShrines == OPEN_WINDOWS.SHRINE then
         rewardWallController.ui:show()
         rewardWallController.ui:raise()
@@ -461,7 +470,7 @@ function rewardWallController:onInit()
 end
 
 function rewardWallController:onTerminate()
-    generalBox, windowsPickWindow, ButtonRewardWall = destroyWindows({generalBox, windowsPickWindow, ButtonRewardWall})
+    generalBox, windowsPickWindow, ButtonRewardWall = destroyWindows({ generalBox, windowsPickWindow, ButtonRewardWall })
 end
 
 function rewardWallController:onGameStart()
@@ -482,8 +491,9 @@ function rewardWallController:onGameEnd()
         rewardWallController.ui:hide()
         ButtonRewardWall:setOn(false)
     end
-    generalBox, windowsPickWindow = destroyWindows({generalBox, windowsPickWindow})
+    generalBox, windowsPickWindow = destroyWindows({ generalBox, windowsPickWindow })
 end
+
 -- /*=============================================
 -- =            Call css onClick                =
 -- =============================================*/
@@ -493,7 +503,7 @@ function rewardWallController:onClickshowHistory()
         g_game.requestOpenRewardHistory()
     end
     rewardWallController.ui.footerPanel.historyButton:setText(
-    rewardWallController.ui.historyPanel:isVisible() and "back" or "history")
+        rewardWallController.ui.historyPanel:isVisible() and "back" or "history")
 end
 
 function rewardWallController:onClickToggle()
@@ -527,10 +537,11 @@ function rewardWallController:onClickDisplayWindowsPickRewardWindow(event)
             windowsPickWindow = g_ui.displayUI('styles/pickreward')
             windowsPickWindow:show()
             windowsPickWindow:getChildById('capacity'):setText("Free capacity: " ..
-                                                                   g_game:getLocalPlayer():getFreeCapacity() .. " oz")
+                g_game:getLocalPlayer():getFreeCapacity() .. " oz")
 
-            local text = string.format("You have selected [color=#D33C3C]0[/color] of %d reward items", itemsToSelect)
-            windowsPickWindow:getChildById('rewardLabel'):parseColoredText(text, "#c0c0c0")
+            local text = string.format("You have selected [color=$var-text-cip-store-red]0[/color] of %d reward items",
+                itemsToSelect)
+            windowsPickWindow:getChildById('rewardLabel'):parseColoredText(text, "$var-text-cip-color")
 
             for i, item in pairs(event.target.rewardItem) do
                 local getItem = g_ui.createWidget('ItemReward', windowsPickWindow:getChildById('rewardList'))
@@ -539,7 +550,6 @@ function rewardWallController:onClickDisplayWindowsPickRewardWindow(event)
                 getItem:setBackgroundColor((i % 2 == 0) and COLORS.BASE_1 or COLORS.BASE_2)
                 getItem.totalWeight = item.weight or 1
                 getItem.itemsToSelect = itemsToSelect
-
             end
             actualUsed = {}
             hide()
@@ -548,7 +558,6 @@ function rewardWallController:onClickDisplayWindowsPickRewardWindow(event)
             windowsPickWindow:raise()
             windowsPickWindow:focus()
         end
-
     elseif event.target.bundleType == bundleType.XPBOOST or event.target.bundleType == bundleType.PREY then
         hide()
         actualUsed = {}
@@ -577,10 +586,12 @@ function rewardWallController:onhoverBonus(event)
 
     local isPremium = g_game.getLocalPlayer():isPremium()
     local bonusText = string.format(
-        "Allow [color=#909090]%s[/color]%s\nThis bonus is active because you are [color=%s]Premium[/color] and reached a reward streak of at least [color=#44AD25]%d[/color].%s",
-        bonus.name, isPremium and "" or "[color=#ff0000](Locked)[/color]", isPremium and "#44AD25" or "#ff0000",
+        "Allow [color=$var-text-cip-color-grey]%s[/color]%s\nThis bonus is active because you are [color=%s]Premium[/color] and reached a reward streak of at least [color=$var-text-cip-color-green]%d[/color].%s",
+        bonus.name, isPremium and "" or "[color=#ff0000](Locked)[/color]",
+        isPremium and "$var-text-cip-color-green" or "#ff0000",
         bonus.id,
-        isPremium and ("\n\nActive bonuses: [color=#909090]%s[/color]."):format(getBonusStrings(bonuses)) or "")
+        isPremium and
+        ("\n\nActive bonuses: [color=$var-text-cip-color-grey]%s[/color]."):format(getBonusStrings(bonuses)) or "")
 
     rewardWallController.ui.infoPanel:parseColoredText(bonusText)
 end
@@ -592,9 +603,12 @@ function rewardWallController:onhoverStatusPlayer(event)
     end
 
     local playerStatus = {
-        rewardStreakIcon = "This explains the reward streak system. You need to claim your daily reward between regular server saves to maintain your streak. At a streak of 2+, your character gets resting area bonuses. Free accounts can reach a maximum bonus at streak level 3, while premium players can reach higher levels. Characters on the same account share the streak.",
-        timeLeft = "This is an urgent notification to claim your daily reward within one minute (before the next server save) to raise your reward streak by 1. It mentions that 3 Daily Reward Jokers will be used to prevent resetting your streak. It also encourages raising your streak to benefit from bonuses in resting areas.",
-        restingAreaGold = "This explains how Daily Reward Jokers work. They help you maintain your streak on days when you can't claim your daily reward. Each character receives one Daily Reward Joker on the first day of each month. The message recommends collecting rewards daily to stay safe."
+        rewardStreakIcon =
+        "This explains the reward streak system. You need to claim your daily reward between regular server saves to maintain your streak. At a streak of 2+, your character gets resting area bonuses. Free accounts can reach a maximum bonus at streak level 3, while premium players can reach higher levels. Characters on the same account share the streak.",
+        timeLeft =
+        "This is an urgent notification to claim your daily reward within one minute (before the next server save) to raise your reward streak by 1. It mentions that 3 Daily Reward Jokers will be used to prevent resetting your streak. It also encourages raising your streak to benefit from bonuses in resting areas.",
+        restingAreaGold =
+        "This explains how Daily Reward Jokers work. They help you maintain your streak on days when you can't claim your daily reward. Each character receives one Daily Reward Joker on the first day of each month. The message recommends collecting rewards daily to stay safe."
     }
 
     local DEFAULT_MESSAGE = "Unknown bonus."
@@ -611,7 +625,7 @@ function rewardWallController:onhoverRewardType(event)
         return
     end
 
-    local itemsToSelect = event.target.itemsToSelect or {1, 1}
+    local itemsToSelect = event.target.itemsToSelect or { 1, 1 }
     local freeAmount = 0
     local premiumAmount = 0
 
@@ -656,8 +670,10 @@ end
 
 function rewardWallController:onhoverStatusReward(event)
     local statusReward = {
-        [STATUS.COLLECTED] = "You have already collected this daily reward.\nThe daily rewards follow a specific cycle where each day you claim it, you get another reward. The cycle repeats after 7 claimed rewards. You will be able to claim this daily reward again as soon as you have reached this postion in the next cycle.",
-        [STATUS.ACTIVE] = "The daily reward can be claimed now.\nIf you claim this reward now, it will cost you one Instant Reward Access.\nGet your daily reward for free by visiting a reward shrine.\nYou did not claim your daily reward in time.\nToo bad, you do not have enough Daily Reward Jokers.",
+        [STATUS.COLLECTED] =
+        "You have already collected this daily reward.\nThe daily rewards follow a specific cycle where each day you claim it, you get another reward. The cycle repeats after 7 claimed rewards. You will be able to claim this daily reward again as soon as you have reached this postion in the next cycle.",
+        [STATUS.ACTIVE] =
+        "The daily reward can be claimed now.\nIf you claim this reward now, it will cost you one Instant Reward Access.\nGet your daily reward for free by visiting a reward shrine.\nYou did not claim your daily reward in time.\nToo bad, you do not have enough Daily Reward Jokers.",
         [STATUS.LOCKED] = "This daily reward is still locked.\nFirst collect the previous daily rewards of this cycle."
     }
     if not event.value then
@@ -713,7 +729,7 @@ function onTextChangeChangeNumber(getPanel)
     for _, count in pairs(actualUsed) do
         alreadyUsed = alreadyUsed + (count or 0)
     end
-    local color = alreadyUsed == 0 and "#D33C3C" or "#00FF00"
+    local color = alreadyUsed == 0 and "$var-text-cip-store-red" or "#00FF00"
     windowsPickWindow:getChildById('btnOk'):setEnabled(alreadyUsed > 0)
 
     local text = string.format("You have selected [color=%s]%d[/color] of %d reward items", color, alreadyUsed,
@@ -855,6 +871,11 @@ function displayGeneralBox3(title, message, buttons, onEnterCallback, onEscapeCa
     generalBox:show()
     generalBox:raise()
     generalBox:focus()
+
+    -- UIModalOverlay - bloquear interação com widgets abaixo
+    UIModalOverlay.register(generalBox)
+    UIModalOverlay.show(generalBox) -- Forçar overlay já que a janela já foi mostrada
+
     return generalBox
 end
 
@@ -865,26 +886,26 @@ function managerMessageBoxWindow(id)
     end
 
     local cancelCallback = function()
-        generalBox, windowsPickWindow = destroyWindows({generalBox, windowsPickWindow})
+        generalBox, windowsPickWindow = destroyWindows({ generalBox, windowsPickWindow })
         rewardWallController.ui:show()
         rewardWallController.ui:raise()
         rewardWallController.ui:focus()
     end
 
     local okCallback = config.okCallback or function()
-        generalBox, windowsPickWindow = destroyWindows({generalBox, windowsPickWindow})
+        generalBox, windowsPickWindow = destroyWindows({ generalBox, windowsPickWindow })
         rewardWallController.ui:show()
         rewardWallController.ui:raise()
         rewardWallController.ui:focus()
     end
 
-    local standardButtons = {{
+    local standardButtons = { {
         text = "cancel",
         callback = cancelCallback
     }, {
         text = "ok",
         callback = okCallback
-    }}
+    } }
 
     generalBox = displayGeneralBox3(config.title, config.content, standardButtons)
 

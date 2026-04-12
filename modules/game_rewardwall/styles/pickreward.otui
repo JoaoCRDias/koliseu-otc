@@ -4,7 +4,7 @@ MainWindow
   size: 451 390
   @onEscape: modules.game_rewardwall.destroyPickReward()
   padding: 20
-  color: #c0c0c0
+  color: $var-text-cip-color
 
   Label
     id: rewardLabel
@@ -73,7 +73,7 @@ MainWindow
     margin-top: 5
     margin-right: 10
     text: Ok
-    color: #FFFFFF
+    color: $var-text-cip-color-white
     font: cipsoftFont
     enabled: false
     @onClick: modules.game_rewardwall.onClickBtnOk()
