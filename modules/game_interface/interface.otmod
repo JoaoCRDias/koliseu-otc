@@ -54,6 +54,7 @@ Module
     - game_store
     - game_quickloot
     - game_rewardwall
+    - game_dailyreward
     - game_forge
     - game_cyclopedia
     - game_battlepass

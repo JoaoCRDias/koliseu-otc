@@ -187,6 +187,72 @@ function string.pack_custom(format, ...)
   return table.concat(result)
 end
 
+function string:parseHTML()
+    local result = {}
+    local currentIndex = 1
+
+    if not self:find("<") or not self:find(">") then
+        return { { "", self } }
+    end
+
+    while currentIndex <= #self do
+        local startTag, endTagStart = self:find("<(.-)>", currentIndex)
+        if startTag then
+            local tag = self:sub(startTag + 1, endTagStart - 1)
+            local endTag = "</" .. tag:match("^(%a+)") .. ">"
+            local contentStart, contentEnd = self:find(endTag, endTagStart)
+
+            if contentStart then
+                local textBefore = self:sub(currentIndex, startTag - 1)
+                if #textBefore > 0 then
+                    table.insert(result, { "", textBefore })
+                end
+
+                local formatType, color, fontType, fontStyle
+                if tag == "b" then
+                    formatType = "bold"
+                elseif tag == "i" then
+                    formatType = "italic"
+                elseif tag == "li" then
+                    formatType = "list"
+                elseif tag:match("^font") then
+                    formatType = "font"
+                    color = tag:match("color=\"(.-)\"")
+                    fontType = tag:match("type=\"(.-)\"")
+                    fontStyle = tag:match("style=\"(.-)\"")
+                end
+
+                local content = self:sub(endTagStart + 1, contentStart - 1)
+                local data = { formatType, content }
+                if color then
+                    data[1] = "color"
+                    data[3] = color
+                elseif fontType then
+                    data[1] = "fontType"
+                    data[3] = fontType
+                elseif fontStyle then
+                    data[1] = "fontStyle"
+                    data[3] = fontStyle
+                end
+                table.insert(result, data)
+
+                currentIndex = contentEnd + 1
+            else
+                break
+            end
+        else
+            break
+        end
+    end
+
+    local textAfter = self:sub(currentIndex)
+    if #textAfter > 0 then
+        table.insert(result, { "", textAfter })
+    end
+
+    return result
+end
+
 function string.capitalize(str)
     if not str or str == "" then
         return str

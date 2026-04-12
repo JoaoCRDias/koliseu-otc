@@ -83,7 +83,7 @@ function closeDaily()
 end
 
 function show()
-  g_game.openDailyReward()
+  g_game.sendOpenRewardWall()
 end
 
 function requestHistory()
