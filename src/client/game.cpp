@@ -1856,7 +1856,7 @@ void Game::taskHuntingShopPurchase(const uint16_t itemId)
     m_protocolGame->sendTaskHuntingShopPurchase(itemId);
 }
 
-void Game::bountyPreferredAction(const uint8_t actionType, const uint8_t slot, const uint16_t raceId)
+void Game::bountyPreferredAction(const uint8_t actionType, const uint16_t slot, const uint16_t raceId)
 {
     if (!canPerformGameAction())
         return;

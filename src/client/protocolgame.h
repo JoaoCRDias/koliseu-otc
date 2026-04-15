@@ -138,11 +138,16 @@ public:
     void sendPreyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void sendTaskHuntingAction(uint8_t slot, uint8_t actionType, bool upgrade, uint16_t raceId);
     void sendTaskBoardCommand(const std::string& action, const std::string& data = "{}");
+    void sendTaskBoardAction(uint8_t option);
+    void sendTaskBoardActionU8(uint8_t option, uint8_t param);
+    void sendTaskBoardActionU16(uint8_t option, uint16_t param);
+    void sendTaskBoardActionU8U8(uint8_t option, uint8_t param1, uint8_t param2);
+    void sendTaskBoardActionU16U16(uint8_t option, uint16_t param1, uint16_t param2);
     void sendBountyTaskAction(uint8_t actionType, uint16_t param);
     void sendWeeklyTaskAction(uint8_t actionType, uint16_t param);
     void sendTaskHuntingShopRequest();
     void sendTaskHuntingShopPurchase(uint16_t itemId);
-    void sendBountyPreferredAction(uint8_t actionType, uint8_t slot, uint16_t raceId);
+    void sendBountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
     void sendBountyTalismanUpgrade(uint8_t statType);
     void sendPreyRequest();
     void sendOpenPortableForge();

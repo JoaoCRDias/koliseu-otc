@@ -392,7 +392,7 @@ public:
     void weeklyTaskAction(uint8_t actionType, uint16_t param);
     void taskHuntingShopRequest();
     void taskHuntingShopPurchase(uint16_t itemId);
-    void bountyPreferredAction(uint8_t actionType, uint8_t slot, uint16_t raceId);
+    void bountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
     void bountyTalismanUpgrade(uint8_t statType);
     void soulsealRequest();
     void soulsealFightAction(std::string_view name);
