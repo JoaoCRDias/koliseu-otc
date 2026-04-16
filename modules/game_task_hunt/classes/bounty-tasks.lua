@@ -93,6 +93,7 @@ function TaskBounty.onServerData(header, monsters, talisman)
             if panel2 then
                 local m = monsters[1]
                 TaskBounty.populateTaskPanel(panel2, {
+                    taskIndex = tonumber(m.taskIndex) or 0,
                     raceId = tonumber(m.raceId) or 0,
                     currentKills = tonumber(m.currentKills) or 0,
                     totalKills = tonumber(m.totalKills) or 0,
@@ -113,6 +114,7 @@ function TaskBounty.onServerData(header, monsters, talisman)
                     if monsters[i] then
                         local m = monsters[i]
                         TaskBounty.populateTaskPanel(panel, {
+                            taskIndex = tonumber(m.taskIndex) or 0,
                             raceId = tonumber(m.raceId) or 0,
                             currentKills = tonumber(m.currentKills) or 0,
                             totalKills = tonumber(m.totalKills) or 0,
@@ -236,6 +238,7 @@ local RARITY_BACKDROPS = {
 
 function TaskBounty.populateTaskPanel(panel, data)
     local raceId = data.raceId or 0
+    local taskIndex = data.taskIndex or 0
     local rarity = data.rarity or 0
 
     -- Backdrop image and size based on rarity
@@ -321,7 +324,7 @@ function TaskBounty.populateTaskPanel(panel, data)
             selectBtn:setText('Select Task')
             selectBtn:setEnabled(true)
             selectBtn.onClick = function()
-                TaskBounty.selectTask(raceId)
+                TaskBounty.selectTask(taskIndex)
             end
         end
     end

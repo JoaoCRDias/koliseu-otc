@@ -4652,7 +4652,7 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
         const uint32_t soulseals = msg->getU32();
 
         std::map<std::string, std::string> header;
-        header["difficulty"] = weeklyProgressFinished == 0 ? "0" : stringify(std::max<uint8_t>(1, unlockedDifficulty));
+        header["difficulty"] = unlockedDifficulty == 0 ? "0" : stringify(unlockedDifficulty);
         const int32_t remainingDays = static_cast<int32_t>((resetTimestamp - static_cast<uint32_t>(std::time(nullptr))) / 86400);
         header["remainingDays"] = stringify(std::max<int32_t>(0, remainingDays));
         header["totalTaskSlots"] = stringify(monsters.size() > 6 || items.size() > 6 ? 9 : 6);
