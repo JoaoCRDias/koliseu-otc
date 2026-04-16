@@ -100,16 +100,22 @@ function controllerNpcTrader:initNpcWindow(creature, buttons)
     end
     self.widthConsole = self.DEFAULT_CONSOLE_WIDTH
     self.isTradeOpen = false
+    local newCreatureName = "Unknown"
+    local newOutfit = "/game_npctrader/assets/images/icon-npcdialog-multiplenpcs"
     if creature then
-        self.creatureName = creature:getName() or "Unknown"
-        self.outfit = creature:getOutfit()
-    else
-        self.creatureName = "Unknown"
-        self.outfit = "/game_npctrader/assets/images/icon-npcdialog-multiplenpcs"
+        newCreatureName = creature:getName() or "Unknown"
+        newOutfit = creature:getOutfit()
     end
+
+    local npcChanged = (self.creatureName ~= newCreatureName)
+    self.creatureName = newCreatureName
+    self.outfit = newOutfit
     self.buttons = buttons or self.buttons or self.buttonsDefault
     self:updateChatButton()
-    if not self.ui or not self.ui:isVisible() then
+    if not self.ui or not self.ui:isVisible() or npcChanged then
+        if self.ui and self.ui:isVisible() then
+            self:unloadHtml()
+        end
         self:loadHtml('templates/game_npctrader.html')
     end
     local creatureOutfit = self:findWidget("#creatureOutfit")
@@ -126,6 +132,10 @@ end
 function onNpcChatWindow(data)
     if not g_game.getFeature(GameNpcWindowRedesign) then
         controllerNpcTrader:legacy_show()
+        return
+    end
+    if not data.npcIds or not data.npcIds[1] then
+        controllerNpcTrader:onCloseNpcTrade()
         return
     end
     local creature = g_map.getCreatureById(data.npcIds[1])

@@ -792,14 +792,13 @@ void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)
     msg->getU8(); // unknown
     const uint8_t conversationId = msg->getU8();
 
-    NpcChatWindowData data;
-
     if (conversationId == 0) {
         msg->getU8(); // unknown
-        g_lua.callGlobalField("g_game", "onNpcChatWindow", data);
+        g_lua.callGlobalField("g_game", "onCloseNpcTrade");
         return;
     }
 
+    NpcChatWindowData data;
     const uint32_t npcId = msg->getU32();
     data.npcIds.push_back(npcId);
 
