@@ -3184,7 +3184,7 @@ function WheelOfDestiny.checkApplyButton()
 	local applyButton = wheelWindow:recursiveGetChildById("apply")
 	local okButton = wheelWindow:recursiveGetChildById("ok")
 	closeButton:setText(hasChanges and "Close" or "Cancel")
-	okButton:setEnabled(not hasChanges)
+	okButton:setEnabled(true)
 end
 
 function WheelOfDestiny.loadWheelPresets()
