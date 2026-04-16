@@ -781,10 +781,9 @@ void ProtocolGame::sendRequestTrackerQuestLog(const std::map<uint16_t, std::stri
     msg->addU8(static_cast<uint8_t>(quests.size()));
     for (const auto& [questId, questName] : quests) {
         msg->addU16(questId);
-        if (g_game.getClientVersion() >= 1410) {
-            msg->addString(questName);
-        }
     }
+    msg->addU8(0x01);
+    msg->addU8(0x01);
     send(msg);
 }
 
