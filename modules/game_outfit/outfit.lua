@@ -1552,13 +1552,18 @@ end
 
 function onColorModeChange(widget, selectedWidget)
     local colorMode = selectedWidget:getId()
+    local colorModePanel = window.appearance.colorMode
     if colorMode == "head" then
+        colorModePanel:setImageClip("0 0 253 18")
         colorBoxGroup:selectWidget(window.appearance.colorBoxPanel["colorBox" .. tempOutfit.head])
     elseif colorMode == "primary" then
+        colorModePanel:setImageClip("0 18 253 18")
         colorBoxGroup:selectWidget(window.appearance.colorBoxPanel["colorBox" .. tempOutfit.body])
     elseif colorMode == "secondary" then
+        colorModePanel:setImageClip("0 36 253 18")
         colorBoxGroup:selectWidget(window.appearance.colorBoxPanel["colorBox" .. tempOutfit.legs])
     elseif colorMode == "detail" then
+        colorModePanel:setImageClip("0 54 253 18")
         colorBoxGroup:selectWidget(window.appearance.colorBoxPanel["colorBox" .. tempOutfit.feet])
     end
 end
