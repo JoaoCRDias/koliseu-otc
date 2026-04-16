@@ -789,22 +789,21 @@ void ProtocolGame::parseBugReport(const InputMessagePtr& msg)
 
 void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)
 {
-    msg->getU8(); // unknown
-    const uint8_t conversationId = msg->getU8();
-
-    if (conversationId == 0) {
-        msg->getU8(); // unknown
-        g_lua.callGlobalField("g_game", "onCloseNpcTrade");
+    const uint8_t status = msg->getU8();
+    if (status != 0) {
         return;
     }
-
     NpcChatWindowData data;
-    const uint32_t npcId = msg->getU32();
-    data.npcIds.push_back(npcId);
 
-    const uint8_t optionCount = msg->getU8();
-    data.buttons.reserve(optionCount);
-    for (uint8_t i = 0; i < optionCount; ++i) {
+    const uint8_t npcCount = msg->getU8();
+    data.npcIds.reserve(npcCount);
+    for (uint8_t i = 0; i < npcCount; ++i) {
+        data.npcIds.push_back(msg->getU32());
+    }
+
+    const uint8_t buttonCount = msg->getU8();
+    data.buttons.reserve(buttonCount);
+    for (uint8_t i = 0; i < buttonCount; ++i) {
         NpcButton button;
         button.id = msg->getU8();
         button.text = msg->getString();
