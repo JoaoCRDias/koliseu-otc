@@ -7138,6 +7138,14 @@ void ProtocolGame::parseOpenWheelWindow(const InputMessagePtr& msg)
         g_logger.debug(fmt::format("[Wheel C++ Parse] hasMonkQuest lido (valor={})", static_cast<int>(hasMonkQuest)));
     }
 
+    uint16_t huntingTaskExtraPoints = 0;
+    if (msg->getUnreadSize() >= 2) {
+        huntingTaskExtraPoints = msg->getU16();
+        extraPoints += huntingTaskExtraPoints;
+        g_logger.debug(fmt::format("[Wheel C++ Parse] huntingTaskExtraPoints={} (somado a extraPoints={})",
+            static_cast<int>(huntingTaskExtraPoints), static_cast<int>(extraPoints)));
+    }
+
     // Gems ativas (equipadas)
     std::vector<uint16_t> equipedGems;
     uint8_t activeGemCount = msg->getU8();

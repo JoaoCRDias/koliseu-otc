@@ -12,6 +12,7 @@ WheelOfDestiny.changeState = 0
 WheelOfDestiny.lastSelectedGemVessel = nil
 WheelOfDestiny.extraGemPoints = 0
 WheelOfDestiny.fromAchievementType = 0
+WheelOfDestiny.pendingClose = false
 
 WheelOfDestiny.passivePoints = {}
 WheelOfDestiny.extraPassivePoints = {}
@@ -700,6 +701,11 @@ function WheelOfDestiny.onDestinyWheel(playerId, canView, changeState, vocationI
     WheelOfDestiny.loadWheelPresets()
   end
 
+  if WheelOfDestiny.pendingClose then
+    WheelOfDestiny.pendingClose = false
+    return
+  end
+
   if not wheelWindow:isVisible() then
     wheelWindow:show()
     WheelOfDestiny.resetPassiveFocus()
@@ -730,10 +736,8 @@ function WheelOfDestiny.onDestinyWheel(playerId, canView, changeState, vocationI
 
   local presetEnabled = (changeState == 1)
   local managePresetsButton = wheelWindow.mainPanel.wheelMenu.info.presetTabBar:getChildById('managePresetsButton')
-  if not presetEnabled then
-    toggleTabBarButtons('informationButton')
-  end
 
+  toggleTabBarButtons('informationButton')
   managePresetsButton:setEnabled(presetEnabled)
 
   if vocationId == 1 then
@@ -2022,11 +2026,10 @@ function onWheelOfDestinyApply(close, ignoreprotocol)
   end
 
   if close then
-    scheduleEvent(function()
-      wheelWindow:hide()
-      wheelWindow:ungrabMouse()
-      wheelWindow:ungrabKeyboard()
-    end, 100)
+    WheelOfDestiny.pendingClose = true
+    wheelWindow:hide()
+    wheelWindow:ungrabMouse()
+    wheelWindow:ungrabKeyboard()
   end
 end
 
