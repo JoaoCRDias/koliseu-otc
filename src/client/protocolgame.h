@@ -138,6 +138,7 @@ public:
     void sendPreyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void sendTaskHuntingAction(uint8_t slot, uint8_t actionType, bool upgrade, uint16_t raceId);
     void sendTaskBoardCommand(const std::string& action, const std::string& data = "{}");
+    void sendSoulSealFight(uint16_t raceId);
     void sendTaskBoardAction(uint8_t option);
     void sendTaskBoardActionU8(uint8_t option, uint8_t param);
     void sendTaskBoardActionU16(uint8_t option, uint16_t param);
@@ -348,7 +349,7 @@ private:
     // 12x
     void parseShowDescription(const InputMessagePtr& msg);
     void parseBestiaryTracker(const InputMessagePtr& msg);
-    void parseTaskHuntingBasicData(const InputMessagePtr& msg);
+    void parseSoulSealsWindow(const InputMessagePtr& msg);
     void parseTaskHuntingData(const InputMessagePtr& msg);
     void parseTaskBoardData(const InputMessagePtr& msg);
     void parseExperienceTracker(const InputMessagePtr& msg);

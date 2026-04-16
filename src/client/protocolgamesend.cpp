@@ -1448,6 +1448,14 @@ void ProtocolGame::sendTaskBoardCommand(const std::string& action, const std::st
     sendExtendedOpcode(205, payload);
 }
 
+void ProtocolGame::sendSoulSealFight(uint16_t raceId)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskHuntingAction);
+    msg->addU16(raceId);
+    send(msg);
+}
+
 void ProtocolGame::sendTaskBoardAction(uint8_t option)
 {
     const auto& msg = std::make_shared<OutputMessage>();

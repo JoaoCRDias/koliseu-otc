@@ -458,8 +458,7 @@ ResourceTypes = {
     COIN_AUCTION = 92,
     COIN_TOURNAMENT = 93,
     BOUNTY_TASK_POINTS = 94,
-    BOUNTY_REROLL_POINTS = 95,
-    SOULSEAL_POINTS = 96
+    BOUNTY_REROLL_POINTS = 95
 }
 
 CyclopediaCharacterInfoTypes = {

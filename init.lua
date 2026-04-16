@@ -96,7 +96,7 @@ if ENABLE_SERVERS then
         --
         ["http://127.0.0.1/login.php"] = {
             port = 80,
-            protocol = 1511,
+            protocol = 1523,
             httpLogin = true,
             useAuthenticator = false
         },
@@ -112,7 +112,7 @@ if ENABLE_SERVERS then
         --
         ["http://127.0.0.1/login.php"] = {
             port = 80,
-            protocol = 1511,
+            protocol = 1523,
             httpLogin = true,
             useAuthenticator = false
         }

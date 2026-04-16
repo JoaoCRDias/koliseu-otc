@@ -395,7 +395,7 @@ public:
     void bountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
     void bountyTalismanUpgrade(uint8_t statType);
     void soulsealRequest();
-    void soulsealFightAction(std::string_view name);
+    void soulsealFightAction(uint16_t raceId);
     void preyRequest();
 
     // exiva related

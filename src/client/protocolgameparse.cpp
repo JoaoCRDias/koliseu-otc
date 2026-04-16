@@ -476,7 +476,7 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     parseBestiaryTracker(msg);
                     break;
                 case Proto::GameServerTaskHuntingBasicData:
-                    parseTaskHuntingBasicData(msg);
+                    parseSoulSealsWindow(msg);
                     break;
                 case Proto::GameServerTaskHuntingData:
                     parseTaskHuntingData(msg);
@@ -4417,38 +4417,16 @@ void ProtocolGame::parseBestiaryTracker(const InputMessagePtr& msg)
     g_lua.callGlobalField("g_game", "onParseCyclopediaTracker", trackerType, trackerData);
 }
 
-void ProtocolGame::parseTaskHuntingBasicData(const InputMessagePtr& msg)
+void ProtocolGame::parseSoulSealsWindow(const InputMessagePtr& msg)
 {
-    std::map<uint16_t, uint8_t> monsterInfo;
-    const uint16_t preys = msg->getU16();
-    for (auto i = 0; i < preys; ++i) {
-        const uint16_t raceId = msg->getU16();
-        const uint8_t difficulty = msg->getU8();
-        monsterInfo[raceId] = difficulty;
+    std::vector<uint16_t> masteredRaceIds;
+    const uint16_t count = msg->getU16();
+    masteredRaceIds.reserve(count);
+    for (uint16_t i = 0; i < count; ++i) {
+        masteredRaceIds.push_back(msg->getU16());
     }
 
-    std::vector<std::map<std::string, uint32_t>> rewardData;
-    const uint8_t options = msg->getU8();
-    rewardData.reserve(options);
-    for (auto i = 0; i < options; ++i) {
-        const uint8_t difficulty = msg->getU8();
-        const uint8_t stars = msg->getU8();
-        const uint16_t firstKill = msg->getU16();
-        const uint16_t firstReward = msg->getU16();
-        const uint16_t secondKill = msg->getU16();
-        const uint16_t secondReward = msg->getU16();
-
-        std::map<std::string, uint32_t> option;
-        option["difficulty"] = difficulty;
-        option["grade"] = stars;
-        option["nonBestiaryKills"] = firstKill;
-        option["nonBestiaryReward"] = firstReward;
-        option["fullBestiaryKills"] = secondKill;
-        option["fullBestiaryReward"] = secondReward;
-        rewardData.emplace_back(std::move(option));
-    }
-
-    g_lua.callGlobalField("g_game", "onTaskHuntingBasicData", monsterInfo, rewardData);
+    g_lua.callGlobalField("g_game", "onSoulsealsData", masteredRaceIds);
 }
 
 void ProtocolGame::parseTaskHuntingData(const InputMessagePtr& msg)

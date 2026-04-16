@@ -252,7 +252,7 @@ function onResourceBalance(balance, oldBalance, resourceType)
         TaskShop.updateBalance(balance)
     end
 
-    if resourceType == ResourceTypes.SOULSEAL_POINTS then
+    if resourceType == ResourceTypes.SOULSEALS then
         local panel = taskHuntWindow:recursiveGetChildById('soulpitPoints')
         if panel then
             local label = panel:recursiveGetChildById('panelLabel')

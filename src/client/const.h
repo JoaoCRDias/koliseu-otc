@@ -719,7 +719,6 @@ namespace Otc
         RESOURE_COIN_TOURNAMENT = 93,
         RESOURCE_BOUNTY_TASK_POINTS = 94,
         RESOURCE_BOUNTY_REROLL_POINTS = 95,
-        RESOURCE_SOULSEAL_POINTS = 96,
     };
 
     enum ExperienceRate_t : uint8_t
