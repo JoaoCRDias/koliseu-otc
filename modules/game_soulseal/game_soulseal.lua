@@ -1,11 +1,12 @@
-local soulsealData = {}
+local masteredRaceIds = {}
+local soulsealEntries = {}
 local selectedIndex = nil
 local soulsealWindow = nil
 local gameEvents
 
 local function getSoulsealBalance()
     local player = g_game.getLocalPlayer()
-    return player and player:getResourceBalance(ResourceTypes.SOULSEAL_POINTS) or 0
+    return player and player:getResourceBalance(ResourceTypes.SOULSEALS) or 0
 end
 
 function init()
@@ -26,13 +27,11 @@ function init()
     end
 
     soulsealWindow.selectedPanel.fightBtn.onClick = function()
-        if not selectedIndex or not soulsealData[selectedIndex] then
+        if not selectedIndex or not soulsealEntries[selectedIndex] then
             return
         end
 
-        local entry = soulsealData[selectedIndex]
-        local msg = string.format('Are you sure you want to fight "%s" for %d soulseal points?',
-            string.capitalize(entry.name), entry.soulsealPoints)
+        local entry = soulsealEntries[selectedIndex]
 
         local confirmBox
         local function destroy()
@@ -48,11 +47,13 @@ function init()
                 confirmBox:destroy()
                 confirmBox = nil
             end
-            g_game.soulsealFightAction(entry.name)
+            g_game.soulsealFightAction(entry.raceId)
             hide()
         end
 
         hide()
+        local msg = string.format('Are you sure you want to fight "%s" for %d soulseal points?',
+            string.capitalize(entry.name or "unknown"), entry.soulsealPoints or 0)
         confirmBox = displayGeneralBox('Confirm', msg, {
             { text = 'Ok',     callback = onConfirm },
             { text = 'Cancel', callback = destroy },
@@ -89,24 +90,52 @@ end
 
 function offline()
     disconnect(g_game, gameEvents)
-    soulsealData = {}
+    soulsealEntries = {}
+    masteredRaceIds = {}
     selectedIndex = nil
     if soulsealWindow then
         soulsealWindow:hide()
     end
 end
 
-function onSoulsealsData(entries)
-    soulsealData = entries
+function onSoulsealsData(data)
     selectedIndex = nil
+
+    if type(data) == "table" and #data > 0 and type(data[1]) == "table" and data[1].raceId and data[1].name then
+        soulsealEntries = data
+        masteredRaceIds = {}
+        for _, entry in ipairs(data) do
+            if entry.done then
+                masteredRaceIds[entry.raceId] = true
+            end
+        end
+    else
+        masteredRaceIds = {}
+        soulsealEntries = {}
+        for _, raceId in ipairs(data) do
+            masteredRaceIds[raceId] = true
+            local raceData = g_things.getRaceData(raceId)
+            local name = "unknown"
+            if raceData then
+                name = raceData.name or ("creature_" .. tostring(raceId))
+            end
+            table.insert(soulsealEntries, {
+                raceId = raceId,
+                name = name,
+                soulsealPoints = 0,
+                category = 0,
+                done = true,
+            })
+        end
+    end
+
     show()
     refreshList()
-
     soulsealWindow.balancePanel.balanceLabel:setText(comma_value(getSoulsealBalance()))
 end
 
 function onResourceBalance(balance, _, resourceType)
-    if resourceType ~= ResourceTypes.SOULSEAL_POINTS then
+    if resourceType ~= ResourceTypes.SOULSEALS then
         return
     end
     if soulsealWindow and soulsealWindow:isVisible() then
@@ -141,8 +170,8 @@ local function getFilteredEntries()
     local categoryIndex = soulsealWindow.filterPanel.categoryCombo:getCurrentIndex()
 
     local filtered = {}
-    for i, entry in ipairs(soulsealData) do
-        local matchSearch = searchText == "" or entry.name:lower():find(searchText, 1, true)
+    for i, entry in ipairs(soulsealEntries) do
+        local matchSearch = searchText == "" or (entry.name and entry.name:lower():find(searchText, 1, true))
         local matchCategory = categoryIndex == 1 or entry.category == (categoryIndex - 1)
         if matchSearch and matchCategory then
             table.insert(filtered, { index = i, entry = entry })
@@ -152,7 +181,7 @@ local function getFilteredEntries()
         if a.entry.done ~= b.entry.done then
             return not a.entry.done
         end
-        return a.entry.name:lower() < b.entry.name:lower()
+        return (a.entry.name or ""):lower() < (b.entry.name or ""):lower()
     end)
     return filtered
 end
@@ -163,14 +192,14 @@ local function updateSelected()
     local creatureWidget = selectedPanel:recursiveGetChildById('selectedCreature')
     local costLabel = selectedPanel:recursiveGetChildById('costLabel')
 
-    if not selectedIndex or not soulsealData[selectedIndex] then
+    if not selectedIndex or not soulsealEntries[selectedIndex] then
         creatureWidget:setVisible(false)
         costLabel:setText('0')
         selectedPanel.fightBtn:setEnabled(false)
         return
     end
 
-    local entry = soulsealData[selectedIndex]
+    local entry = soulsealEntries[selectedIndex]
 
     local raceData = g_things.getRaceData(entry.raceId)
     if raceData and raceData.outfit then
@@ -178,9 +207,9 @@ local function updateSelected()
         creatureWidget:setVisible(true)
     end
 
-    costLabel:setText(tostring(entry.soulsealPoints))
+    costLabel:setText(tostring(entry.soulsealPoints or 0))
 
-    local canFight = not entry.done and getSoulsealBalance() >= entry.soulsealPoints
+    local canFight = not entry.done
     selectedPanel.fightBtn:setEnabled(canFight)
 
     local list = soulsealWindow.listPanel.monsterList
@@ -212,8 +241,8 @@ function refreshList()
         local entry = item.entry
         local row = g_ui.createWidget('SoulsealRow', list)
         row:setId('row_' .. item.index)
-        row.nameLabel:setText(string.capitalize(entry.name))
-        row.pointsLabel:setText(tostring(entry.soulsealPoints))
+        row.nameLabel:setText(string.capitalize(entry.name or "unknown"))
+        row.pointsLabel:setText(tostring(entry.soulsealPoints or 0))
         row.raceId = entry.raceId
 
         local color = i % 2 == 0 and '$var-textlist-even' or '$var-textlist-odd'

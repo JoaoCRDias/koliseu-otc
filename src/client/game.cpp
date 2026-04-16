@@ -1856,7 +1856,7 @@ void Game::taskHuntingShopPurchase(const uint16_t itemId)
     m_protocolGame->sendTaskHuntingShopPurchase(itemId);
 }
 
-void Game::bountyPreferredAction(const uint8_t actionType, const uint8_t slot, const uint16_t raceId)
+void Game::bountyPreferredAction(const uint8_t actionType, const uint16_t slot, const uint16_t raceId)
 {
     if (!canPerformGameAction())
         return;
@@ -1880,15 +1880,12 @@ void Game::soulsealRequest()
     m_protocolGame->sendTaskBoardCommand("soulsealRequest");
 }
 
-void Game::soulsealFightAction(const std::string_view name)
+void Game::soulsealFightAction(uint16_t raceId)
 {
     if (!canPerformGameAction())
         return;
 
-    std::string escapedName{ name };
-    stdext::replace_all(escapedName, "\\", "\\\\");
-    stdext::replace_all(escapedName, "\"", "\\\"");
-    m_protocolGame->sendTaskBoardCommand("soulsealFight", "{\"name\":\"" + escapedName + "\"}");
+    m_protocolGame->sendSoulSealFight(raceId);
 }
 
 void Game::preyRequest()

@@ -781,10 +781,9 @@ void ProtocolGame::sendRequestTrackerQuestLog(const std::map<uint16_t, std::stri
     msg->addU8(static_cast<uint8_t>(quests.size()));
     for (const auto& [questId, questName] : quests) {
         msg->addU16(questId);
-        if (g_game.getClientVersion() >= 1410) {
-            msg->addString(questName);
-        }
     }
+    msg->addU8(0x01);
+    msg->addU8(0x01);
     send(msg);
 }
 
@@ -1448,38 +1447,109 @@ void ProtocolGame::sendTaskBoardCommand(const std::string& action, const std::st
     sendExtendedOpcode(205, payload);
 }
 
+void ProtocolGame::sendSoulSealFight(uint16_t raceId)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskHuntingAction);
+    msg->addU16(raceId);
+    send(msg);
+}
+
+void ProtocolGame::sendTaskBoardAction(uint8_t option)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskBoardAction);
+    msg->addU8(option);
+    send(msg);
+}
+
+void ProtocolGame::sendTaskBoardActionU8(uint8_t option, uint8_t param)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskBoardAction);
+    msg->addU8(option);
+    msg->addU8(param);
+    send(msg);
+}
+
+void ProtocolGame::sendTaskBoardActionU16(uint8_t option, uint16_t param)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskBoardAction);
+    msg->addU8(option);
+    msg->addU16(param);
+    send(msg);
+}
+
+void ProtocolGame::sendTaskBoardActionU8U8(uint8_t option, uint8_t param1, uint8_t param2)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskBoardAction);
+    msg->addU8(option);
+    msg->addU8(param1);
+    msg->addU8(param2);
+    send(msg);
+}
+
+void ProtocolGame::sendTaskBoardActionU16U16(uint8_t option, uint16_t param1, uint16_t param2)
+{
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientTaskBoardAction);
+    msg->addU8(option);
+    msg->addU16(param1);
+    msg->addU16(param2);
+    send(msg);
+}
+
 void ProtocolGame::sendBountyTaskAction(const uint8_t actionType, const uint16_t param)
 {
-    sendTaskBoardCommand("bountyTaskAction",
-        "{\"actionType\":" + std::to_string(actionType) + ",\"param\":" + std::to_string(param) + "}");
+    switch (actionType) {
+        case 0: sendTaskBoardAction(3); break;
+        case 1: sendTaskBoardActionU8(5, static_cast<uint8_t>(param)); break;
+        case 2: sendTaskBoardAction(6); break;
+        case 3: sendTaskBoardActionU8(2, static_cast<uint8_t>(param)); break;
+        case 4: sendTaskBoardAction(0); break;
+        case 5: sendTaskBoardAction(4); break;
+        default: break;
+    }
 }
 
 void ProtocolGame::sendWeeklyTaskAction(const uint8_t actionType, const uint16_t param)
 {
-    sendTaskBoardCommand("weeklyTaskAction",
-        "{\"actionType\":" + std::to_string(actionType) + ",\"param\":" + std::to_string(param) + "}");
+    switch (actionType) {
+        case 0: sendTaskBoardActionU8(9, static_cast<uint8_t>(param)); break;
+        case 1: sendTaskBoardActionU8(8, static_cast<uint8_t>(param)); break;
+        case 2: sendTaskBoardAction(1); break;
+        default: break;
+    }
 }
 
 void ProtocolGame::sendTaskHuntingShopRequest()
 {
-    sendTaskBoardCommand("taskShopRequest");
+    sendTaskBoardAction(10);
 }
 
 void ProtocolGame::sendTaskHuntingShopPurchase(const uint16_t itemId)
 {
-    sendTaskBoardCommand("taskShopPurchase", "{\"itemId\":" + std::to_string(itemId) + "}");
+    sendTaskBoardActionU8U8(11, static_cast<uint8_t>(itemId), 0);
 }
 
-void ProtocolGame::sendBountyPreferredAction(const uint8_t actionType, const uint8_t slot, const uint16_t raceId)
+void ProtocolGame::sendBountyPreferredAction(const uint8_t actionType, const uint16_t slot, const uint16_t raceId)
 {
-    sendTaskBoardCommand("bountyPreferredAction",
-        "{\"actionType\":" + std::to_string(actionType) + ",\"slot\":" + std::to_string(slot) +
-        ",\"raceId\":" + std::to_string(raceId) + "}");
+    switch (actionType) {
+        case 0: sendTaskBoardAction(0); break;
+        case 1: sendTaskBoardActionU16(12, slot); break;
+        case 2: sendTaskBoardActionU16U16(15, slot, raceId); break;
+        case 3: sendTaskBoardActionU16U16(16, slot, raceId); break;
+        case 4: sendTaskBoardActionU16(13, slot); break;
+        case 5: sendTaskBoardActionU16(14, slot); break;
+        default: break;
+    }
 }
 
 void ProtocolGame::sendBountyTalismanUpgrade(const uint8_t statType)
 {
-    sendTaskBoardCommand("bountyTalismanUpgrade", "{\"statType\":" + std::to_string(statType) + "}");
+    sendTaskBoardActionU8(7, statType);
 }
 
 void ProtocolGame::sendPreyRequest()

@@ -1417,32 +1417,32 @@ end
 
 -- Safe wrapper functions for module compatibility
 function Cyclopedia.Items.addToQuickSellWhitelist(itemId)
-    if modules.game_npctrade then
-        if modules.game_npctrade.addToWhitelist then
-            modules.game_npctrade.addToWhitelist(itemId)
-        elseif modules.game_npctrade.addToList then
-            modules.game_npctrade.addToList(itemId)
+    if modules.game_npctrader then
+        if modules.game_npctrader.addToWhitelist then
+            modules.game_npctrader.addToWhitelist(itemId)
+        elseif modules.game_npctrader.addToList then
+            modules.game_npctrader.addToList(itemId)
         end
     end
 end
 
 function Cyclopedia.Items.removeFromQuickSellWhitelist(itemId)
-    if modules.game_npctrade then
-        if modules.game_npctrade.removeItemInList then
-            modules.game_npctrade.removeItemInList(itemId)
-        elseif modules.game_npctrade.removeFromList then
-            modules.game_npctrade.removeFromList(itemId)
-        elseif modules.game_npctrade.removeItem then
-            modules.game_npctrade.removeItem(itemId)
+    if modules.game_npctrader then
+        if modules.game_npctrader.removeItemInList then
+            modules.game_npctrader.removeItemInList(itemId)
+        elseif modules.game_npctrader.removeFromList then
+            modules.game_npctrader.removeFromList(itemId)
+        elseif modules.game_npctrader.removeItem then
+            modules.game_npctrader.removeItem(itemId)
         end
     end
 end
 
 function Cyclopedia.Items.isInQuickSellWhitelist(itemId)
-    if not modules.game_npctrade then return false end
+    if not modules.game_npctrader then return false end
 
     -- Try different possible function names
-    local npctrade = modules.game_npctrade
+    local npctrade = modules.game_npctrader
     if npctrade.inWhiteList then
         return npctrade.inWhiteList(itemId)
     elseif npctrade.isInList then

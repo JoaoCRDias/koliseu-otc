@@ -44,6 +44,7 @@
 #include <fmt/format.h>
 #include <framework/util/stats.h>
 #include <framework/stdext/string.h>
+#include <ctime>
 
 void ProtocolGame::parseMessage(const InputMessagePtr& msg)
 {
@@ -108,6 +109,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     break;
                 case Proto::GameServerBugReport:
                     parseBugReport(msg);
+                    break;
+                case Proto::GameServerNpcChatWindow:
+                    parseNpcChatWindow(msg);
                     break;
                 case Proto::GameServerPingBack:
                 case Proto::GameServerPing:
@@ -249,7 +253,12 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     parseBosstiaryInfo(msg);
                     break;
                 case Proto::GameServerTakeScreenshot:
-                    parseTakeScreenshot(msg);
+                    // todo improve this if
+                    if (g_game.getClientVersion() >= 1521) {
+                        parseClientEvent(msg);
+                    } else {
+                        parseTakeScreenshot(msg);
+                    }
                     break;
                 case Proto::GameServerCyclopediaItemDetail:
                     parseCyclopediaItemDetail(msg);
@@ -467,7 +476,7 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                     parseBestiaryTracker(msg);
                     break;
                 case Proto::GameServerTaskHuntingBasicData:
-                    parseTaskHuntingBasicData(msg);
+                    parseSoulSealsWindow(msg);
                     break;
                 case Proto::GameServerTaskHuntingData:
                     parseTaskHuntingData(msg);
@@ -778,6 +787,33 @@ void ProtocolGame::parseBugReport(const InputMessagePtr& msg)
     g_game.setCanReportBugs(canReportBugs);
 }
 
+void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)
+{
+    const uint8_t status = msg->getU8();
+    if (status != 0) {
+        return;
+    }
+    NpcChatWindowData data;
+
+    const uint8_t npcCount = msg->getU8();
+    data.npcIds.reserve(npcCount);
+    for (uint8_t i = 0; i < npcCount; ++i) {
+        data.npcIds.push_back(msg->getU32());
+    }
+
+    const uint8_t buttonCount = msg->getU8();
+    data.buttons.reserve(buttonCount);
+    for (uint8_t i = 0; i < buttonCount; ++i) {
+        NpcButton button;
+        button.id = msg->getU8();
+        button.text = msg->getString();
+        data.buttons.push_back(button);
+    }
+
+    g_lua.callGlobalField("g_game", "onNpcChatWindow", data);
+}
+
+
 void ProtocolGame::parsePendingGame(const InputMessagePtr&)
 {
     //set player to pending game state
@@ -833,11 +869,14 @@ void ProtocolGame::parseResourceBalance(const InputMessagePtr& msg) const
     const auto type = static_cast<Otc::ResourceTypes_t>(msg->getU8());
     uint64_t value;
     switch (type) {
+        // 14.10+
         case Otc::RESOURCE_CHARM:
         case Otc::RESOURCE_MINOR_CHARM:
         case Otc::RESOURCE_MAX_CHARM:
         case Otc::RESOURCE_MAX_MINOR_CHARM:
-            // 14.10
+        // 15.13+
+        case Otc::RESOURCE_BOUNTY_POINTS:
+        case Otc::RESOURCE_SOULSEALS:
             value = msg->getU32();
             break;
         default:
@@ -1816,6 +1855,7 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
                     const uint16_t shotId = g_game.getFeature(Otc::GameEffectU16) ? msg->getU16() : msg->getU8();
                     const auto offsetX = static_cast<int8_t>(msg->getU8());
                     const auto offsetY = static_cast<int8_t>(msg->getU8());
+                    const uint16_t effectSource = g_game.getFeature(Otc::GameEffectSource) ? msg->getU8() : 0;
                     if (!g_things.isValidDatId(shotId, ThingCategoryMissile)) {
                         g_logger.traceError("invalid missile id {}", shotId);
                         return;
@@ -1823,6 +1863,7 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
 
                     const auto& missile = std::make_shared<Missile>();
                     missile->setId(shotId);
+                    missile->setSource(static_cast<Otc::MagicEffectSources>(effectSource));
 
                     if (effectType == Otc::MAGIC_EFFECTS_CREATE_DISTANCEEFFECT) {
                         missile->setPath(pos, Position(pos.x + offsetX, pos.y + offsetY, pos.z));
@@ -1840,9 +1881,11 @@ void ProtocolGame::parseMagicEffect(const InputMessagePtr& msg)
                         g_logger.traceError("invalid effect id {}", effectId);
                         continue;
                     }
+                    const uint16_t effectSource = g_game.getFeature(Otc::GameEffectSource) ? msg->getU8() : 0;
 
                     const auto& effect = std::make_shared<Effect>();
                     effect->setId(effectId);
+                    effect->setSource(static_cast<Otc::MagicEffectSources>(effectSource));
                     g_map.addThing(effect, pos);
                     break;
                 }
@@ -2192,7 +2235,6 @@ void ProtocolGame::parseOpenForge(const InputMessagePtr& msg)
 void ProtocolGame::setCreatureVocation(const InputMessagePtr& msg, const uint32_t creatureId) const
 {
     const uint8_t vocationId = msg->getU8();
-
     const auto& creature = g_map.getCreatureById(creatureId);
     if (!creature) {
         return;
@@ -2211,13 +2253,11 @@ void ProtocolGame::addCreatureIcon(const InputMessagePtr& msg, const uint32_t cr
         const uint16_t count = msg->getU16(); // icon.count
         icons.emplace_back(icon, category, count);
     }
-
     const auto& creature = g_map.getCreatureById(creatureId);
     if (!creature) {
         g_logger.traceDebug("ProtocolGame::addCreatureIcon: could not get creature with id {}", creatureId);
         return;
     }
-
     creature->setIcons(icons);
 }
 
@@ -2500,7 +2540,7 @@ void ProtocolGame::parsePlayerStats(const InputMessagePtr& msg) const
 
     const uint64_t experience = g_game.getFeature(Otc::GameDoubleExperience) ? msg->getU64() : msg->getU32();
     const uint16_t level = g_game.getFeature(Otc::GameLevelU16) ? msg->getU16() : msg->getU8();
-    const uint8_t levelPercent = msg->getU8();
+    const uint16_t levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() : msg->getU8();
 
     if (g_game.getFeature(Otc::GameExperienceBonus)) {
         if (g_game.getClientVersion() <= 1096) {
@@ -4377,38 +4417,16 @@ void ProtocolGame::parseBestiaryTracker(const InputMessagePtr& msg)
     g_lua.callGlobalField("g_game", "onParseCyclopediaTracker", trackerType, trackerData);
 }
 
-void ProtocolGame::parseTaskHuntingBasicData(const InputMessagePtr& msg)
+void ProtocolGame::parseSoulSealsWindow(const InputMessagePtr& msg)
 {
-    std::map<uint16_t, uint8_t> monsterInfo;
-    const uint16_t preys = msg->getU16();
-    for (auto i = 0; i < preys; ++i) {
-        const uint16_t raceId = msg->getU16();
-        const uint8_t difficulty = msg->getU8();
-        monsterInfo[raceId] = difficulty;
+    std::vector<uint16_t> masteredRaceIds;
+    const uint16_t count = msg->getU16();
+    masteredRaceIds.reserve(count);
+    for (uint16_t i = 0; i < count; ++i) {
+        masteredRaceIds.push_back(msg->getU16());
     }
 
-    std::vector<std::map<std::string, uint32_t>> rewardData;
-    const uint8_t options = msg->getU8();
-    rewardData.reserve(options);
-    for (auto i = 0; i < options; ++i) {
-        const uint8_t difficulty = msg->getU8();
-        const uint8_t stars = msg->getU8();
-        const uint16_t firstKill = msg->getU16();
-        const uint16_t firstReward = msg->getU16();
-        const uint16_t secondKill = msg->getU16();
-        const uint16_t secondReward = msg->getU16();
-
-        std::map<std::string, uint32_t> option;
-        option["difficulty"] = difficulty;
-        option["grade"] = stars;
-        option["nonBestiaryKills"] = firstKill;
-        option["nonBestiaryReward"] = firstReward;
-        option["fullBestiaryKills"] = secondKill;
-        option["fullBestiaryReward"] = secondReward;
-        rewardData.emplace_back(std::move(option));
-    }
-
-    g_lua.callGlobalField("g_game", "onTaskHuntingBasicData", monsterInfo, rewardData);
+    g_lua.callGlobalField("g_game", "onSoulsealsData", masteredRaceIds);
 }
 
 void ProtocolGame::parseTaskHuntingData(const InputMessagePtr& msg)
@@ -4511,27 +4529,28 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
 
     if (mode == 0) {
         std::vector<std::map<std::string, std::string>> monsters;
-        const uint8_t slotCount = msg->getU8();
-        monsters.reserve(slotCount);
-        for (uint8_t i = 0; i < slotCount; ++i) {
-            msg->getU8(); // unknown
+        const uint8_t offerCount = msg->getU8();
+        monsters.reserve(offerCount);
+        for (uint8_t i = 0; i < offerCount; ++i) {
+            const uint8_t taskIndex = msg->getU8();
             const uint16_t raceId = msg->getU16();
             const uint16_t totalKills = msg->getU16();
             const uint32_t rewardXp = msg->getU32();
             const uint8_t rewardPoints = msg->getU8();
             const uint16_t currentKills = msg->getU16();
-            const uint8_t buttonState = msg->getU8();
+            const uint8_t claimRewardType = msg->getU8();
             const uint8_t rarity = msg->getU8();
 
             std::map<std::string, std::string> entry;
+            entry["taskIndex"] = stringify(taskIndex);
             entry["raceId"] = stringify(raceId);
             entry["totalKills"] = stringify(totalKills);
             entry["rewardXp"] = stringify(rewardXp);
             entry["rewardPoints"] = stringify(rewardPoints);
             entry["rewardReroll"] = "1";
             entry["currentKills"] = stringify(currentKills);
-            entry["isActive"] = buttonState > 0 ? "1" : "0";
-            entry["isCompleted"] = "0";
+            entry["isActive"] = claimRewardType > 0 ? "1" : "0";
+            entry["isCompleted"] = claimRewardType == 2 ? "1" : "0";
             entry["rarity"] = stringify(rarity);
             monsters.emplace_back(std::move(entry));
         }
@@ -4545,23 +4564,18 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
         std::vector<std::map<std::string, std::string>> talisman;
         talisman.reserve(4);
         for (uint8_t i = 0; i < 4; ++i) {
-            const uint16_t currentValue = msg->getU16();
+            const uint8_t multiplier1 = msg->getU8();
+            msg->getU8(); // multiplier2, always 0
             const bool canUpgrade = msg->getU8() != 0;
             const uint16_t upgradeCost = msg->getU16();
 
             uint16_t nextValue = 0;
             if (canUpgrade) {
-                if (currentValue < 2000) {
-                    nextValue = currentValue + 100;
-                } else if (currentValue < 4000) {
-                    nextValue = currentValue + 50;
-                } else {
-                    nextValue = currentValue + 20;
-                }
+                nextValue = static_cast<uint16_t>(multiplier1) + 1;
             }
 
             std::map<std::string, std::string> entry;
-            entry["currentValue"] = stringify(currentValue);
+            entry["currentValue"] = stringify(static_cast<uint16_t>(multiplier1));
             entry["nextValue"] = stringify(nextValue);
             entry["upgradeCost"] = stringify(upgradeCost);
             talisman.emplace_back(std::move(entry));
@@ -4625,26 +4639,28 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
             items.emplace_back(std::move(entry));
         }
 
-        msg->getU8(); // unknown enum
+        msg->getU8(); // difficultyMultiplier
         const uint32_t killTaskXp = msg->getU32();
         const uint32_t deliveryTaskXp = msg->getU32();
         const uint8_t completedKillTasks = msg->getU8();
         const uint8_t completedDeliveryTasks = msg->getU8();
-        const uint8_t showDifficultySelection = msg->getU8();
-        const uint8_t maxDifficulty = msg->getU8();
-        const uint8_t unlocked = msg->getU8();
+        const uint8_t weeklyProgressFinished = msg->getU8();
+        const uint8_t unlockedDifficulty = msg->getU8();
+        const uint32_t resetTimestamp = msg->getU32();
+        const uint8_t weeklyExpansion = msg->getU8();
         const uint32_t taskPoints = msg->getU32();
         const uint32_t soulseals = msg->getU32();
 
         std::map<std::string, std::string> header;
-        header["difficulty"] = showDifficultySelection != 0 ? "0" : stringify(std::max<uint8_t>(1, maxDifficulty + 1));
-        header["remainingDays"] = "7";
+        header["difficulty"] = unlockedDifficulty == 0 ? "0" : stringify(unlockedDifficulty);
+        const int32_t remainingDays = static_cast<int32_t>((resetTimestamp - static_cast<uint32_t>(std::time(nullptr))) / 86400);
+        header["remainingDays"] = stringify(std::max<int32_t>(0, remainingDays));
         header["totalTaskSlots"] = stringify(monsters.size() > 6 || items.size() > 6 ? 9 : 6);
         header["maxExperience"] = stringify(killTaskXp);
         header["maxDeliveryExperience"] = stringify(deliveryTaskXp);
         header["completedKillTasks"] = stringify(completedKillTasks);
         header["completedDeliveryTasks"] = stringify(completedDeliveryTasks);
-        const uint8_t difficultyId = std::max<uint8_t>(1, maxDifficulty + 1);
+        const uint8_t difficultyId = std::max<uint8_t>(1, unlockedDifficulty);
         static const uint8_t killTaskPointsByDifficulty[4] = { 25, 50, 100, 110 };
         header["killTaskPoints"] = stringify(killTaskPointsByDifficulty[std::min<uint8_t>(3, difficultyId - 1)]);
         header["deliveryTaskPoints"] = "75";
@@ -4658,13 +4674,13 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
         header["rewardMultiplier"] = stringify(rewardMultiplier);
         header["pointsEarned"] = stringify(taskPoints);
         header["soulsealsEarned"] = stringify(soulseals);
-        header["extraSlot"] = unlocked != 0 ? "1" : "0";
-        header["unlocked"] = unlocked != 0 ? "1" : "0";
+        header["extraSlot"] = weeklyExpansion != 0 ? "1" : "0";
+        header["unlocked"] = unlockedDifficulty != 0 ? "1" : "0";
 
         std::vector<std::map<std::string, std::string>> difficulties;
         static const char* difficultyNames[4] = { "Beginner", "Adept", "Expert", "Master" };
         static const uint16_t difficultyMinLevels[4] = { 1, 150, 300, 500 };
-        for (uint8_t i = 0; i <= std::min<uint8_t>(3, maxDifficulty); ++i) {
+        for (uint8_t i = 0; i <= std::min<uint8_t>(3, unlockedDifficulty); ++i) {
             std::map<std::string, std::string> entry;
             entry["id"] = stringify(i + 1);
             entry["name"] = difficultyNames[i];
@@ -4682,52 +4698,70 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
         items.reserve(itemCount);
         for (uint8_t i = 0; i < itemCount; ++i) {
             const uint8_t type = msg->getU8();
-            const std::string& name = msg->getString();
-            const std::string& desc = msg->getString();
-            const uint32_t clientId = msg->getU32();
 
             std::map<std::string, std::string> entry;
             entry["id"] = stringify(i + 1);
-            entry["title"] = name;
-            entry["description"] = desc;
 
-            if (type == 3) {
-                entry["extraClientId"] = stringify(msg->getU32());
-            }
+            if (type == 4) {
+                const uint16_t alreadyPurchased = msg->getU16();
+                const uint32_t price = msg->getU32();
+                const uint8_t status = msg->getU8();
 
-            if (type == 2) {
-                entry["addon"] = stringify(msg->getU8());
-            }
+                entry["type"] = "Bonus";
+                entry["title"] = "Bonus Promotion";
+                entry["description"] = "";
+                entry["price"] = stringify(price);
+                entry["bought"] = "0";
+                entry["bonusType"] = "wheel_of_destiny_points";
+                entry["maxPurchases"] = "10";
+                entry["currentPurchases"] = stringify(alreadyPurchased);
+                entry["nextCost"] = stringify(price);
+            } else {
+                const std::string& name = msg->getString();
+                const std::string& desc = msg->getString();
+                const uint32_t clientId = msg->getU32();
 
-            const uint32_t price = msg->getU32();
-            const uint8_t buttonState = msg->getU8();
-            entry["price"] = stringify(price);
-            entry["bought"] = buttonState == 4 ? "1" : "0";
+                entry["title"] = name;
+                entry["description"] = desc;
 
-            switch (type) {
-                case 0:
-                    entry["type"] = "Decoration";
-                    entry["itemId"] = stringify(clientId);
-                    entry["clientId"] = stringify(clientId);
-                    break;
-                case 1:
-                    entry["type"] = "Mount";
-                    entry["lookType"] = stringify(clientId);
-                    break;
-                case 2:
-                    entry["type"] = "Outfit";
-                    entry["lookType"] = stringify(clientId);
-                    entry["lookHead"] = "0";
-                    entry["lookBody"] = "0";
-                    entry["lookLegs"] = "0";
-                    entry["lookFeet"] = "0";
-                    entry["lookAddons"] = entry["addon"];
-                    break;
-                default:
-                    entry["type"] = "Decoration";
-                    entry["itemId"] = stringify(clientId);
-                    entry["clientId"] = stringify(clientId);
-                    break;
+                if (type == 2) {
+                    entry["addon"] = stringify(msg->getU8());
+                }
+
+                if (type == 3) {
+                    entry["extraClientId"] = stringify(msg->getU32());
+                }
+
+                const uint32_t price = msg->getU32();
+                const uint8_t buttonState = msg->getU8();
+                entry["price"] = stringify(price);
+                entry["bought"] = buttonState == 4 ? "1" : "0";
+
+                switch (type) {
+                    case 0:
+                        entry["type"] = "Decoration";
+                        entry["itemId"] = stringify(clientId);
+                        entry["clientId"] = stringify(clientId);
+                        break;
+                    case 1:
+                        entry["type"] = "Mount";
+                        entry["lookType"] = stringify(clientId);
+                        break;
+                    case 2:
+                        entry["type"] = "Outfit";
+                        entry["lookType"] = stringify(clientId);
+                        entry["lookHead"] = "0";
+                        entry["lookBody"] = "0";
+                        entry["lookLegs"] = "0";
+                        entry["lookFeet"] = "0";
+                        entry["lookAddons"] = entry["addon"];
+                        break;
+                    default:
+                        entry["type"] = "Decoration";
+                        entry["itemId"] = stringify(clientId);
+                        entry["clientId"] = stringify(clientId);
+                        break;
+                }
             }
 
             items.emplace_back(std::move(entry));
@@ -5232,7 +5266,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             CyclopediaCharacterGeneralStats stats;
             stats.experience = msg->getU64();
             stats.level = msg->getU16();
-            stats.levelPercent = msg->getU8();
+            stats.levelPercent = g_game.getFeature(Otc::GameLevelPercentU16) ? msg->getU16() : msg->getU8();
             stats.baseExpGain = msg->getU16();
             if (g_game.getFeature(Otc::GameTournamentPackets)) {
                 msg->getU32(); // tournament exp(deprecated)
@@ -5597,6 +5631,10 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 const uint8_t count = msg->getU8();
                 houseItems.emplace_back(itemId, itemName, count);
             }
+
+            if (g_game.getClientVersion() >= 1521) {
+                msg->getU8();
+            }
             g_lua.callGlobalField("g_game", "onParseCyclopediaStoreSummary", xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked, preyWildcards, instantRewards, hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems);
             break;
         }
@@ -5639,22 +5677,21 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
         {
             CyclopediaCharacterOffenceStats data;
 
-            // Critical hit chance
             data.critChanceTotal = msg->getDouble();
+            data.critChanceEquipament = msg->getDouble();
             if (g_game.getClientVersion() >= 1510) {
                 data.critChanceFlat = msg->getDouble();
             }
-            data.critChanceEquipament = msg->getDouble();
             data.critChanceImbuement = msg->getDouble();
             data.critChanceWheel = msg->getDouble();
             data.critChanceConcoction = msg->getDouble();
 
             // Critical hit damage
             data.critDamageTotal = msg->getDouble();
+            data.critDamageEquipament = msg->getDouble();
             if (g_game.getClientVersion() >= 1510) {
                 data.critDamageFlat = msg->getDouble();
             }
-            data.critDamageEquipament = msg->getDouble();
             data.critDamageImbuement = msg->getDouble();
             data.critDamageWheel = msg->getDouble();
             data.critDamageConcoction = msg->getDouble();
@@ -5677,7 +5714,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             data.onslaught = msg->getDouble();
             data.onslaughtBase = msg->getDouble();
             data.onslaughtBonus = msg->getDouble();
-            msg->getDouble(); // unused
+            data.onslaughtEventBonus = msg->getDouble();
 
             data.cleavePercent = msg->getDouble();
 
@@ -5689,7 +5726,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
 
             data.flatDamage = msg->getU16();
             data.flatDamageBase = msg->getU16();
-            msg->getU16(); // unused
+            data.flatDamageWheel = msg->getU16();
 
             data.weaponAttack = msg->getU16();
             data.weaponFlatModifier = msg->getU16();
@@ -5698,31 +5735,87 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             data.weaponSkillLevel = msg->getU16();
             data.weaponSkillModifier = msg->getU16();
             data.weaponElement = msg->getU8();
-            data.weaponElementDamage = msg->getDouble();
-            data.weaponElementType = msg->getU8();
+            // damage conversion
+            data.weaponElementDamage = msg->getDouble(); // % amount
+            data.weaponElementType = msg->getU8(); // new element
 
-            const uint8_t accuracyCount = msg->getU8();
+            const uint8_t accuracyCount = msg->getU8();// distance fighting accuracy
             for (int i = 0; i < accuracyCount; i++) {
-                msg->getU8(); // range
-                data.weaponAccuracy.push_back(msg->getDouble());
+                CyclopediaCharacterOffenceStats::AccuracyData acc;
+                acc.range = msg->getU8(); // range
+                acc.chance = msg->getDouble(); // change to hit (placeholder)
+                data.weaponAccuracy.push_back(acc);
             }
 
             if (g_game.getClientVersion() >= 1510) {
-                msg->getDouble(); // unused
-                msg->getU16(); // unused
-                msg->getU8(); // unused
-                msg->getDouble(); // unused
-                msg->getDouble(); // unused
-                msg->getU8(); // unused
-                msg->getDouble(); // unused
-                msg->getDouble(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU16(); // unused
-                msg->getU8(); // unused
-                msg->getU8(); // unused
-                msg->getU8(); // unused
+                data.damagePowerfulFoes = msg->getDouble(); // damage against powerful foes
+                const uint16_t targetCount = msg->getU16(); // damage against specific targets FOR
+                for (int i = 0; i < targetCount; i++) {
+                    CyclopediaCharacterOffenceStats::TargetBonus bonus;
+                    bonus.name = msg->getString(); // placeholder
+                    bonus.value = msg->getDouble(); // 1.25
+                    data.damageSpecificTargets.push_back(bonus);
+                }
+                const uint8_t elementCount = msg->getU8();// critical chance by type
+                for (int i = 0; i < elementCount; i++) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.damageElements.push_back(mod);
+                }
+                data.offensiveRuneDamage = msg->getDouble(); // +x% for offensive runes
+                data.autoAttackDamage = msg->getDouble(); // +x% for auto-attack
+                const uint8_t critDmgElemCount = msg->getU8(); // critical damage by type
+                for (int i = 0; i < critDmgElemCount; i++) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.critDamageElements.push_back(mod);
+                }
+                data.critDamageOffensiveRunes = msg->getDouble(); // crit dmg: +x% for offensive runes
+                data.critDamageAutoAttack = msg->getDouble(); // crit dmg: +x% for auto-attack
+
+                data.lifeGainHit = msg->getU16(); // life gain on hit
+                data.manaGainHit = msg->getU16(); // mana gain on hit
+                data.lifeGainKill = msg->getU16(); // life gain on kill
+                data.manaGainKill = msg->getU16(); // mana gain on kill
+
+                const uint8_t adExtraDmgCount = msg->getU8();
+                for (int i = 0; i < adExtraDmgCount; i++) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraDamageSkills.push_back(bonus);
+                }
+                const uint8_t spellExtraCount = msg->getU8();
+                for (int i = 0; i < spellExtraCount; i++) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraDamageSpells.push_back(bonus);
+                }
+                const uint8_t spellExtraHealingCount = msg->getU8();
+                for (int i = 0; i < spellExtraHealingCount; i++) {
+                    CyclopediaCharacterOffenceStats::SkillBonus bonus;
+                    bonus.skillId = msg->getU8(); // skill id, uses same enums as in HardcodedSkillIds
+                    bonus.valueA = msg->getDouble(); // value a
+                    bonus.valueB = msg->getDouble(); // value b
+                    data.extraHealingSpells.push_back(bonus);
+                }
+            }
+            if (g_game.getClientVersion() >= 1521) {
+                data.damageHighHp = msg->getDouble(); // damage to targets above 95% hp
+                data.damageLowHp = msg->getDouble(); // damage to targets below 30% hp
+                data.armorPenetration = msg->getDouble(); // armor penetration multiplier
+                const uint8_t elemPierceBonuses = msg->getU8(); // elemental pierce
+                for (int i = 0; i < elemPierceBonuses; i++) {
+                    CyclopediaCharacterOffenceStats::ElementModifier mod;
+                    mod.element = msg->getU8(); // element id
+                    mod.value = msg->getDouble(); // modifier
+                    data.elementalPierce.push_back(mod);
+                }
             }
 
             g_game.processCyclopediaCharacterOffenceStats(data);
@@ -6121,28 +6214,16 @@ void ProtocolGame::parsePreyData(const InputMessagePtr& msg)
 
 void ProtocolGame::parsePreyRerollPrice(const InputMessagePtr& msg)
 {
-    const uint32_t price = msg->getU32(); // prey reroll price
-    uint8_t wildcard = 0; // prey bonus reroll price
-    uint8_t directly = 0; // prey selection list price
-    uint32_t taskRerollPrice = 0;
-    uint32_t taskRemovePrice = 0;
-    uint8_t taskSelectPrice = 0;
-    uint8_t taskBonusRerollPrice = 0;
+    const uint32_t price = msg->getU32();
+    uint8_t wildcard = 0;
+    uint8_t directly = 0;
 
     if (g_game.getProtocolVersion() >= 1230) {
         wildcard = msg->getU8();
         directly = msg->getU8();
-        taskRerollPrice = msg->getU32(); // task hunting reroll price
-        taskRemovePrice = msg->getU32(); // task hunting remove/cancel price
-        taskSelectPrice = msg->getU8(); // task hunting selection list price
-        taskBonusRerollPrice = msg->getU8(); // task hunting bonus reroll price
     }
 
     g_lua.callGlobalField("g_game", "onPreyRerollPrice", price, wildcard, directly);
-    if (g_game.getProtocolVersion() >= 1230) {
-        g_lua.callGlobalField("g_game", "onPreyHuntingPrice", taskRerollPrice, taskRemovePrice, taskSelectPrice,
-                              taskBonusRerollPrice);
-    }
 }
 
 Imbuement ProtocolGame::getImbuementInfo(const InputMessagePtr& msg)
@@ -6724,6 +6805,67 @@ void ProtocolGame::parseBosstiaryCooldownTimer(const InputMessagePtr& msg)
 void ProtocolGame::parseBosstiaryEntryChanged(const InputMessagePtr& msg)
 {
     msg->getU32(); // bossId
+}
+
+void ProtocolGame::parseClientEvent(const InputMessagePtr& msg)
+{
+    const auto type = static_cast<Otc::ClientEventType_t>(msg->getU8());
+    switch (type) {
+        case Otc::CLIENT_EVENT_TYPE_SIMPLE: {
+            const auto eventType = static_cast<Otc::ClientEvent_t>(msg->getU8());
+            if (eventType < Otc::CLIENT_EVENT_ATTACKSTOPPED) {
+                m_localPlayer->takeScreenshot(eventType); // TODO unTest
+            } else {
+                g_lua.callGlobalField("g_game", "onClientEvent", type, eventType);
+            }
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_ACHIEVEMENT:
+        case Otc::CLIENT_EVENT_TYPE_TITLE: {
+            const auto name = msg->getString();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, name);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_LEVEL: {
+            const auto level = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, level);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_SKILL: {
+            const auto skillId = msg->getU8();
+            const auto level = msg->getU16();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, skillId, level);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_BESTIARY:
+        case Otc::CLIENT_EVENT_TYPE_BOSSTIARY: {
+            const auto raceId = msg->getU16();
+            const auto progressLevel = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, raceId, progressLevel);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_QUEST: {
+            const auto questName = msg->getString();
+            const auto isCompleted = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, questName, isCompleted);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_COSMETIC: {
+            const auto lookType = msg->getU16();
+            const auto skinName = msg->getString();
+            const auto skinType = msg->getU8();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, lookType, skinName, skinType);
+            break;
+        }
+        case Otc::CLIENT_EVENT_TYPE_PROFICIENCY: {
+            const auto itemId = msg->getU16();
+            const auto message = msg->getString();
+            g_lua.callGlobalField("g_game", "onClientEvent", type, itemId, message);
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void ProtocolGame::parseTakeScreenshot(const InputMessagePtr& msg)

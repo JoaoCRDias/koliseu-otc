@@ -6,7 +6,6 @@ controller:registerEvents(g_game, {
         -- g_game.enableFeature(GameWingsAurasEffectsShader)
         -- g_game.enableFeature(GameCreaturePaperdoll)
         -- g_game.enableFeature(GameAllowCustomBotScripts)
-
         g_game.enableFeature(GameFormatCreatureName)
         
 
@@ -220,8 +219,6 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GamePlayerFamiliars)
             g_game.disableFeature(GameEnvironmentEffect)
             g_game.disableFeature(GameItemAnimationPhase)
-            -- Canary/OTCR: servidor envia group id (u8) após vocation em AddCreature (ver docs/context/04-protocol-and-network.md)
-            g_game.enableFeature(GameCreatureGroupType)
         end
 
         if version >= 1290 then
@@ -272,6 +269,15 @@ controller:registerEvents(g_game, {
 
         if version >= 1500 then
             g_game.enableFeature(GameVocationMonk)
+        end
+        if version >= 1513 then
+            g_game.enableFeature(GameNpcWindowRedesign)
+        end
+        if version >= 1514 then
+            g_game.enableFeature(GameEffectSource)
+        end
+        if version >= 1520 then
+            g_game.enableFeature(GameLevelPercentU16)
         end
     end
 })

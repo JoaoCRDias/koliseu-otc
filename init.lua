@@ -96,7 +96,7 @@ if ENABLE_SERVERS then
         --
         ["http://127.0.0.1/login.php"] = {
             port = 80,
-            protocol = 1511,
+            protocol = 1523,
             httpLogin = true,
             useAuthenticator = false
         },
@@ -112,7 +112,7 @@ if ENABLE_SERVERS then
         --
         ["http://127.0.0.1/login.php"] = {
             port = 80,
-            protocol = 1511,
+            protocol = 1523,
             httpLogin = true,
             useAuthenticator = false
         }
@@ -258,6 +258,7 @@ local function loadModules()
     -- game modules 500-999
     g_modules.autoLoadModules(999)
     g_modules.ensureModuleLoaded('game_interface')
+
 
     -- mods 1000-9999
     g_modules.autoLoadModules(9999)

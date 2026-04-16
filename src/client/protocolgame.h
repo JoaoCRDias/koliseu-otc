@@ -138,11 +138,17 @@ public:
     void sendPreyAction(uint8_t slot, uint8_t actionType, uint16_t index);
     void sendTaskHuntingAction(uint8_t slot, uint8_t actionType, bool upgrade, uint16_t raceId);
     void sendTaskBoardCommand(const std::string& action, const std::string& data = "{}");
+    void sendSoulSealFight(uint16_t raceId);
+    void sendTaskBoardAction(uint8_t option);
+    void sendTaskBoardActionU8(uint8_t option, uint8_t param);
+    void sendTaskBoardActionU16(uint8_t option, uint16_t param);
+    void sendTaskBoardActionU8U8(uint8_t option, uint8_t param1, uint8_t param2);
+    void sendTaskBoardActionU16U16(uint8_t option, uint16_t param1, uint16_t param2);
     void sendBountyTaskAction(uint8_t actionType, uint16_t param);
     void sendWeeklyTaskAction(uint8_t actionType, uint16_t param);
     void sendTaskHuntingShopRequest();
     void sendTaskHuntingShopPurchase(uint16_t itemId);
-    void sendBountyPreferredAction(uint8_t actionType, uint8_t slot, uint16_t raceId);
+    void sendBountyPreferredAction(uint8_t actionType, uint16_t slot, uint16_t raceId);
     void sendBountyTalismanUpgrade(uint8_t statType);
     void sendPreyRequest();
     void sendOpenPortableForge();
@@ -228,6 +234,7 @@ private:
     void parsePlayerHelpers(const InputMessagePtr& msg) const;
     void parseMessage(const InputMessagePtr& msg);
     void parseBugReport(const InputMessagePtr& msg);
+    void parseNpcChatWindow(const InputMessagePtr& msg);
     void parsePendingGame(const InputMessagePtr& msg);
     void parseEnterGame(const InputMessagePtr& msg);
     void parseLogin(const InputMessagePtr& msg) const;
@@ -260,6 +267,7 @@ private:
     void parseContainerUpdateItem(const InputMessagePtr& msg);
     void parseContainerRemoveItem(const InputMessagePtr& msg);
     void parseBosstiaryInfo(const InputMessagePtr& msg);
+    void parseClientEvent(const InputMessagePtr& msg);
     void parseTakeScreenshot(const InputMessagePtr& msg);
     void parseCyclopediaItemDetail(const InputMessagePtr& msg);
     void parseAddInventoryItem(const InputMessagePtr& msg);
@@ -341,7 +349,7 @@ private:
     // 12x
     void parseShowDescription(const InputMessagePtr& msg);
     void parseBestiaryTracker(const InputMessagePtr& msg);
-    void parseTaskHuntingBasicData(const InputMessagePtr& msg);
+    void parseSoulSealsWindow(const InputMessagePtr& msg);
     void parseTaskHuntingData(const InputMessagePtr& msg);
     void parseTaskBoardData(const InputMessagePtr& msg);
     void parseExperienceTracker(const InputMessagePtr& msg);
