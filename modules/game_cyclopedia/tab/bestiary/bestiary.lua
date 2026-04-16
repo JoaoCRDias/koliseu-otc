@@ -2159,12 +2159,12 @@ function onAddLootClick(widget, mousePosition, mouseButton)
             end)
     end
 
-    if not modules.game_npctrade.inWhiteList(itemId) then
+    if modules.game_npctrader and not modules.game_npctrader.inWhiteList(itemId) then
         menu:addOption(tr('Add to Quick Sell BlackList'),
-            function() modules.game_npctrade.addToWhitelist(itemId) end)
-    else
+            function() modules.game_npctrader.addToWhitelist(itemId) end)
+    elseif modules.game_npctrader then
         menu:addOption(tr('Remove from Quick Sell BlackList'),
-            function() modules.game_npctrade.removeItemInList(itemId) end)
+            function() modules.game_npctrader.removeItemInList(itemId) end)
     end
 
     menu:display(menuPosition)

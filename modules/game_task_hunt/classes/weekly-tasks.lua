@@ -388,9 +388,9 @@ function TaskWeekly.loadData(data)
                     end
                 end
 
-                local isNotInNpcBlacklist = modules.game_npctrade
-                    and modules.game_npctrade.inWhiteList
-                    and not modules.game_npctrade.inWhiteList(previewItemId)
+                local isNotInNpcBlacklist = modules.game_npctrader
+                    and modules.game_npctrader.inWhiteList
+                    and not modules.game_npctrader.inWhiteList(previewItemId)
 
                 if previewPanel and quickLootWarning then
                     local redIcon = g_ui.createWidget('UIWidget', previewPanel)

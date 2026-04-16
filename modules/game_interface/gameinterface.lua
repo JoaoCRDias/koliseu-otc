@@ -1112,13 +1112,13 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             actionFunction(lookThing:getId())
         end)
 
-        if modules.game_npctrade.inWhiteList then
-            if not modules.game_npctrade.inWhiteList(lookThing:getId()) then
+        if modules.game_npctrader and modules.game_npctrader.inWhiteList then
+            if not modules.game_npctrader.inWhiteList(lookThing:getId()) then
                 menu:addOption(tr('Add to Quick Sell BlackList'),
-                    function() modules.game_npctrade.addToWhitelist(lookThing:getId()) end)
+                    function() modules.game_npctrader.addToWhitelist(lookThing:getId()) end)
             else
                 menu:addOption(tr('Remove from Quick Sell BlackList'),
-                    function() modules.game_npctrade.removeItemInList(lookThing:getId()) end)
+                    function() modules.game_npctrader.removeItemInList(lookThing:getId()) end)
             end
         end
     end
