@@ -33,6 +33,13 @@ function controllerNpcTrader:sortTradeItems(items)
         return
     end
     table.sort(items, function(a, b)
+        if self.tradeMode == controllerNpcTrader.SELL then
+            local aQty = a.sellQty or 0
+            local bQty = b.sellQty or 0
+            if aQty ~= bQty then
+                return aQty > bQty
+            end
+        end
         if self.sortBy == 'price' then
             return a.price < b.price
         elseif self.sortBy == 'weight' then

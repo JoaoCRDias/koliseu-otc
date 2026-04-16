@@ -1147,4 +1147,5 @@ return {
         end
     },   
     showInfoBanner                     = true,
+    displayNpcDialogWindow             = true,
 }

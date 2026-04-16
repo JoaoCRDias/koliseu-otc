@@ -94,12 +94,60 @@ function controllerNpcTrader:cloneConsoleMessages()
     end
 end
 
-function controllerNpcTrader:initNpcWindow(creature, buttons)
-    if not g_game.getFeature(GameNpcWindowRedesign) then
+function controllerNpcTrader:findNearestNpc()
+    local player = g_game.getLocalPlayer()
+    if not player then return nil end
+    local pos = player:getPosition()
+    local spectators = g_map.getSpectatorsInRangeEx(pos, false, 4, 4, 4, 4)
+    local nearest = nil
+    local nearestDist = math.huge
+    for _, spec in ipairs(spectators) do
+        if spec:isNpc() then
+            local spos = spec:getPosition()
+            local dist = math.abs(spos.x - pos.x) + math.abs(spos.y - pos.y)
+            if dist < nearestDist then
+                nearestDist = dist
+                nearest = spec
+            end
+        end
+    end
+    return nearest
+end
+
+-- Debounce: várias chamadas (onNpcChatWindow + onNpcTalk) viram uma única abertura no próximo tick.
+local function _flushNpcWindowOpen()
+    controllerNpcTrader._openScheduled = false
+    if controllerNpcTrader.ui and not controllerNpcTrader.ui:isDestroyed() then
+        controllerNpcTrader._pendingOpen = nil
         return
     end
+    local pending = controllerNpcTrader._pendingOpen
+    if not pending then return end
+    controllerNpcTrader._pendingOpen = nil
+    controllerNpcTrader:initNpcWindow(pending.creature, pending.buttons)
+end
+
+function controllerNpcTrader:requestOpenNpcWindow(creature, buttons)
+    if self.ui and not self.ui:isDestroyed() then
+        return
+    end
+    local prev = self._pendingOpen
+    self._pendingOpen = {
+        creature = creature or (prev and prev.creature),
+        buttons = buttons or (prev and prev.buttons)
+    }
+    if not self._openScheduled then
+        self._openScheduled = true
+        scheduleEvent(_flushNpcWindowOpen, 0)
+    end
+end
+
+function controllerNpcTrader:initNpcWindow(creature, buttons)
     self.widthConsole = self.DEFAULT_CONSOLE_WIDTH
     self.isTradeOpen = false
+    if not creature then
+        creature = self:findNearestNpc()
+    end
     if creature then
         self.creatureName = creature:getName() or "Unknown"
         self.outfit = creature:getOutfit()
@@ -107,10 +155,61 @@ function controllerNpcTrader:initNpcWindow(creature, buttons)
         self.creatureName = "Unknown"
         self.outfit = "/game_npctrader/assets/images/icon-npcdialog-multiplenpcs"
     end
-    self.buttons = buttons or self.buttons or self.buttonsDefault
+    if buttons then
+        self.buttons = buttons
+        self._detectedButtonIds = {}
+        for _, btn in ipairs(buttons) do
+            self._detectedButtonIds[btn.id] = true
+        end
+    elseif not self.buttons then
+        self.buttons = {}
+        self._detectedButtonIds = {}
+
+        local npcNameLower = self.creatureName:lower()
+        local preset = self.npcButtonPresets[npcNameLower]
+        if not preset and npcNameLower:find("^hireling") then
+            preset = self.npcButtonPresets["hireling"]
+        end
+        if preset then
+            for _, btn in ipairs(preset) do
+                if not self._detectedButtonIds[btn.id] then
+                    table.insert(self.buttons, btn)
+                    self._detectedButtonIds[btn.id] = true
+                end
+            end
+        end
+
+        for _, btn in ipairs(self.buttonsDefault) do
+            if not self._detectedButtonIds[btn.id] then
+                table.insert(self.buttons, btn)
+                self._detectedButtonIds[btn.id] = true
+            end
+        end
+    end
+
+    -- Modo clássico: sem HTML; conversa no canal NPC da consola; trade em janela legacy.
+    if not self:useNewNpcDialog() then
+        self._classicNpcMode = true
+        if self.ui and not self.ui:isDestroyed() then
+            pcall(function() self:unloadHtml() end)
+        end
+        self.ui = nil
+        self.htmlId = nil
+        self._initNpcWindowInProgress = false
+        return
+    end
+    self._classicNpcMode = false
+
     self:updateChatButton()
-    if not self.ui or not self.ui:isVisible() then
+    -- Evita duplicata: (1) já existe janela válida OU (2) outra chamada já está criando (onNpcChatWindow + onNpcTalk no mesmo tick).
+    local haveValidWindow = (self.ui and not self.ui:isDestroyed()) or (self._initNpcWindowInProgress == true)
+    if not haveValidWindow then
+        self._initNpcWindowInProgress = true
+        if self.ui then
+            pcall(function() self:unloadHtml() end)
+        end
         self:loadHtml('templates/game_npctrader.html')
+        self._initNpcWindowInProgress = false
     end
     local creatureOutfit = self:findWidget("#creatureOutfit")
     if creatureOutfit then
@@ -120,16 +219,44 @@ function controllerNpcTrader:initNpcWindow(creature, buttons)
             creatureOutfit:setOutfit(self.outfit)
         end
     end
+
+    local inputConsole = self:findWidget(".inputConsole")
+    if inputConsole then
+        inputConsole.onKeyPress = function(widget, keyCode, keyboardModifiers, autoRepeatTicks)
+            if keyCode == KeyEnter then
+                local raw = widget:getText()
+                local text = raw and raw:match("^%s*(.-)%s*$") or ""
+                if #text > 0 then
+                    controllerNpcTrader:onConsoleTextClicked(nil, text)
+                    widget:clearText()
+                end
+                return true
+            end
+            return false
+        end
+    end
+
     self:cloneConsoleMessages()
+    scheduleEvent(function()
+        if not controllerNpcTrader or not controllerNpcTrader.setupTradeAmountInputHooks then return end
+        if not controllerNpcTrader.ui or controllerNpcTrader.ui:isDestroyed() then return end
+        controllerNpcTrader:setupTradeAmountInputHooks()
+    end, 0)
 end
 
 function onNpcChatWindow(data)
-    if not g_game.getFeature(GameNpcWindowRedesign) then
-        controllerNpcTrader:legacy_show()
+    if not controllerNpcTrader:useNewNpcDialog() then
         return
     end
-    local creature = g_map.getCreatureById(data.npcIds[1])
-    controllerNpcTrader:initNpcWindow(creature, data.buttons)
+    if controllerNpcTrader.ui and not controllerNpcTrader.ui:isDestroyed() and controllerNpcTrader.ui:isVisible() then
+        return
+    end
+    if data and data.npcIds and data.npcIds[1] then
+        local creature = g_map.getCreatureById(data.npcIds[1])
+        controllerNpcTrader:requestOpenNpcWindow(creature, data.buttons)
+    else
+        controllerNpcTrader:requestOpenNpcWindow(nil, nil)
+    end
 end
 
 function controllerNpcTrader:onConsoleKeyPress(event)
@@ -145,8 +272,114 @@ function controllerNpcTrader:onConsoleKeyPress(event)
     end
 end
 
+local function isNpcFarewellMessage(text)
+    if not text or type(text) ~= "string" then return true end
+    local lower = text:lower()
+    if lower:find("good bye") or lower:find("goodbye") or lower:find("bye and come again") then
+        return true
+    end
+    if lower:find("ate logo") or lower:find("ate a proxima") or lower:find("tchau") then
+        return true
+    end
+    if lower:find("farewell") or lower:find("see you") then
+        return true
+    end
+    return false
+end
+
+local function extractKeywordsFromMessage(text)
+    local keywords = {}
+    for content in text:gmatch("%{([^}]+)%}") do
+        local keyword = content:match("([^,]+)")
+        if keyword then
+            keywords[#keywords + 1] = keyword:lower():match("^%s*(.-)%s*$")
+        end
+    end
+    return keywords
+end
+
+function controllerNpcTrader:reloadButtonsUI()
+    if not self.ui or not self.ui:isVisible() then return end
+    local panel = self:findWidget("#panelBotons")
+    if not panel then return end
+    panel:destroyChildren()
+    for _, btn in ipairs(self.buttons or {}) do
+        local widget = g_ui.createWidget("UIButton", panel)
+        widget:setSize({width = 19, height = 19})
+        widget:setImageSource("/game_npctrader/assets/images/icons-npcdialog")
+        widget:setImageClip(self:getIconClip(btn.id))
+        widget:setMarginRight(2)
+        widget:setTooltip(btn.text)
+        widget.onClick = function()
+            self:onConsoleTextClicked(btn.text)
+        end
+    end
+end
+
+function controllerNpcTrader:detectAndAddButtons(text)
+    if not text or not self.keywordButtonMap then return end
+    if not self._detectedButtonIds then
+        self._detectedButtonIds = {}
+    end
+
+    local keywords = extractKeywordsFromMessage(text)
+    local added = false
+
+    for _, keyword in ipairs(keywords) do
+        local btnDef = self.keywordButtonMap[keyword]
+        if btnDef and not self._detectedButtonIds[btnDef.id] then
+            self._detectedButtonIds[btnDef.id] = true
+            local insertPos = #self.buttons - 2
+            if insertPos < 1 then insertPos = 1 end
+            table.insert(self.buttons, insertPos, btnDef)
+            added = true
+        end
+    end
+
+    if added then
+        self:reloadButtonsUI()
+    end
+end
+
+function controllerNpcTrader:addTradeButton()
+    if not self:useNewNpcDialog() then
+        return
+    end
+    if not self._detectedButtonIds then
+        self._detectedButtonIds = {}
+    end
+    local tradeId = KeywordButtonIcon.KEYWORDBUTTONICON_GENERALTRADE
+    if not self._detectedButtonIds[tradeId] then
+        self._detectedButtonIds[tradeId] = true
+        local btnDef = { id = tradeId, text = "trade" }
+        local insertPos = #self.buttons - 2
+        if insertPos < 1 then insertPos = 1 end
+        table.insert(self.buttons, insertPos, btnDef)
+        self:reloadButtonsUI()
+    end
+end
+
 function onNpcTalk(name, level, mode, text, channelId, creaturePos)
-    if not controllerNpcTrader.ui or not controllerNpcTrader.ui:isVisible() then
+    if controllerNpcTrader:useNewNpcDialog() then
+        if mode == MessageModes.NpcFrom or mode == MessageModes.NpcFromStartBlock then
+            if not controllerNpcTrader.ui or not controllerNpcTrader.ui:isVisible() then
+                local closedAt = controllerNpcTrader._closedAt or 0
+                local elapsed = g_clock.millis() - closedAt
+                if elapsed > 2000 and not isNpcFarewellMessage(text) then
+                    controllerNpcTrader:requestOpenNpcWindow(nil, nil)
+                end
+            end
+        end
+
+        if not controllerNpcTrader.ui or not controllerNpcTrader.ui:isVisible() then
+            return
+        end
+
+        if mode == MessageModes.NpcFrom or mode == MessageModes.NpcFromStartBlock then
+            controllerNpcTrader:detectAndAddButtons(text)
+        end
+    else
+        -- Consola já mostra NPC via onTalk; não duplicar nem abrir HTML.
         return
     end
 
