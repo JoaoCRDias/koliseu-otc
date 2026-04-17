@@ -157,7 +157,7 @@ AlarmSettingsWindow < MainWindow
 
   UIWidget
     id: lowSupplyAlarmHelp
-    image-source: /images/skin/show-gui-help-grey
+    image-source: /images/icons/show_gui_help_grey
     size: 12 12
     anchors.verticalCenter: lowSupplyAlarm.verticalCenter
     anchors.right: parent.right
@@ -198,7 +198,7 @@ AlarmSettingsWindow < MainWindow
 
   UIWidget
     id: flashWindowAlarmHelp
-    image-source: /images/skin/show-gui-help-grey
+    image-source: /images/icons/show_gui_help_grey
     size: 12 12
     anchors.verticalCenter: flashWindowAlarm.verticalCenter
     anchors.right: parent.right
