@@ -293,6 +293,41 @@ return {
             panels.gameMapPanel:setDrawHarmony(value)
         end
     },
+    showCustomisableStatusBars           = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if not g_game.isOnline() then
+                return
+            end
+            if value then
+                if modules.game_interface and modules.game_interface.showCustomisableStatusBars then
+                    modules.game_interface.showCustomisableStatusBars()
+                end
+            else
+                if modules.game_interface and modules.game_interface.hideCustomisableStatusBars then
+                    modules.game_interface.hideCustomisableStatusBars()
+                end
+            end
+        end
+    },
+    showStatusBars                       = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            local mainRightPanel = modules.game_interface.getMainRightPanel()
+            if mainRightPanel then
+                local healthManaPanel = mainRightPanel:getChildById('mainhealthmanapanel')
+                if healthManaPanel then
+                    if value then
+                        healthManaPanel:setHeight(32)
+                        healthManaPanel:show()
+                    else
+                        healthManaPanel:hide()
+                    end
+                    modules.game_interface.fitMainRightPanel()
+                end
+            end
+        end
+    },
     displayText                       = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
@@ -792,20 +827,38 @@ return {
                 'Opacity Missile: %s%%', value))
         end
     },
+    showHealthManaCircle                 = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            modules.game_healthcircle.handleShowArc(value)
+
+            local hudPanel = panels.interfaceHUD
+            for _, id in ipairs({ 'distFromCenScrollbar', 'distanceLabel', 'opacityScrollbar', 'opacityLabel' }) do
+                local widget = hudPanel:recursiveGetChildById(id)
+                if widget then widget:setEnabled(value) end
+            end
+        end
+    },
     distFromCenScrollbar              = {
         value = 0,
         action = function(value, options, controller, panels, extraWidgets)
-            local bar = modules.game_healthcircle.optionPanel:recursiveGetChildById('distFromCenScrollbar')
-            bar:setText(tr('Distance: %s', bar:recursiveGetChildById('valueBar'):getValue()))
-            modules.game_healthcircle.setDistanceFromCenter(bar:recursiveGetChildById('valueBar'):getValue())
+            local label = panels.interfaceHUD:recursiveGetChildById('distanceLabel')
+            if label then label:setText(tr('Distance: %d', value)) end
+            modules.game_healthcircle.setArcDistance(value)
         end
     },
     opacityScrollbar                  = {
-        value = 0,
+        value = 100,
         action = function(value, options, controller, panels, extraWidgets)
-            local bar = modules.game_healthcircle.optionPanel:recursiveGetChildById('opacityScrollbar')
-            bar:setText(tr('Opacity: %s', bar:recursiveGetChildById('valueBar'):getValue() / 100))
-            modules.game_healthcircle.setCircleOpacity(bar:recursiveGetChildById('valueBar'):getValue() / 100)
+            local label = panels.interfaceHUD:recursiveGetChildById('opacityLabel')
+            if label then label:setText(tr('Opacity: %d%%', value)) end
+            modules.game_healthcircle.updateOpacity(value)
+        end
+    },
+    healthCircleSize                  = {
+        value = 'default',
+        action = function(value, options, controller, panels, extraWidgets)
+            modules.game_healthcircle.setHealthCircleSize(value)
         end
     },
     profile                           = {

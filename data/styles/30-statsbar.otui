@@ -256,8 +256,6 @@ StatsBarTopWithShrink < UIWidget
   min-height: 54
   UIWidget
     anchors.fill: parent
-    image-source: /images/ui/background
-    image-repeated: true
 
   UIWidget
     anchors.right: rightIncreaseSidePanels.left
@@ -359,7 +357,7 @@ TopStatsSkillElement < UIWidget
   Label
     id: level
     !text: '99999'
-    color: #c0c0c0ff
+    color: $var-text-cip-color
     text-align: right
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
@@ -417,6 +415,7 @@ TopStatsBarLargeOnTop < UIWidget
     anchors.right: parent.right
     anchors.left: monkStats.right
     !statsbar-type: 'mana'
+    !statsbar-alignment: 'right'
     !statsbar-size: 'large'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
@@ -507,11 +506,10 @@ TopStatsBarParallelOnTop < UIWidget
     anchors.left: health.left
     anchors.right: health.right
     !statsbar-type: 'mana'
+    !statsbar-alignment: 'right'
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-top: 5
-    height: 14
 
   StatsBarUp
     id: manashield
@@ -603,13 +601,10 @@ TopStatsBarDefaultOnTop < UIWidget
     anchors.right: parent.right
     anchors.left: parent.horizontalCenter
     !statsbar-type: 'mana'
+    !statsbar-alignment: 'right'
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-right: 12
-    margin-left: 5
-    margin-top: 5
-    height: 14
 
   StatsBarUp
     id: manashield
@@ -622,15 +617,6 @@ TopStatsBarDefaultOnTop < UIWidget
     statsbar-text: true
     margin-top: 0
     height: 14
-
-  Panel
-    id: skills
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: manashield.bottom
-    margin-left: 12
-    margin-right: 18
-    height: 0
 
   Panel
     id: icons
@@ -693,8 +679,8 @@ TopStatsBarDefaultOnTop < UIWidget
         anchors.fill: parent
         text-align: center
         text-auto-resize: true
-        font: Verdana Bold-11px
-        color: #f4f4f4
+        font: $var-cip-main-font
+        color: $var-text-cip-color-highlight
         text: 0%
         phantom: true
     UIWidget
@@ -748,6 +734,7 @@ TopStatsBarCompactOnTop < UIWidget
     anchors.right: parent.right
     anchors.left: monkStats.right
     !statsbar-type: 'mana'
+    !statsbar-alignment: 'right'
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
@@ -820,48 +807,64 @@ TopStatsBar < UIWidget
     anchors.fill: parent
     visible: false
     phantom: true
+    image-source: /images/ui/panel_map
+    image-repeated: true
 
   TopStatsBarParallelOnTop
     id: parallelOnTop
     anchors.fill: parent
     visible: false
     phantom: true
+    image-source: /images/ui/panel_map
+    image-repeated: true
 
   TopStatsBarDefaultOnTop
     id: defaultOnTop
     anchors.fill: parent
     visible: false
     phantom: true
+    image-source: /images/ui/panel_map
+    image-repeated: true
 
   TopStatsBarCompactOnTop
     id: compactOnTop
     anchors.fill: parent
     visible: false
     phantom: true
+    image-source: /images/ui/panel_map
+    image-repeated: true
     
   TopStatsBarLargeOnBottom
     id: largeOnBottom
     anchors.fill: parent
     visible: false
     phantom: true
+    image-source: /images/ui/panel_map
+    image-repeated: true
 
   TopStatsBarParallelOnBottom
     id: parallelOnBottom
     anchors.fill: parent
     visible: false
     phantom: true
+    image-source: /images/ui/panel_map
+    image-repeated: true
 
   TopStatsBarDefaultOnBottom
     id: defaultOnBottom
     anchors.fill: parent
     visible: false
     phantom: true
+    image-source: /images/ui/panel_map
+    image-repeated: true
 
   TopStatsBarCompactOnBottom
     id: compactOnBottom
     anchors.fill: parent
     visible: false
     phantom: true
+    image-source: /images/ui/panel_map
+    image-repeated: true
 
 StatsBarDarkBackground < UIWidget
   UIWidget
@@ -1053,7 +1056,7 @@ StatsBarUp < UIStatsBar
 StatsBarBottomWithShrink < UIWidget
   UIWidget
     anchors.fill: parent
-    image-source: /images/ui/background
+    image-source: /images/ui/panel_map
     image-repeated: true
 
   UIWidget
@@ -1157,7 +1160,7 @@ BottomStatsSkillElement < UIWidget
   Label
     id: levelBottom
     !text: '99999'
-    color: #c0c0c0ff
+    color: $var-text-cip-color
     text-align: right
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
@@ -1218,17 +1221,14 @@ TopStatsBarLargeOnBottom < UIWidget
     anchors.right: parent.right
     anchors.left: monkStats.right
     !statsbar-type: 'mana'
+    !statsbar-alignment: 'right'
     !statsbar-size: 'large'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-left: 7
-    margin-right: 7
-    margin-top: 0
-    height: 27
 
   StatsBarUp
     id: manashield
-    anchors.top: mana.bottom
+    anchors.top: icons.top
     anchors.right: parent.right
     anchors.left: monkStats.right
     !statsbar-type: 'manashield'
@@ -1308,6 +1308,7 @@ TopStatsBarParallelOnBottom < UIWidget
     anchors.left: health.left
     anchors.right: health.right
     !statsbar-type: 'mana'
+    !statsbar-alignment: 'right'
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
@@ -1403,13 +1404,10 @@ TopStatsBarDefaultOnBottom < UIWidget
     anchors.right: parent.right
     anchors.left: parent.horizontalCenter
     !statsbar-type: 'mana'
+    !statsbar-alignment: 'right'
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
-    margin-left: 7
-    margin-right: 7
-    margin-top: 8
-    height: 14
 
   StatsBarUp
     id: manashield
@@ -1422,13 +1420,6 @@ TopStatsBarDefaultOnBottom < UIWidget
     statsbar-text: true
     margin-top: 0
     height: 14
-
-  Panel
-    id: skills
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: manashield.bottom
-    height: 0
 
   Panel
     id: icons
@@ -1491,8 +1482,8 @@ TopStatsBarDefaultOnBottom < UIWidget
         anchors.fill: parent
         text-align: center
         text-auto-resize: true
-        font: Verdana Bold-11px
-        color: #f4f4f4
+        font: $var-cip-main-font
+        color: $var-text-cip-color-highlight
         text: 0%
         phantom: true
     UIWidget
@@ -1546,33 +1537,11 @@ TopStatsBarCompactOnBottom < UIWidget
     anchors.right: parent.right
     anchors.left: monkStats.right
     !statsbar-type: 'mana'
+    !statsbar-alignment: 'right'
     !statsbar-size: 'small'
     !statsbar-orientation: 'horizontal'
     statsbar-text: true
     margin-left: 7
-    margin-right: 7
-    height: 14
-
-  StatsBarUp
-    id: manashield
-    anchors.top: mana.bottom
-    anchors.right: parent.right
-    anchors.left: monkStats.right
-    !statsbar-type: 'manashield'
-    !statsbar-size: 'small'
-    !statsbar-orientation: 'horizontal'
-    statsbar-text: true
-    margin-top: 0
-    margin-left: 7
-    margin-right: 7
-    height: 14
-
-  Panel
-    id: skills
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: manashield.bottom
-    margin-top: 6
     margin-right: 6
     height: 0
 

@@ -7,6 +7,10 @@ local SideBars = {
     horizontalRightConfig = {},
     openAnalysers = {},
     openContainers = {},
+    statsBarConfig = {
+        dimension = nil,
+        placement = nil,
+    },
 }
 
 local configLoaded = false
@@ -84,8 +88,9 @@ function loadConfigJson()
     SideBars.horizontalLeftConfig = result.horizontalLeftConfig or {}
     SideBars.horizontalRightConfig = result.horizontalRightConfig or {}
     SideBars.openAnalysers = result.openAnalysers or {} -- Load saved analyser widgets
-    SideBars.openContainers = result.openContainers or {} -- Load saved container widgets
-    SideBars.sidebarWidgetsConfig = {} -- Don't restore normal panel configs
+    SideBars.openContainers = result.openContainers or {}
+    SideBars.sidebarWidgetsConfig = {}
+    SideBars.statsBarConfig = result.statsBarConfig or { dimension = nil, placement = nil }
 
     configLoaded = true
 
@@ -625,6 +630,7 @@ function resetConfig()
         horizontalRightConfig = {},
         openAnalysers = {},
         openContainers = {},
+        statsBarConfig = { dimension = nil, placement = nil },
     }
 end
 
@@ -790,4 +796,11 @@ end
 -- Ensures sidebar state is saved while widgets are still alive.
 function onContainersAboutToClose()
     saveConfigJson()
+end
+
+function getStatsBarConfig()
+    if not configLoaded then
+        return nil
+    end
+    return SideBars.statsBarConfig
 end

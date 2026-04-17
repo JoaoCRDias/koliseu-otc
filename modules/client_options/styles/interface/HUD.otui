@@ -53,6 +53,28 @@ UIWidget
     margin-top: 7
     height: 22
 
+    OptionCheckBox
+      id: showCustomisableStatusBars
+      !text: tr('Show Customisable Status Bars')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBox
+      id: showStatusBars
+      !text: tr('Show Status Bars')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
     $!mobile:
       height: 0
       margin-top: 0
@@ -140,3 +162,100 @@ UIWidget
       anchors.verticalCenter: prev.verticalCenter
       anchors.left: prev.right
       mouse-scroll: false
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBox
+      id: showHealthManaCircle
+      !text: tr('Show Arcs')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    Label
+      id: healthCircleSizeLabel
+      !text: tr('Circle Size:')
+      anchors.left: parent.left
+      margin-left: 4
+      anchors.verticalCenter: parent.verticalCenter
+
+    QtComboBox
+      id: healthCircleSize
+      width: 80
+      margin-left: 10
+      anchors.verticalCenter: healthCircleSizeLabel.verticalCenter
+      anchors.left: healthCircleSizeLabel.right
+      mouse-scroll: false
+      @onSetup: |
+        self:addOption(tr('Small'), 'small')
+        self:addOption(tr('Default'), 'default')
+        self:addOption(tr('Large'), 'large')
+        local value = g_settings.getString('healthCircleSize')
+        if value ~= 'small' and value ~= 'default' and value ~= 'large' then
+          value = 'default'
+        end
+        self:setCurrentOptionByData(value, true)
+      @onOptionChange: modules.client_options.setOption('healthCircleSize', self:getCurrentOption().data)
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    Label
+      id: distanceLabel
+      !text: tr('Distance: 0')
+      anchors.left: parent.left
+      margin-left: 4
+      anchors.verticalCenter: parent.verticalCenter
+
+    HorizontalScrollBar
+      id: distFromCenScrollbar
+      width: 129
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 5
+      step: 1
+      pixels-scroll: true
+      minimum: 0
+      maximum: 100
+      default-scroll: true
+      @onValueChange: modules.client_options.setOption('distFromCenScrollbar', self:getValue())
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    Label
+      id: opacityLabel
+      !text: tr('Opacity: 100%%')
+      anchors.left: parent.left
+      margin-left: 4
+      anchors.verticalCenter: parent.verticalCenter
+
+    HorizontalScrollBar
+      id: opacityScrollbar
+      width: 129
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 5
+      step: 1
+      pixels-scroll: true
+      default-scroll: true
+      minimum: 20
+      maximum: 100
+      @onValueChange: modules.client_options.setOption('opacityScrollbar', self:getValue())
