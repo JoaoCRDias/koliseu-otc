@@ -14,7 +14,6 @@ local SOUND_FILE = '/sounds/full_dust.ogg'
 
 local PLAY_DELAY = 3000 -- 3 segundos de atraso antes de tocar
 
-local soundSource = nil
 local pendingEvent = nil
 local isLoadingUI = false
 local soundPreloaded = false
@@ -35,10 +34,7 @@ _Helper.FullDustAlarm.toggle = function(checked)
   local config = _Helper.AlarmSettings.getConfig()
   config.dust.enabled = checked
 
-  if not checked and soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  if not checked then g_sounds.stopAlarm() end
 
   _Helper.AlarmSettings.saveConfig()
 end
@@ -70,14 +66,11 @@ _Helper.FullDustAlarm.check = function(dustFull)
   pendingEvent = scheduleEvent(function()
     pendingEvent = nil
 
-    if soundSource then
-      soundSource:stop()
-      soundSource = nil
-    end
+    g_sounds.stopAlarm()
 
     if g_sounds then
       ensurePreloaded()
-      soundSource = g_sounds.play(SOUND_FILE, 0, 1.0, 1.0)
+      g_sounds.playAlarm(SOUND_FILE)
     end
 
     local cfg = _Helper.AlarmSettings.getConfig()
@@ -93,10 +86,7 @@ _Helper.FullDustAlarm.resetCheckbox = function()
     removeEvent(pendingEvent)
     pendingEvent = nil
   end
-  if soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  g_sounds.stopAlarm()
   wasDustFull = true
 end
 

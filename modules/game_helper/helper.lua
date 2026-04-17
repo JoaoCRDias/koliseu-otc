@@ -7,6 +7,7 @@ end
 if not _Helper then
   _Helper = {}
 end
+_Helper._suppressMessages = false
 
 -- Resolve custom rune: if area is a table (custom definition) but empty, replace with SpellAreas.AREA_CIRCLE3X3
 function _Helper.resolveCustomRuneArea(runeSpell)
@@ -76,6 +77,9 @@ local lastActiveMenu = 'healingMenu'
 local healingActiveBuffs = {}
 local isTransitioningPlayer = false
 local smartFollowCreatureHooked = false
+local multiUseExDelay = 0
+local lastObjectUseWasRune = false
+local potionTurnCooldown = 0
 
 -- fallback for LoadedPlayer when not provided by server-side module
 if not LoadedPlayer then
@@ -345,18 +349,18 @@ local pzState = {
 
 local eventTable = {
   -- Intervalos maiores pois onHealthChange/onManaChange fornecem reação instantânea
-  checkHealthHealing = { interval = 500, action = nil },  -- Backup polling (era 250)
-  checkMana = { interval = 500, action = nil },           -- Backup polling (era 100)
+  checkHealthHealing = { interval = 50, action = nil },  -- Backup polling (era 250)
+  checkMana = { interval = 50, action = nil },           -- Backup polling (era 100)
   routineChecks = { interval = 2500, action = nil },      -- Aumentado: autoChangeGold agora é reativo via onResourcesBalanceChange
-  checkFriendHealing = { interval = 1000, action = nil }, -- Backup polling (era 250) - agora usa onPartyMemberHealthChange
+  checkFriendHealing = { interval = 50, action = nil }, -- Backup polling (era 250) - agora usa onPartyMemberHealthChange
   -- checkAutoHaste removido: agora usa onStatesChange + cycle event temporario
-  checkMagicShooter = { interval = 100, action = nil },
+  checkMagicShooter = { interval = 50, action = nil },
   checkAutoTarget = { interval = 750, action = nil },
   checkExerciseEvent = { interval = 10000, action = nil },
-  updatePartyHealth = { interval = 250, action = nil },
-  checkEquipItems = { interval = 250, action = nil },   -- Check and equip rings/amulets based on health
+  updatePartyHealth = { interval = 50, action = nil },
+  checkEquipItems = { interval = 50, action = nil },   -- Check and equip rings/amulets based on health
   checkQuiverRefill = { interval = 500, action = nil }, -- Check and refill quiver for paladins
-  checkMagicShield = { interval = 250, action = nil },   -- Check and manage magic shield for mages
+  checkMagicShield = { interval = 50, action = nil },   -- Check and manage magic shield for mages
   checkItemTimer = { interval = 1000, action = nil },    -- Use item on timer
   checkExetaRes = { interval = 500, action = nil },      -- Exeta Res by time + creature
   checkAmpRes = { interval = 500, action = nil },        -- Amp Res: 8 sqm, 10s cooldown
@@ -419,6 +423,12 @@ local function getDirectionTo(fromPos, toPos)
 end
 
 local function getPlayer()
+  if player then
+    local success = pcall(function() return player:getId() end)
+    if not success then
+      player = nil
+    end
+  end
   if not player then
     player = g_game.getLocalPlayer()
   end
@@ -544,6 +554,7 @@ helperConfig = {
   currentLockedTargetId  = 0,
   keepWayDistance        = 0,
   avoidWaves             = false,
+  timerEnabled           = true,
   autoFollow             = false,
   autoBless              = false,
   advertisingChannel     = false,
@@ -3013,11 +3024,20 @@ function usePotion(potionId)
     return false
   end
 
+  local now = g_clock.millis()
+
   local cooldown = getSpellCooldown(potionConfig.id)
-  if cooldown > g_clock.millis() then
+  if cooldown > now then
     return false
   end
 
+  if multiUseExDelay > now then
+    return false
+  end
+
+  if potionTurnCooldown > now then
+    return false
+  end
 
   if g_helperCore and g_helperCore.isMultiUseOnCooldown and g_helperCore.isMultiUseOnCooldown() then
     return false
@@ -3028,7 +3048,13 @@ function usePotion(potionId)
     safeDoThing(false)
     g_game.useInventoryItemWith(potionId, player, 0, true)
     safeDoThing(true)
+    local expires = now + potionConfig.exhaustion
     g_helperCore.setSpellCooldown(potionConfig.id, potionConfig.exhaustion)
+    multiUseExDelay = expires
+    lastObjectUseWasRune = false
+    if helperConfig.magicShooterEnabled then
+      potionTurnCooldown = now + 1100
+    end
     return true
   end
 
@@ -4322,12 +4348,29 @@ _Helper.onSpellGroupCooldown = function(groupId, delay)
 end
 
 _Helper.isObjectUseOnCooldown = function()
+  if multiUseExDelay > g_clock.millis() then return true end
   return g_helperCore.isMultiUseOnCooldown()
 end
 
 _Helper.setObjectUseCooldown = function(duration)
   duration = duration or 1000
+  local now = g_clock.millis()
+  local expires = now + duration
+  multiUseExDelay = expires
+  lastObjectUseWasRune = true
+  potionTurnCooldown = now + 1100
   g_helperCore.setMultiUseCooldown(duration)
+end
+
+_Helper.tryPotionAfterSpell = function()
+  checkHealthHealing()
+  local localPlayer = g_game.getLocalPlayer()
+  if localPlayer then
+    local mana, maxMana = localPlayer:getMana(), localPlayer:getMaxMana()
+    if mana and maxMana and maxMana > 0 then
+      checkManaHealing(mana, maxMana)
+    end
+  end
 end
 
 _Helper.findBestTarget = function(position, direction, area, creatureList, minCreatures)

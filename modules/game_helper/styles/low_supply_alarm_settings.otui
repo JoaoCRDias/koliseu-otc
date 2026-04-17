@@ -25,7 +25,7 @@ LowSupplyAlarmWindow < MainWindow
     anchors.left: itemButton.right
     anchors.verticalCenter: itemButton.verticalCenter
     margin-left: 6
-    font: verdana-11px-antialised
+    font: $var-main-font
     color: #888888
     text: Click to select item
     text-auto-resize: true
@@ -46,8 +46,8 @@ LowSupplyAlarmWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Alarm when count lower than:')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     text-auto-resize: true
 
   TextEdit
@@ -74,13 +74,13 @@ LowSupplyAlarmWindow < MainWindow
     anchors.left: parent.left
     margin-bottom: 4
     !text: tr('Alert In Protect Zone')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     text-offset: 13 0
     width: 160
     change-cursor-image: false
     $hover !disabled:
-      color: #c0c0c0
+      color: $var-text-cip-color
 
   Button
     id: closeButton

@@ -7,6 +7,7 @@ if not _Helper then
 end
 
 _Helper.AutoTarget = {}
+_Helper.AutoTarget.monsterCount = 0
 
 -- ===== CONFIGURACOES LOCAIS =====
 
@@ -435,6 +436,50 @@ _Helper.AutoTarget.isIgnoredCreature = function(creature, ignoreTable)
   return ignoreTable[creatureName:lower()] == true
 end
 
+_Helper.AutoTarget.gatherMonsters = function(playerPosition)
+  local spectators = g_map.getSpectators(playerPosition, false)
+  local creatureList = {}
+  local monsters = {}
+  local totalOnScreen = 0
+  local isWithinReach = _Helper.isWithinReach
+  local isIgnoredCreature = _Helper.AutoTarget.isIgnoredCreature
+  local ignoreMonsterTable = _Helper.getIgnoreMonsterTable and _Helper.getIgnoreMonsterTable() or {}
+
+  for _, creature in ipairs(spectators) do
+    if creature and not creature:isLocalPlayer() and not creature:isPlayer()
+       and not creature:isDead() and creature:canBeSeen() then
+      local creaturePos = creature:getPosition()
+      if creaturePos and creaturePos.z == playerPosition.z then
+        local entry = {
+          creature = creature,
+          position = creaturePos,
+          id = creature:getId()
+        }
+        table.insert(creatureList, entry)
+
+        if isWithinReach and isWithinReach(playerPosition, creaturePos) then
+          totalOnScreen = totalOnScreen + 1
+          if g_map.isSightClear(playerPosition, creaturePos) then
+            if not isIgnoredCreature(creature, ignoreMonsterTable) then
+              table.insert(monsters, creature)
+            end
+          end
+        end
+      end
+    end
+  end
+
+  _Helper.AutoTarget.monsterCount = totalOnScreen
+  return monsters, creatureList, playerPosition
+end
+
+_Helper.AutoTarget.countVisibleMonsters = function()
+  local position = g_game.getLocalPlayer() and g_game.getLocalPlayer():getPosition()
+  if not position then return 0 end
+  _Helper.AutoTarget.gatherMonsters(position)
+  return _Helper.AutoTarget.monsterCount
+end
+
 -- Funcao principal que verifica e seleciona alvo
 _Helper.AutoTarget.check = function()
   local helperAutomaticFunctionsEnabled = _Helper.isHelperAutomaticFunctionsEnabled and
@@ -509,6 +554,12 @@ _Helper.AutoTarget.check = function()
   if currentLockedTarget and isIgnoredCreature(currentLockedTarget, ignoreMonsterTable) then
     helperConfig.currentLockedTargetId = 0
     g_game.cancelAttack()
+  end
+
+  if currentLockedTarget and not currentLockedTarget:isDead()
+      and isWithinReach and isWithinReach(position, currentLockedTarget:getPosition())
+      and not isIgnoredCreature(currentLockedTarget, ignoreMonsterTable) then
+    return
   end
 
   -- Reset reusable targeting tables

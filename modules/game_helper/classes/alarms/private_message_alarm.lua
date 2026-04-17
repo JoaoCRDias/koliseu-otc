@@ -14,7 +14,6 @@ local SOUND_FILE = '/sounds/private_message.ogg'
 local DEBOUNCE_INTERVAL = 2000 -- 2 segundos
 
 local lastPlayTime = 0
-local soundSource = nil
 local isLoadingUI = false
 local soundPreloaded = false
 
@@ -33,10 +32,7 @@ _Helper.PrivateMessageAlarm.toggle = function(checked)
   local config = _Helper.AlarmSettings.getConfig()
   config.private_message.enabled = checked
 
-  if not checked and soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  if not checked then g_sounds.stopAlarm() end
 
   if not checked then
     lastPlayTime = 0
@@ -67,14 +63,11 @@ _Helper.PrivateMessageAlarm.check = function(name, level, mode)
 
   lastPlayTime = now
 
-  if soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  g_sounds.stopAlarm()
 
   if g_sounds then
     ensurePreloaded()
-    soundSource = g_sounds.play(SOUND_FILE, 0, 1.0, 1.0)
+    g_sounds.playAlarm(SOUND_FILE)
   end
 
   local cfg = _Helper.AlarmSettings.getConfig()
@@ -85,10 +78,7 @@ end
 
 -- Reset state (chamado apenas no offline/logout)
 _Helper.PrivateMessageAlarm.resetCheckbox = function()
-  if soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  g_sounds.stopAlarm()
   lastPlayTime = 0
 end
 

@@ -7,6 +7,7 @@ void HelperCore::clearCooldowns()
     m_spellsCooldown.clear();
     m_groupsCooldown.clear();
     m_multiUseCooldownEnd = 0;
+    cleanupExpiredCooldowns();
 }
 
 void HelperCore::setSpellCooldown(int spellId, int delay)
@@ -144,7 +145,9 @@ std::string HelperCore::numberToOrdinal(int n)
 
 bool HelperCore::isWithinReach(const Position& playerPos, const Position& targetPos)
 {
-    return getDistanceBetween(playerPos, targetPos) <= 8 && playerPos.z == targetPos.z;
+    return std::abs(playerPos.x - targetPos.x) <= 7
+        && std::abs(playerPos.y - targetPos.y) <= 5
+        && playerPos.z == targetPos.z;
 }
 
 int HelperCore::getAutoTargetModeId(const std::string& modeKey)
@@ -158,11 +161,25 @@ int HelperCore::getAutoTargetModeId(const std::string& modeKey)
     return it != modes.end() ? it->second : 6;
 }
 
-std::unordered_map<std::string, int> HelperCore::getAutoTargetModesTable()
+const std::unordered_map<std::string, int>& HelperCore::getAutoTargetModesTable()
 {
-    return {
+    static const std::unordered_map<std::string, int> modes = {
         {"A", 1}, {"B", 2}, {"C", 3}, {"D", 4},
         {"E", 5}, {"F", 6}, {"G", 7}, {"H", 8},
         {"I", 9}, {"J", 10}
     };
+    return modes;
+}
+
+void HelperCore::cleanupExpiredCooldowns()
+{
+    ticks_t now = g_clock.millis();
+    for (auto it = m_spellsCooldown.begin(); it != m_spellsCooldown.end(); ) {
+        if (it->second <= now) it = m_spellsCooldown.erase(it);
+        else ++it;
+    }
+    for (auto it = m_groupsCooldown.begin(); it != m_groupsCooldown.end(); ) {
+        if (it->second <= now) it = m_groupsCooldown.erase(it);
+        else ++it;
+    }
 }

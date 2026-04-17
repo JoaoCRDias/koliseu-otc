@@ -14,7 +14,6 @@ local OPCODE_BOTCHECK_ALERT = 230
 local SOUND_FILE = '/sounds/gm_detected.ogg'
 local LOOP_INTERVAL = 3000 -- 3 segundos entre toques
 
-local alertSoundSource = nil
 local loopEvent = nil
 local isAlertActive = false
 local soundPreloaded = false
@@ -33,14 +32,11 @@ local function playAlertSound()
     return
   end
 
-  if alertSoundSource then
-    alertSoundSource:stop()
-    alertSoundSource = nil
-  end
+  g_sounds.stopAlarm()
 
   if g_sounds then
     ensurePreloaded()
-    alertSoundSource = g_sounds.play(SOUND_FILE, 0, 1.0, 1.0)
+    g_sounds.playAlarm(SOUND_FILE)
   end
 end
 
@@ -64,22 +60,24 @@ _Helper.BotCheckAlarm.start = function()
 
   isAlertActive = true
 
-  -- Disable cavebot when bot check starts
-  if modules.game_helper and modules.game_helper.cavebot then
-    if modules.game_helper.cavebot.isEnabled() then
-      modules.game_helper.cavebot.toggleButtonPress()
-    end
-  end
-
-  -- Disable smart follow when bot check starts
-  if _Helper.SmartFollow then
-    if _Helper.SmartFollow.isEnabled() then
-      _Helper.SmartFollow.resetCheckbox()
-    end
-  end
-
   playAlertSound()
   scheduleLoop()
+
+  pcall(function()
+    if modules.game_helper and modules.game_helper.cavebot then
+      if modules.game_helper.cavebot.isEnabled() then
+        modules.game_helper.cavebot.toggleButtonPress()
+      end
+    end
+  end)
+
+  pcall(function()
+    if _Helper.SmartFollow then
+      if _Helper.SmartFollow.isEnabled() then
+        _Helper.SmartFollow.resetCheckbox()
+      end
+    end
+  end)
 
   local config = _Helper.AlarmSettings.getConfig()
   if config.flash_window and config.flash_window.enabled then
@@ -99,10 +97,7 @@ _Helper.BotCheckAlarm.stop = function()
     loopEvent = nil
   end
 
-  if alertSoundSource then
-    alertSoundSource:stop()
-    alertSoundSource = nil
-  end
+  g_sounds.stopAlarm()
 end
 
 -- Handler do opcode
@@ -122,6 +117,7 @@ end
 -- Registra o opcode (chamado no init do helper)
 _Helper.BotCheckAlarm.register = function()
   ensurePreloaded()
+  pcall(function() ProtocolGame.unregisterExtendedOpcode(OPCODE_BOTCHECK_ALERT) end)
   ProtocolGame.registerExtendedOpcode(OPCODE_BOTCHECK_ALERT, _Helper.BotCheckAlarm.onExtendedOpcode)
 end
 

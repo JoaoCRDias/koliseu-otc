@@ -36,7 +36,8 @@ public:
     bool isWithinReach(const Position& playerPos, const Position& targetPos);
 
     int getAutoTargetModeId(const std::string& modeKey);
-    std::unordered_map<std::string, int> getAutoTargetModesTable();
+    const std::unordered_map<std::string, int>& getAutoTargetModesTable();
+    void cleanupExpiredCooldowns();
 
 private:
     std::unordered_map<int, ticks_t> m_spellsCooldown;

@@ -15,7 +15,6 @@ local CHECK_INTERVAL = 3000 -- 3 segundos
 local DEFAULT_THRESHOLD = 30
 
 local lastPlayTime = 0
-local soundSource = nil
 local isLoadingUI = false
 local soundPreloaded = false
 
@@ -34,10 +33,7 @@ _Helper.LowHealthAlarm.toggle = function(checked)
   local config = _Helper.AlarmSettings.getConfig()
   config.health.enabled = checked
 
-  if not checked and soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  if not checked then g_sounds.stopAlarm() end
 
   if not checked then
     lastPlayTime = 0
@@ -87,14 +83,11 @@ _Helper.LowHealthAlarm.check = function()
 
   lastPlayTime = now
 
-  if soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  g_sounds.stopAlarm()
 
   if g_sounds then
     ensurePreloaded()
-    soundSource = g_sounds.play(SOUND_FILE, 0, 1.0, 1.0)
+    g_sounds.playAlarm(SOUND_FILE)
   end
 
   if config.flash_window and config.flash_window.enabled then
@@ -104,10 +97,7 @@ end
 
 -- Reset state (stop sound)
 _Helper.LowHealthAlarm.resetCheckbox = function()
-  if soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  g_sounds.stopAlarm()
   lastPlayTime = 0
 end
 

@@ -19,7 +19,6 @@ local SOUND_FILE = '/sounds/low_supply.ogg'
 local CHECK_INTERVAL = 10000 -- 10 segundos
 
 local lastPlayTime = 0
-local soundSource = nil
 local isLoadingUI = false
 local soundPreloaded = false
 
@@ -90,10 +89,7 @@ _Helper.LowSupplyAlarm.toggle = function(checked)
   local config = _Helper.AlarmSettings.getConfig()
   config.supply.enabled = checked
 
-  if not checked and soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  if not checked then g_sounds.stopAlarm() end
 
   if not checked then
     lastPlayTime = 0
@@ -147,14 +143,22 @@ _Helper.LowSupplyAlarm.check = function()
 
   lastPlayTime = now
 
-  if soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  g_sounds.stopAlarm()
 
   if g_sounds then
     ensurePreloaded()
-    soundSource = g_sounds.play(SOUND_FILE, 0, 1.0, 1.0)
+    g_sounds.playAlarm(SOUND_FILE)
+  end
+
+  if modules.client_options.getOption('alertSupply') == false then return end
+  local notifierMod = modules.notifier
+  if notifierMod and notifierMod.Notifier and notifierMod.Notifier.show then
+    local itemName = triggerRule.name or ("Item #" .. triggerRule.itemId)
+    notifierMod.Notifier.show({
+      type = "item", itemId = triggerRule.itemId,
+      title = "Low Supply", description = itemName,
+      duration = 3000, source = "alert"
+    })
   end
 
   if config.flash_window and config.flash_window.enabled then
@@ -163,10 +167,7 @@ _Helper.LowSupplyAlarm.check = function()
 end
 
 _Helper.LowSupplyAlarm.resetCheckbox = function()
-  if soundSource then
-    soundSource:stop()
-    soundSource = nil
-  end
+  g_sounds.stopAlarm()
   lastPlayTime = 0
 
   if settingsWindow then
@@ -370,7 +371,7 @@ _Helper.LowSupplyAlarm.onRuleClick = function(index)
     local itemNameLabel = settingsWindow:recursiveGetChildById('itemNameLabel')
     if itemNameLabel then
       itemNameLabel:setText(selectedItemName)
-      itemNameLabel:setColor('#dfdfdf')
+      itemNameLabel:setColor('$var-text-color')
     end
 
     local thresholdInput = settingsWindow:recursiveGetChildById('thresholdInput')
@@ -490,6 +491,8 @@ _Helper.LowSupplyAlarm.updateRulesList = function()
       end
     end
 
+    _RuleList.setupDoubleClickToggle(widget)
+
     local capturedIndex = i
     widget.onMouseRelease = function(w, mousePos, mouseButton)
       if mouseButton == MouseLeftButton then
@@ -501,6 +504,9 @@ _Helper.LowSupplyAlarm.updateRulesList = function()
           end
         end
         _Helper.LowSupplyAlarm.onRuleClick(capturedIndex)
+        return true
+      elseif mouseButton == MouseRightButton then
+        _Helper.LowSupplyAlarm.showRuleContextMenu(capturedIndex, rule.name or ("Item #" .. rule.itemId), mousePos)
         return true
       end
       return false
@@ -630,7 +636,7 @@ _Helper.LowSupplyAlarm.onItemSelected = function(self, mousePosition, mouseButto
   local itemNameLabel = settingsWindow:recursiveGetChildById('itemNameLabel')
   if itemNameLabel then
     itemNameLabel:setText(itemName)
-    itemNameLabel:setColor('#dfdfdf')
+    itemNameLabel:setColor('$var-text-color')
   end
 
   local clearButton = settingsWindow:recursiveGetChildById('clearButton')
@@ -645,6 +651,34 @@ _Helper.LowSupplyAlarm.onItemSelected = function(self, mousePosition, mouseButto
   end
 
   return true
+end
+
+-- ===== CONTEXT MENU =====
+
+_Helper.LowSupplyAlarm.showRuleContextMenu = function(index, ruleName, position)
+  local menu = g_ui.createWidget('PopupMenu')
+
+  menu:addOption(tr('Edit'), function()
+    _Helper.LowSupplyAlarm.onRuleClick(index)
+  end)
+
+  menu:addSeparator()
+
+  menu:addOption(tr('Move Up'), function()
+    _Helper.LowSupplyAlarm.moveRuleUp(index)
+  end)
+
+  menu:addOption(tr('Move Down'), function()
+    _Helper.LowSupplyAlarm.moveRuleDown(index)
+  end)
+
+  menu:addSeparator()
+
+  menu:addOption(tr('Delete'), function()
+    _Helper.LowSupplyAlarm.removeRule(index)
+  end)
+
+  menu:display(position)
 end
 
 -- ===== SETTINGS WINDOW =====

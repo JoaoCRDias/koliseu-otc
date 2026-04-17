@@ -393,11 +393,7 @@ _Helper.MagicShooter.check = function()
         goto continue
       end
 
-      -- Verificar se o monstro é visível (não está atrás de parede)
-      -- Isso evita tentar jogar runas em monstros que estão do outro lado de paredes
-      if not g_map.isSightClear(position, creaturePos) then
-        goto continue
-      end
+      local hasSightClear = g_map.isSightClear(position, creaturePos)
 
       if getDistanceBetween and getDistanceBetween(position, creaturePos) <= 6 then
         creaturesAround = creaturesAround + 1
@@ -412,6 +408,7 @@ _Helper.MagicShooter.check = function()
       entry.position.y = creaturePos.y
       entry.position.z = creaturePos.z
       entry.creature = creature
+      entry.hasSightClear = hasSightClear
       entry.turnedMelee = creature:hasIcon(MonsterIconTurnedMelee)
       entry.exposeWeakness = creature:hasIcon(MonsterIconExposeWeakness)
       entry.sapStrength = creature:hasIcon(MonsterIconSapStrength)

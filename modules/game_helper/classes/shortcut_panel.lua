@@ -213,6 +213,14 @@ _Helper.Shortcut.syncPanelState = function()
     shortcutEquipment:setChecked(enabled)
     _Helper.Shortcut.updateMark(shortcutEquipment, enabled)
   end
+
+  -- Timer
+  local shortcutTimer = helperShortcutPanel:getChildById('shortcutTimer')
+  if shortcutTimer and helperConfig then
+    local enabled = helperConfig.timerEnabled ~= false
+    shortcutTimer:setChecked(enabled)
+    _Helper.Shortcut.updateMark(shortcutTimer, enabled)
+  end
 end
 
 _Helper.Shortcut.syncButton = function(buttonId, enabled)
@@ -309,6 +317,14 @@ _Helper.Shortcut.onButtonChange = function(button)
       if smartFollowCheckbox and smartFollowCheckbox:isChecked() ~= isChecked then
         smartFollowCheckbox:setChecked(isChecked)
       end
+    end
+  elseif id == 'shortcutTimer' then
+    if helperConfig then
+      helperConfig.timerEnabled = isChecked
+      if modules.game_helper and modules.game_helper.timerPanel and modules.game_helper.timerPanel.syncEnableTimer then
+        modules.game_helper.timerPanel.syncEnableTimer()
+      end
+      if _Helper.saveSettings then _Helper.saveSettings() end
     end
   elseif id == 'shortcutCavebot' then
     -- Sincronizar com cavebot toggle
