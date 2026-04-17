@@ -258,7 +258,7 @@ function onResourceBalance(balance, oldBalance, resourceType)
         end
     end
 
-    if resourceType == ResourceTypes.BOUNTY_TASK_POINTS then
+    if resourceType == ResourceTypes.BOUNTY_POINTS then
         local panel = taskHuntWindow:recursiveGetChildById('bountyPoints')
         if panel then
             local label = panel:recursiveGetChildById('panelLabel')

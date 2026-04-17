@@ -242,7 +242,7 @@ function BountyPreferred.populateSlots()
 
                     -- Disable unlock button if player lacks bounty task points
                     local player = g_game.getLocalPlayer()
-                    local balance = player and player:getResourceBalance(ResourceTypes.BOUNTY_TASK_POINTS) or 0
+                    local balance = player and player:getResourceBalance(ResourceTypes.BOUNTY_POINTS) or 0
                     unlockBtn:setEnabled(balance >= price)
                 end
 
@@ -305,7 +305,7 @@ function BountyPreferred.setupSlotColumn(col, slotNum, raceId, colType)
         assignBtn.onClick = function()
             if selectedRaceId > 0 then
                 local actionType = isPreferred and ACTION_SET_PREFERRED or ACTION_SET_UNWANTED
-                g_game.bountyPreferredAction(actionType, slotNum, selectedRaceId)
+                g_game.bountyPreferredAction(actionType, slotNum - 1, selectedRaceId)
             end
         end
     end
@@ -314,12 +314,12 @@ function BountyPreferred.setupSlotColumn(col, slotNum, raceId, colType)
     if clearBtn then
         clearBtn:setVisible(hasMonster)
         local player = g_game.getLocalPlayer()
-        local balance = player and player:getResourceBalance(ResourceTypes.BOUNTY_TASK_POINTS) or 0
+        local balance = player and player:getResourceBalance(ResourceTypes.BOUNTY_POINTS) or 0
         local canAfford = balance >= cachedRemoveCost
         clearBtn:setEnabled(canAfford)
         clearBtn.onClick = function()
             local actionType = isPreferred and ACTION_REMOVE_PREFERRED or ACTION_REMOVE_UNWANTED
-            g_game.bountyPreferredAction(actionType, slotNum, 0)
+            g_game.bountyPreferredAction(actionType, slotNum - 1, 0)
         end
     end
 
