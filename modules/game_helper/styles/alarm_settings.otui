@@ -11,12 +11,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 5
     !text: tr('Cap Alarm')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: #c0c0c0
+      color: $var-text-cip-color
   TextEdit
     id: lowCapacityThreshold
     size: 60 18
@@ -25,12 +25,10 @@ AlarmSettingsWindow < MainWindow
     margin-left: 5
     text: 50
     text-align: center
-  UIWidget
+  UITooltipGrey
     id: lowCapacityHelp
-    size: 12 12
     anchors.verticalCenter: lowCapacityAlarm.verticalCenter
     anchors.right: parent.right
-    image-source: /images/skin/show-gui-help-grey
     !tooltip: tr('Plays an alarm sound every 10 seconds when\ncapacity is below the defined value.')
 
   CheckBox
@@ -40,12 +38,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Low Health')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: #c0c0c0
+      color: $var-text-cip-color
   TextEdit
     id: lowHealthThreshold
     size: 40 18
@@ -61,14 +59,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: lowHealthThreshold.right
     margin-left: 2
     text: %
-    font: verdana-11px-antialised
+    font: $var-main-font
     color: #aaaaaa
-  UIWidget
+  UITooltipGrey
     id: lowHealthHelp
-    size: 12 12
     anchors.verticalCenter: lowHealthAlarm.verticalCenter
     anchors.right: parent.right
-    image-source: /images/skin/show-gui-help-grey
     !tooltip: tr('Plays an alarm sound every 3 seconds when\nhealth percent is below the defined value.')
 
   CheckBox
@@ -78,12 +74,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Low Mana')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: #c0c0c0
+      color: $var-text-cip-color
   TextEdit
     id: lowManaThreshold
     size: 40 18
@@ -99,14 +95,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: lowManaThreshold.right
     margin-left: 2
     text: %
-    font: verdana-11px-antialised
+    font: $var-main-font
     color: #aaaaaa
-  UIWidget
+  UITooltipGrey
     id: lowManaHelp
-    size: 12 12
     anchors.verticalCenter: lowManaAlarm.verticalCenter
     anchors.right: parent.right
-    image-source: /images/skin/show-gui-help-grey
     !tooltip: tr('Plays an alarm sound every 3 seconds when\nmana percent is below the defined value.')
 
   CheckBox
@@ -116,18 +110,16 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Full Dust')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: #c0c0c0
-  UIWidget
+      color: $var-text-cip-color
+  UITooltipGrey
     id: fullDustHelp
-    size: 12 12
     anchors.verticalCenter: fullDustAlarm.verticalCenter
     anchors.right: parent.right
-    image-source: /images/skin/show-gui-help-grey
     !tooltip: tr('Plays an alarm sound once when your Forge dust reaches the maximum.\nIt will not play again until dust drops below max and becomes full again.')
 
   CheckBox
@@ -137,18 +129,16 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Private Message')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: #c0c0c0
-  UIWidget
+      color: $var-text-cip-color
+  UITooltipGrey
     id: privateMessageHelp
-    size: 12 12
     anchors.verticalCenter: privateMessageAlarm.verticalCenter
     anchors.right: parent.right
-    image-source: /images/skin/show-gui-help-grey
     !tooltip: tr('Plays an alarm sound when you receive a private message.\n2 second cooldown between alarms.')
 
   CheckBox
@@ -158,12 +148,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Low Supply')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: #c0c0c0
+      color: $var-text-cip-color
 
   UIWidget
     id: lowSupplyAlarmHelp
@@ -200,11 +190,11 @@ AlarmSettingsWindow < MainWindow
     margin-top: 8
     width: 120
     !text: tr('Flash BTC Taskbar')
-    font: verdana-11px-antialised
-    color: #dfdfdf
+    font: $var-main-font
+    color: $var-text-color
     change-cursor-image: false
     $hover !disabled:
-      color: #c0c0c0
+      color: $var-text-cip-color
 
   UIWidget
     id: flashWindowAlarmHelp
