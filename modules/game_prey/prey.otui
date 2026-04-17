@@ -8,13 +8,13 @@ NoStar < UIWidget
 
 WildcardLabel < UIWidget
   size: 191 16
-  font: Verdana Bold-11px
-  color: #c0c0c0
+  font: $var-cip-main-font
+  color: $var-text-cip-color
   text-auto-resize: true
   phantom: false
   text-offset: 21 0
   $focus:
-    color: #f4f4f4
+    color: $var-text-cip-color-highlight
 
   UIWidget
     id: icon
@@ -57,7 +57,7 @@ WildcardPreyPanel < Panel
     id: searchText
     size: 205 21
     !placeholder: tr('Type to search')
-    color: #c0c0c0
+    color: $var-text-cip-color
     text-offset: 1 1
     anchors.top: prev.bottom
     anchors.right: parent.right
@@ -99,7 +99,7 @@ LockedPreyPanel < Panel
     anchors.top: prev.bottom
     anchors.left: parent.left
     anchors.right: parent.right
-    height: 64
+    height: 67
     margin-top: 7
     @onClick: modules.game_shop.show()
 
@@ -116,34 +116,11 @@ LockedPreyPanel < Panel
       $pressed:
         image-clip: 0 67 207 67
 
-  UIButton
-    id: temp
-    anchors.top: prev.bottom
-    anchors.left: parent.left
-    anchors.right: parent.right
-    height: 64
-    margin-top: 7
-    visible: false
-    @onClick: modules.game_shop.show()
-
-    UIWidget
-      id: shopTempButton
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.verticalCenter: parent.verticalCenter
-      image-source: /images/game/prey/prey_temp_test
-      size: 195 67
-      image-clip: 0 0 204 67
-      @onClick: modules.game_shop.show()
-      @onHoverChange: modules.game_prey.onHover(self)
-
-      $pressed:
-        image-clip: 0 67 204 67
-
 CreatureAndBonus < Panel
   size: 205 156
   UIWidget
     id: panel
-    phantom: true
+    phantom: false
     anchors.top: parent.top
     anchors.left: parent.left
     border-width: 1
@@ -155,12 +132,11 @@ CreatureAndBonus < Panel
 
   UICreature
     id: creature
-    phantom: true
-    anchors.top: parent.top
-    anchors.left: parent.left
-    size: 126 126
-    margin-top: 4
-    margin-left: 4
+    phantom: false
+    anchors.verticalCenter: panel.verticalCenter
+    anchors.horizontalCenter: panel.horizontalCenter
+    size: 96 96
+    clipping: false
     idle-animate: true
 
   FlatPanel
@@ -221,8 +197,8 @@ CreatureAndBonus < Panel
     anchors.top: prev.top
     anchors.horizontalCenter: parent.horizontalCenter
     text-align: center
-    font: Verdana Bold-11px
-    color: #c0c0c0
+    font: $var-cip-main-font
+    color: $var-text-cip-color
     text-auto-resize: true
     margin-top: 2
 
@@ -407,12 +383,12 @@ InactivePreyPanel < Panel
         image-border: 1
         text: Automatic Bonus Reroll
         text-offset: 15 -3
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         change-cursor-image: false
         @onHoverChange: modules.game_prey.onHover(self)
         $hover !disabled
-          color: #c0c0c0
+          color: $var-text-cip-color
 
     Panel
       id: autoRerollPrice
@@ -438,8 +414,8 @@ InactivePreyPanel < Panel
         margin-top: 4
         margin-right: 2
         text: 0
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         text-auto-resize: true
 
     FlatPanel
@@ -458,14 +434,14 @@ InactivePreyPanel < Panel
         image-source: /images/ui/checkbox
         image-border: 1
         size: 155 15
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         text: Lock Prey
         text-offset: 15 -3
         change-cursor-image: false
         @onHoverChange: modules.game_prey.onHover(self)
         $hover !disabled
-          color: #c0c0c0
+          color: $var-text-cip-color
 
     Panel
       id: lockPreyPrice
@@ -491,8 +467,8 @@ InactivePreyPanel < Panel
         margin-top: 4
         margin-right: 2
         text: 0
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         text-auto-resize: true
 
 SelectPreyPanel < Panel
@@ -590,12 +566,12 @@ ActivePreyPanel < Panel
         image-border: 1
         text: Automatic Bonus Reroll
         text-offset: 15 -3
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         change-cursor-image: false
         @onHoverChange: modules.game_prey.onHover(self)
         $hover !disabled
-          color: #c0c0c0
+          color: $var-text-cip-color
 
     Panel
       id: autoRerollPrice
@@ -621,8 +597,8 @@ ActivePreyPanel < Panel
         margin-top: 4
         margin-right: 2
         text: 0
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         text-auto-resize: true
 
     FlatPanel
@@ -641,14 +617,14 @@ ActivePreyPanel < Panel
         image-source: /images/ui/checkbox
         image-border: 1
         size: 155 15
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         text: Lock Prey
         text-offset: 15 -3
         change-cursor-image: false
         @onHoverChange: modules.game_prey.onHover(self)
         $hover !disabled
-          color: #c0c0c0
+          color: $var-text-cip-color
     Panel
       id: lockPreyPrice
       size: 26 22
@@ -673,8 +649,8 @@ ActivePreyPanel < Panel
         margin-top: 4
         margin-right: 2
         text: 0
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         text-auto-resize: true
 
 //Buttons
@@ -719,7 +695,7 @@ RerollButton < Panel
       margin-left: 3
       image-source: /images/game/prey/timerProgress
       image-clip: 0 0 60 12
-      color: #c0c0c0
+      color: $var-text-cip-color
       @onHoverChange: modules.game_prey.onHover(self)
 
       Label
@@ -727,8 +703,8 @@ RerollButton < Panel
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
         text-align: center
-        font: Verdana Bold-11px
-        color: #c0c0c0
+        font: $var-cip-main-font
+        color: $var-text-cip-color
         text-auto-resize: true
         margin-top: 2
 
@@ -839,8 +815,8 @@ CardLabel < FlatPanel
     margin-top: 3
     margin-right: 2
     text: 0
-    font: Verdana Bold-11px
-    color: #c0c0c0
+    font: $var-cip-main-font
+    color: $var-text-cip-color
     text-auto-resize: true
 
 GoldLabel < Panel
@@ -852,7 +828,7 @@ GoldLabel < Panel
     anchors.right: parent.right
     margin-top: 6
     margin-right: 3
-    image-source: /images/game/prey/prey_gold
+    image-source: /images/ui/goldcoin
     tooltip: Gold Coins
 
   UIWidget
@@ -862,8 +838,8 @@ GoldLabel < Panel
     margin-top: 3
     margin-right: 2
     !text: tr('0')
-    font: Verdana Bold-11px
-    color: #c0c0c0
+    font: $var-cip-main-font
+    color: $var-text-cip-color
     text-auto-resize: true
     tooltip-font: Verdana Bold-11px-wheel
   UIWidget
@@ -874,14 +850,14 @@ GoldLabel < Panel
     margin-right: 6
     !text: tr('1 k')
     font: Verdana-Strikethrough-11px
-    color: #707070
+    color: $var-cip-inactive-color
     text-auto-resize: true
     visible: false
 
 PreyCreatureBox < UIWidget
   size: 68 68
   border-width: 1
-  border-color: #ffffff
+  border-color: $var-text-cip-color-white
   focusable: true
 
   UIWidget
@@ -900,7 +876,7 @@ PreyCreatureBox < UIWidget
     idle-animate: true
 
   $checked on:
-    border-color: #ffffff
+    border-color: $var-text-cip-color-white
 
   $!checked:
     border-color: alpha
@@ -921,8 +897,8 @@ PreySlotPanel < Panel
     anchors.right: parent.right
     margin-top: 2
     text-align: center
-    font: Verdana Bold-11px
-    color: #909090
+    font: $var-cip-main-font
+    color: $var-text-cip-color-grey
 
   InactivePreyPanel
     id: inactive
@@ -956,7 +932,7 @@ PreySlotPanel < Panel
 
   LockedPreyPanel
     id: locked
-    margin-top: 10
+    margin-top: 22
     anchors.top: parent.top
     anchors.left: parent.left
     anchors.right: parent.right
@@ -993,36 +969,12 @@ NewMainWindow
 
     UIButton
       id: preyWindowButton
-      size: 332 34
+      size: 666 36
       margin-left: 1
       margin-top: 1
       anchors.left: parent.left
       anchors.top: parent.top
       image-source: /images/game/prey/prey-button
-      image-clip: 0 0 332 34
-      $pressed:
-        image-clip: 0 34 332 34
-      $hover:
-        image-clip: 0 0 332 34
-      $checked:
-        image-clip: 0 34 332 34
-
-    UIButton
-      id: huntingTaskButton
-      size: 332 34
-      anchors.left: prev.right
-      anchors.top: parent.top
-      margin-top: 1
-      margin-left: 1
-      image-source: /images/game/prey/task-button
-      image-clip: 0 0 332 34
-      $pressed:
-        image-clip: 0 34 332 34
-      $hover:
-        image-clip: 0 0 332 34
-      $checked:
-        image-clip: 0 34 332 34
-      @onClick: modules.game_prey.onSelectHunting()
 
   PreySlotPanel
     id: slot1
@@ -1058,8 +1010,8 @@ NewMainWindow
     text-wrap: true
     image-source: /images/ui/2pixel-up-frame-borderimage
     image-border: 3
-    font: pVerdana Bold-11px
-    color: #c0c0c0
+    font: $var-cip-main-font
+    color: $var-text-cip-color
     text-offset: 4 2
 
   HorizontalSeparator
@@ -1095,7 +1047,7 @@ NewMainWindow
       anchors.right: parent.right
       margin-top: 6
       margin-right: 3
-      image-source: /images/game/prey/prey_gold
+      image-source: /images/ui/goldcoin
       tooltip: Gold Coins
       tooltip-delayed: true
 
@@ -1106,8 +1058,8 @@ NewMainWindow
       margin-top: 3
       margin-right: 2
       text: 0
-      font: Verdana Bold-11px
-      color: #c0c0c0
+      font: $var-cip-main-font
+      color: $var-text-cip-color
       text-auto-resize: true
       tooltip-font: Verdana Bold-11px-wheel
       tooltip-delayed: true
@@ -1137,8 +1089,8 @@ NewMainWindow
       margin-top: 3
       margin-right: 2
       text: 0
-      font: Verdana Bold-11px
-      color: #c0c0c0
+      font: $var-cip-main-font
+      color: $var-text-cip-color
       text-auto-resize: true
 
   UIButton
@@ -1149,224 +1101,10 @@ NewMainWindow
     size: 26 20
     anchors.verticalCenter: closeButton.verticalCenter
     tooltip: Go to the Store to get more Prey Wildcards!
-    image-source: /images/game/prey/prey_smallstore
+    image-source: /images/game/prey/small-store
     image-clip: 0 0 26 20
     @onClick: modules.game_mainpanel.toggleStore(1)
 
     $pressed:
       image-clip: 0 20 26 20
 
-PreyCreatureTrack < Panel
-  size: 144 19
-  phantom: false
-  tooltip-font: pVerdana Bold-11px
-
-  UICreature
-    id: creature
-    size: 22 22
-    anchors.top: parent.top
-    anchors.left: parent.left
-    idle-animate: true
-    margin-top: -2
-    phantom: true
-
-  UICreature
-    id: noCreature
-    size: 17 16
-    anchors.top: parent.top
-    anchors.left: parent.left
-    image-source: /images/game/prey/prey_inactive
-    phantom: true
-    margin-top: 3
-
-  UIWidget
-    id: preyType
-    size: 15 15
-    anchors.top: parent.top
-    anchors.left: prev.right
-    image-source: /images/game/prey/prey_no_bonus
-    margin-left: 5
-    margin-top: 5
-    phantom: true
-
-  UIWidget
-    id: creatureName
-    size: 110 11
-    anchors.top: prev.top
-    anchors.left: prev.right
-    margin-left: 3
-    margin-right: 10
-    text: Inactive
-    font: Verdana Bold-11px
-    color: #c0c0c0
-    text-align: left
-    phantom: true
-
-  ProgressBar
-    id: time
-    size: 95 5
-    anchors.top: prev.bottom
-    anchors.left: prev.left
-    margin-top: 3
-    background-color: #C28400
-    color: #c0c0c0
-    phantom: true
-
-  UIWidget
-    id: preyAutoExtend
-    size: 6 5
-    anchors.top: prev.top
-    anchors.left: prev.right
-    image-source: /images/game/prey/prey-auto-extend-disabled
-    margin-left: 5
-    phantom: true
-
-HuntingCreatureTrack < Panel
-  size: 144 19
-  phantom: false
-  tooltip-font: pVerdana Bold-11px
-
-  UICreature
-    id: creature
-    size: 22 22
-    anchors.top: parent.top
-    anchors.left: parent.left
-    idle-animate: true
-    margin-top: -2
-    phantom: true
-
-  UICreature
-    id: noCreature
-    size: 17 16
-    anchors.top: parent.top
-    anchors.left: parent.left
-    image-source: /images/game/prey/prey_inactive
-    margin-top: 3
-
-  UIWidget
-    id: huntingBonus
-    size: 11 11
-    anchors.top: parent.top
-    anchors.left: prev.right
-    image-source: /images/game/prey/preyhuntingtask-tokens
-    margin-left: 6
-    margin-top: 2
-    phantom: true
-
-  UIWidget
-    id: creatureName
-    size: 110 11
-    anchors.top: prev.top
-    anchors.left: prev.right
-    margin-left: 7
-    margin-right: 10
-    margin-top: -2
-    text: Inactive
-    font: Verdana Bold-11px
-    color: #c0c0c0
-    text-align: left
-    phantom: true
-
-  ProgressBar
-    id: time
-    size: 95 5
-    anchors.top: prev.bottom
-    anchors.left: prev.left
-    margin-top: 3
-    background-color: #C28400
-    phantom: false
-    color: #c0c0c0
-
-PreyTracker < MiniWindow
-  id: preyTracker
-  &type: 'prey'
-  !text: tr('Prey')
-  height: 175
-
-  UIWidget
-    id: miniwindowIcon
-    anchors.top: miniwindowHeader.top
-    anchors.left: miniwindowHeader.left
-    margin-top: 2
-    margin-left: 4
-    image-source: /images/icons/icon-prey-widget
-    image-rect: 0 0 12 12
-    image-smooth: false
-
-  Label
-    id: miniwindowTitle
-    anchors.top: miniwindowHeader.top
-    anchors.left: miniwindowHeader.left
-    anchors.right: miniwindowHeader.right
-    margin-top: 2
-    margin-left: 20
-    margin-right: 50
-    font: verdana-11px-monochrome
-    height: 13
-    !text: tr('Prey')
-    color: #9d9d9dff
-
-  MiniWindowContents
-    anchors.fill: parent
-    margin: 16 22 4 6
-    layout: verticalBox
-
-    Label
-      !text: tr('Prey Creatures')
-      font: Verdana Bold-11px
-      color: #c0c0c0
-
-    HorizontalSeparator
-      margin-top: 3
-
-    PreyCreatureTrack
-      id: slot1
-      margin-top: 1
-      margin-left: 3
-      visible: true
-
-    PreyCreatureTrack
-      id: slot2
-      margin-top: 5
-      margin-left: 3
-      visible: true
-
-    PreyCreatureTrack
-      id: slot3
-      margin-top: 5
-      margin-left: 3
-      visible: false
-
-    Label
-      !text: tr('Hunting Tasks')
-      font: Verdana Bold-11px
-      color: #c0c0c0
-      margin-top: 5
-
-    HorizontalSeparator
-      margin-top: 3
-
-    HuntingCreatureTrack
-      id: hslot1
-      margin-top: 1
-      margin-left: 3
-
-    HuntingCreatureTrack
-      id: hslot2
-      margin-top: 5
-      margin-left: 3
-
-    HuntingCreatureTrack
-      id: hslot3
-      margin-top: 5
-      margin-left: 3
-      visible: false
-
-  UIWidget
-    id: miniborder
-    anchors.bottom: parent.bottom
-    anchors.left: parent.left
-    image-source: /images/ui/miniborder
-    size: 14 14
-    margin-left: 2
-    margin-bottom: 2

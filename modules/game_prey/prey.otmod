@@ -5,6 +5,6 @@ Module
   website: http://otclient.ovh
   sandboxed: true
   scripts: [ prey ]
-  dependencies: [ client_topmenu ]
+  dependencies: [ client_topmenu, game_trackers ]
   @onLoad: init()
   @onUnload: terminate()
