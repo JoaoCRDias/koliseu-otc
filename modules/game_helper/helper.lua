@@ -4175,100 +4175,114 @@ local function findBestTarget(position, direction, area, creatureList, minCreatu
   return bestTarget, maxCreaturesHit
 end
 
--- Converte a area da runa em offsets relativos ao centro (valor 3 ou 2)
--- Retorna uma lista de {x, y} offsets onde a runa causa dano
 local function getOffsetsFromArea(area)
-  if not area or type(area) ~= "table" then return {} end
   local centerX, centerY = findPlayerPosition(area)
   if not centerX or not centerY then return {} end
 
   local offsets = {}
+  local n = 0
   for y = 1, #area do
-    for x = 1, #area[y] do
-      -- Valor 1 = area de dano, 2/3 = centro
-      if area[y][x] == 1 or area[y][x] == 2 or area[y][x] == 3 then
-        table.insert(offsets, { x = x - centerX, y = y - centerY })
+    local row = area[y]
+    for x = 1, #row do
+      local v = row[x]
+      if v == 1 or v == 2 or v == 3 then
+        local ox = x - centerX
+        local oy = y - centerY
+        offsets[n + 1] = ox
+        offsets[n + 2] = oy
+        offsets[n + 3] = 1 / (math.sqrt(ox * ox + oy * oy) + 1)
+        n = n + 3
       end
     end
   end
-  return offsets
+  return offsets, n
 end
 
--- Encontra o melhor tile para jogar a runa de area, maximizando o numero de criaturas atingidas
--- Usa logica de score: para cada criatura, calcula todos os tiles possiveis onde a runa
--- poderia ser jogada para atingi-la, acumulando score por posicao
--- Isso e mais eficiente que iterar sobre todos os tiles do mapa
+local KEY_STRIDE = 100000
 local function findBestTileForRune(playerPos, direction, area, creatureList, minCreatures)
-  local offsets = getOffsetsFromArea(area)
-  if #offsets == 0 then return nil, 0 end
+  local offsets, offsetsLen = getOffsetsFromArea(area)
+  if offsetsLen == 0 then return nil, 0 end
 
-  -- Tabela para acumular score por posicao (key = "x,y")
+  local isSightClear = g_map.isSightClear
+  local abs = math.abs
+
+  local playerX, playerY, playerZ = playerPos.x, playerPos.y, playerPos.z
+
   local scoreByPosition = {}
-  -- Cache para evitar verificar o mesmo tile multiplas vezes
-  local checkedTiles = {}
+  local creatureCountByPosition = {}
+  local playerSightCache = {}
+  local creatureSightCache = {}
 
-  -- Para cada criatura, calcular os tiles onde a runa poderia ser jogada para atingi-la
-  for _, creatureData in ipairs(creatureList) do
+  local bestScore = 0
+  local bestKey = nil
+  local bestCount = 0
+  local bestGoalX, bestGoalY = 0, 0
+
+  local goalPos = { x = 0, y = 0, z = 0 }
+  local creaturePosTmp = { x = 0, y = 0, z = 0 }
+
+  for ci = 1, #creatureList do
+    local creatureData = creatureList[ci]
     local creaturePos = creatureData.position
-    if creaturePos and creaturePos.z == playerPos.z then
-      -- Score base por criatura (pode ser ajustado para priorizar criaturas com menos vida)
-      local score = 1
+    if creaturePos and creaturePos.z == playerZ then
+      local cx, cy = creaturePos.x, creaturePos.y
+      creaturePosTmp.x, creaturePosTmp.y, creaturePosTmp.z = cx, cy, playerZ
+      local creatureKey = cy * KEY_STRIDE + cx
 
-      -- Para cada offset da area, calcular onde a runa deveria ser jogada
-      -- para que este offset atinja a criatura
-      for _, offset in ipairs(offsets) do
-        -- Se a runa for jogada em (goalX, goalY), o offset atinge (goalX + offset.x, goalY + offset.y)
-        -- Queremos que atinja creaturePos, entao: goal = creaturePos - offset
-        local goalPos = {
-          x = creaturePos.x - offset.x,
-          y = creaturePos.y - offset.y,
-          z = creaturePos.z
-        }
+      for oi = 1, offsetsLen, 3 do
+        local ox = offsets[oi]
+        local oy = offsets[oi + 1]
+        local goalX = cx - ox
+        local goalY = cy - oy
 
-        local key = string.format("%d,%d", goalPos.x, goalPos.y)
+        if abs(goalX - playerX) <= 7 and abs(goalY - playerY) <= 5 then
+          local key = goalY * KEY_STRIDE + goalX
+          local cached = playerSightCache[key]
+          if cached == nil then
+            goalPos.x, goalPos.y, goalPos.z = goalX, goalY, playerZ
+            cached = isSightClear(playerPos, goalPos)
+            playerSightCache[key] = cached
+          end
 
-        -- Verificar se ja validamos este tile antes
-        if checkedTiles[key] == nil then
-          -- Verificar apenas se o player tem visao clara para este tile (pode jogar runa la)
-          -- isSightClear verifica se nao ha obstaculos bloqueando a visao/projetil
-          if isWithinReach(playerPos, goalPos) and g_map.isSightClear(playerPos, goalPos) then
-            checkedTiles[key] = true
-          else
-            checkedTiles[key] = false
+          if cached then
+            local csKey = key * KEY_STRIDE + creatureKey
+            local cs = creatureSightCache[csKey]
+            if cs == nil then
+              goalPos.x, goalPos.y, goalPos.z = goalX, goalY, playerZ
+              cs = isSightClear(goalPos, creaturePosTmp)
+              creatureSightCache[csKey] = cs
+            end
+
+            if cs then
+              local score = (scoreByPosition[key] or 0) + 1 + offsets[oi + 2]
+              local count = (creatureCountByPosition[key] or 0) + 1
+              scoreByPosition[key] = score
+              creatureCountByPosition[key] = count
+              if score > bestScore and count >= minCreatures then
+                bestScore = score
+                bestKey = key
+                bestCount = count
+                bestGoalX = goalX
+                bestGoalY = goalY
+              end
+            end
           end
         end
-
-        -- Só acumula score se o tile for valido
-        if checkedTiles[key] then
-          scoreByPosition[key] = (scoreByPosition[key] or 0) + score
-        end
       end
     end
   end
 
-  -- Encontrar a posicao com maior score
-  local maxScore = 0
-  local bestPos = nil
-
-  for key, score in pairs(scoreByPosition) do
-    if score >= minCreatures and score > maxScore then
-      local x, y = key:match("(-?%d+),(-?%d+)")
-      x, y = tonumber(x), tonumber(y)
-      local tilePos = { x = x, y = y, z = playerPos.z }
-
-      local tile = g_map.getTile(tilePos)
-      if tile then
-        local topThing = tile:getTopUseThing()
-        if topThing then
-          maxScore = score
-          bestPos = { tile = topThing, position = tilePos }
-        end
-      end
-    end
+  if not bestKey then
+    return nil, 0, nil
   end
 
-  if bestPos then
-    return bestPos.tile, maxScore, bestPos.position
+  local tilePos = { x = bestGoalX, y = bestGoalY, z = playerZ }
+  local tile = g_map.getTile(tilePos)
+  if tile then
+    local topThing = tile:getTopUseThing()
+    if topThing then
+      return topThing, bestCount, tilePos
+    end
   end
 
   return nil, 0, nil
