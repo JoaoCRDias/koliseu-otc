@@ -11,12 +11,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 5
     !text: tr('Cap Alarm')
-    font: $var-main-font
-    color: $var-text-color
+    font: verdana-11px-antialised
+    color: #dfdfdf
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: $var-text-cip-color
+      color: #c0c0c0
   TextEdit
     id: lowCapacityThreshold
     size: 60 18
@@ -40,12 +40,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Low Health')
-    font: $var-main-font
-    color: $var-text-color
+    font: verdana-11px-antialised
+    color: #dfdfdf
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: $var-text-cip-color
+      color: #c0c0c0
   TextEdit
     id: lowHealthThreshold
     size: 40 18
@@ -61,7 +61,7 @@ AlarmSettingsWindow < MainWindow
     anchors.left: lowHealthThreshold.right
     margin-left: 2
     text: %
-    font: $var-main-font
+    font: verdana-11px-antialised
     color: #aaaaaa
   UIWidget
     id: lowHealthHelp
@@ -78,12 +78,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Low Mana')
-    font: $var-main-font
-    color: $var-text-color
+    font: verdana-11px-antialised
+    color: #dfdfdf
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: $var-text-cip-color
+      color: #c0c0c0
   TextEdit
     id: lowManaThreshold
     size: 40 18
@@ -99,7 +99,7 @@ AlarmSettingsWindow < MainWindow
     anchors.left: lowManaThreshold.right
     margin-left: 2
     text: %
-    font: $var-main-font
+    font: verdana-11px-antialised
     color: #aaaaaa
   UIWidget
     id: lowManaHelp
@@ -116,12 +116,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Full Dust')
-    font: $var-main-font
-    color: $var-text-color
+    font: verdana-11px-antialised
+    color: #dfdfdf
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: $var-text-cip-color
+      color: #c0c0c0
   UIWidget
     id: fullDustHelp
     size: 12 12
@@ -137,12 +137,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Private Message')
-    font: $var-main-font
-    color: $var-text-color
+    font: verdana-11px-antialised
+    color: #dfdfdf
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: $var-text-cip-color
+      color: #c0c0c0
   UIWidget
     id: privateMessageHelp
     size: 12 12
@@ -158,12 +158,12 @@ AlarmSettingsWindow < MainWindow
     anchors.left: parent.left
     margin-top: 8
     !text: tr('Low Supply')
-    font: $var-main-font
-    color: $var-text-color
+    font: verdana-11px-antialised
+    color: #dfdfdf
     text-offset: 13 0
     change-cursor-image: false
     $hover !disabled:
-      color: $var-text-cip-color
+      color: #c0c0c0
 
   UIWidget
     id: lowSupplyAlarmHelp
@@ -200,11 +200,11 @@ AlarmSettingsWindow < MainWindow
     margin-top: 8
     width: 120
     !text: tr('Flash BTC Taskbar')
-    font: $var-main-font
-    color: $var-text-color
+    font: verdana-11px-antialised
+    color: #dfdfdf
     change-cursor-image: false
     $hover !disabled:
-      color: $var-text-cip-color
+      color: #c0c0c0
 
   UIWidget
     id: flashWindowAlarmHelp
