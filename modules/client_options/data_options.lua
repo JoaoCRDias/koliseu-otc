@@ -521,6 +521,13 @@ return {
                 tr('Animated Message Scale: %sx', math.max(value + 0.5, 1)))
         end
     },
+    damageFormat                      = {
+        value = 0,
+        action = function(value, options, controller, panels, extraWidgets)
+            g_app.setDamageAbbreviation(value == 1)
+            panels.interfaceHUD:recursiveGetChildById('damageFormat'):setCurrentOptionByData(value, true)
+        end
+    },
     showLeftExtraPanel                = {
         value = false,
         action = function(value, options, controller, panels, extraWidgets)

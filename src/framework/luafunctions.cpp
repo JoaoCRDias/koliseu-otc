@@ -385,6 +385,8 @@ void Application::registerLuaFunctions()
 
     g_lua.bindSingletonFunction("g_app", "isDrawingTexts", &GraphicalApplication::isDrawingTexts, &g_app);
     g_lua.bindSingletonFunction("g_app", "setDrawTexts", &GraphicalApplication::setDrawTexts, &g_app);
+    g_lua.bindSingletonFunction("g_app", "setDamageAbbreviation", &GraphicalApplication::setDamageAbbreviation, &g_app);
+    g_lua.bindSingletonFunction("g_app", "isDamageAbbreviation", &GraphicalApplication::isDamageAbbreviation, &g_app);
     g_lua.bindSingletonFunction("g_app", "setLoadingAsyncTexture", &GraphicalApplication::setLoadingAsyncTexture, &g_app);
     g_lua.bindSingletonFunction("g_app", "isEncrypted", &GraphicalApplication::isEncrypted, &g_app);
     g_lua.bindSingletonFunction("g_app", "isScaled", &GraphicalApplication::isScaled, &g_app);

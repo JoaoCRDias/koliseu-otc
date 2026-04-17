@@ -2972,7 +2972,7 @@ void ProtocolGame::parseTextMessage(const InputMessagePtr& msg)
                     continue;
                 }
 
-                g_map.addAnimatedText(std::make_shared<AnimatedText>(stdext::formatDamageKK(value[j]), color[j]), pos);
+                g_map.addAnimatedText(std::make_shared<AnimatedText>(g_app.isDamageAbbreviation() ? stdext::formatDamageKK(value[j]) : std::to_string(value[j]), color[j]), pos);
             }
             break;
         }
@@ -2987,7 +2987,7 @@ void ProtocolGame::parseTextMessage(const InputMessagePtr& msg)
 
             // Only format heal, not mana
             if (mode == Otc::MessageHeal || mode == Otc::MessageHealOthers) {
-                g_map.addAnimatedText(std::make_shared<AnimatedText>(stdext::formatDamageKK(value), color), pos);
+                g_map.addAnimatedText(std::make_shared<AnimatedText>(g_app.isDamageAbbreviation() ? stdext::formatDamageKK(value) : std::to_string(value), color), pos);
             } else {
                 g_map.addAnimatedText(std::make_shared<AnimatedText>(std::to_string(value), color), pos);
             }

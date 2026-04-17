@@ -131,6 +131,7 @@ local function setupComboBox()
     local listKeybindsPanel = panels.keybindsPanel:recursiveGetChildById('list')
     local mouseControlModeCombobox = panels.generalPanel:recursiveGetChildById('mouseControlMode')
     local lootControlModeCombobox = panels.generalPanel:recursiveGetChildById('lootControlMode')
+    local damageFormatCombobox = panels.interfaceHUD:recursiveGetChildById('damageFormat')
 
     for k, v in pairs({ { 'Disabled', 'disabled' }, { 'Default', 'default' }, { 'Full', 'full' }, { 'Animation', 'animation' } }) do
         crosshairCombo:addOption(v[1], v[2])
@@ -158,6 +159,13 @@ local function setupComboBox()
         
         -- The mouseControlMode action handler will take care of updating
         -- classicControl and smartLeftClick, and their UI visibility
+    end
+
+    damageFormatCombobox:addOption('Default', 0)
+    damageFormatCombobox:addOption('Abbreviated (K/KK/KKK)', 1)
+
+    damageFormatCombobox.onOptionChange = function(comboBox, option)
+        setOption('damageFormat', comboBox:getCurrentOption().data)
     end
 
     for k, t in pairs({ 'None', 'Antialiasing', 'Smooth Retro' }) do

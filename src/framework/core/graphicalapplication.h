@@ -106,6 +106,9 @@ public:
     void setDrawTexts(const bool v) { m_drawText = v; }
     bool isDrawingTexts() { return m_drawText; }
 
+    void setDamageAbbreviation(const bool v) { m_damageAbbreviation = v; }
+    bool isDamageAbbreviation() const { return m_damageAbbreviation; }
+
     float getHUDScale() const;
     void setHUDScale(float v);
 
@@ -148,6 +151,7 @@ private:
     bool m_forceEffectOptimization{ true };
     bool m_drawEffectOnTop{ false };
     bool m_drawText{ true };
+    bool m_damageAbbreviation{ false };
     bool m_loadingAsyncTexture{ false };
 
     float m_creatureInformationScale{ DEFAULT_DISPLAY_DENSITY };

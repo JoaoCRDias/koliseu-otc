@@ -118,3 +118,25 @@ UIWidget
       &minimumScrollValue: 1
       &maximumScrollValue: 9
       &scrollSize: 21
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 32
+
+    Label
+      !text: 'Damage/Heal Format:'
+      anchors.left: parent.left
+      margin-left: 18
+      color: #c0c0c0ff
+      anchors.verticalCenter: parent.verticalCenter
+
+    QtComboBox
+      id: damageFormat
+      width: 180
+      margin-left: 10
+      anchors.verticalCenter: prev.verticalCenter
+      anchors.left: prev.right
+      mouse-scroll: false
