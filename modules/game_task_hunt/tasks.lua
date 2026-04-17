@@ -153,9 +153,7 @@ function onTaskBoardAuxOpcode(protocol, opcode, buffer)
     local action = payload.action
     local data = payload.data or {}
 
-    if action == 'preferredData' then
-        g_game.onBountyPreferredData(data.slots or {}, data.removeCost or 0, data.availableRaceIds or {})
-    elseif action == 'shopResult' then
+    if action == 'shopResult' then
         g_game.onTaskHuntingShopResult(data.itemId or 0, data.result or 0)
     elseif action == 'bountyKillUpdate' then
         g_game.onBountyKillUpdate(data.raceId or 0, data.currentKills or 0, data.totalKills or 0, data.isCompleted or 0)
@@ -260,7 +258,7 @@ function onResourceBalance(balance, oldBalance, resourceType)
         end
     end
 
-    if resourceType == ResourceTypes.BOUNTY_TASK_POINTS then
+    if resourceType == ResourceTypes.BOUNTY_POINTS then
         local panel = taskHuntWindow:recursiveGetChildById('bountyPoints')
         if panel then
             local label = panel:recursiveGetChildById('panelLabel')

@@ -69,6 +69,18 @@ Icons[PlayerStates.Agony] = { clip = 28, tooltip = tr('You are Agony'),  id = 'c
 Icons[PlayerStates.Rewards] = { clip = 30, tooltip = tr('Rewards'),  id = 'condition_Rewards' }
 Icons[PlayerStates.Hungry] = { clip = 32, tooltip = tr('You are hungry'),  id = 'condition_hungry' }
 
+BakragoreIcons = {
+    [1] = { clip = 27, tooltip = tr('Bakragore\'s Taint: Level 1\nA faint trace of Bakragore\'s influence.'), id = 'condition_bakragore_1' },
+    [2] = { clip = 27, tooltip = tr('Bakragore\'s Taint: Level 2\nGrowing corruption seeps into your veins.'), id = 'condition_bakragore_2' },
+    [3] = { clip = 27, tooltip = tr('Bakragore\'s Taint: Level 3\nThe taint strengthens within you.'), id = 'condition_bakragore_3' },
+    [4] = { clip = 27, tooltip = tr('Bakragore\'s Taint: Level 4\nBakragore\'s mark is clearly visible.'), id = 'condition_bakragore_4' },
+    [5] = { clip = 27, tooltip = tr('Powerful Taint\nYou carry a powerful taint of Bakragore.'), id = 'condition_bakragore_5' },
+    [6] = { clip = 27, tooltip = tr('Bakragore\'s Taint: Level 6\nThe corruption deepens further.'), id = 'condition_bakragore_6' },
+    [7] = { clip = 27, tooltip = tr('Bakragore\'s Taint: Level 7\nDark power courses through you.'), id = 'condition_bakragore_7' },
+    [8] = { clip = 27, tooltip = tr('Bakragore\'s Taint: Level 8\nBakragore\'s influence is overwhelming.'), id = 'condition_bakragore_8' },
+    [9] = { clip = 27, tooltip = tr('Bakragore\'s Taint: Level 9\nMaximum corruption achieved.'), id = 'condition_bakragore_9' },
+}
+
 local PLAYER_STATE_SEGMENT = 4294967296
 
 local function isStateBitActive(states, mask)

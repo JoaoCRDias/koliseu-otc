@@ -21,6 +21,8 @@ function UIStatsBar:reloadBorder()
         end
     end
 
+    if not self.grade then return end
+
     for _, child in ipairs(self.grade:getChildren()) do
         if string.len(tostring(child:getId())) >= 6 and string.sub(tostring(child:getId()), 1, 6) == "grade_" then
             child:hide()
@@ -34,7 +36,6 @@ function UIStatsBar:reloadBorder()
 
     self.grade:show()
 
-    -- Borders
     for _, child in ipairs(self.grade:getChildren()) do
         if string.len(child:getId()) >= 13 and string.sub(child:getId(), 1, 13) == 'grade_border_' then
             child:show()
@@ -42,7 +43,6 @@ function UIStatsBar:reloadBorder()
         end
     end
 
-    -- Markers
     local markerOffset = 3
     for _, child in ipairs(self.grade:getChildren()) do
         if self.statsGrade == 3 then
@@ -102,6 +102,8 @@ function UIStatsBar:onStyleApply(styleName, styleNode)
             self.statsGrade = value
         elseif name == 'statsbar-gradecolor' then
             self.statsGradeColor = value
+        elseif name == 'statsbar-alignment' then
+            self.statsAlignment = value
         end
     end
 end
@@ -115,31 +117,43 @@ function UIStatsBar:setValue(value, total)
     self.currentValue = value
     self.currentTotal = total
 
-    -- Bar dimension
     if self.statsOrientation == 'horizontal' then
-        self.bar:setWidth(((self:getWidth() - 2) * value) / total)
+        local barWidth = ((self:getWidth() - 2) * value) / total
+        self.bar:setWidth(barWidth)
+
+        if self.statsAlignment == 'right' then
+            local parentWidth = self:getWidth() - 2
+            local marginLeft = parentWidth - barWidth + 1
+            self.bar:setMarginLeft(marginLeft)
+        end
     elseif self.statsOrientation == 'vertical' then
-        self.bar:setHeight(((self:getHeight() - 2) * value) / total)
+        local barHeight = ((self:getHeight() - 2) * value) / total
+        self.bar:setHeight(barHeight)
+
+        if self.statsAlignment == 'bottom' then
+            local parentHeight = self:getHeight() - 2
+            local marginTop = parentHeight - barHeight + 1
+            self.bar:setMarginTop(marginTop)
+        end
     else
         return
     end
 
-    -- Bar color
     local percent = (value * 100) / total
     if self.statsType == 'health' then
-        if percent >= 100 then
+        if percent > 94 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_100')
-        elseif percent >= 95 then
+        elseif percent > 59 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_95')
-        elseif percent >= 60 then
+        elseif percent > 29 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_60')
-        elseif percent >= 30 then
+        elseif percent > 9 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_30')
-        elseif percent >= 10 then
+        elseif percent > 3 then
             self.bar:setImageSource('/images/bars/' ..
                 self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_10')
         else
@@ -156,7 +170,6 @@ function UIStatsBar:setValue(value, total)
         self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_skill_progressbar_' .. self.statsSize)
     end
 
-    -- Text
     if self.showText then
         self.text:show()
         if self.manaShieldText then

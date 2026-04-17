@@ -2059,6 +2059,187 @@ function limitZoom()
     limitedZoom = true
 end
 
+local SIDE_BUTTONS_HEIGHT = 54
+
+local function calculateActionPanelMargin(statsBarHeight)
+    return math.max(statsBarHeight or 0, SIDE_BUTTONS_HEIGHT)
+end
+
+local function updateActionPanelsMargin(margin)
+    if gameLeftActionPanel then
+        gameLeftActionPanel:setMarginTop(margin)
+    end
+    if gameRightActionPanel then
+        gameRightActionPanel:setMarginTop(margin)
+    end
+
+    local leftBg = gameRootPanel and gameRootPanel:getChildById('leftSidePanelButtonsBackground')
+    local rightBg = gameRootPanel and gameRootPanel:getChildById('rightSidePanelButtonsBackground')
+    if leftBg and rightBg then
+        leftBg:setHeight(margin)
+        rightBg:setHeight(margin)
+    end
+
+    if modules.game_actionbar and modules.game_actionbar.updateVisibleWidgetsExternal then
+        scheduleEvent(function()
+            modules.game_actionbar.updateVisibleWidgetsExternal()
+        end, 50)
+    end
+end
+
+local function ensureActionPanelsAnchoredToParentTop()
+    if gameLeftActionPanel then
+        gameLeftActionPanel:removeAnchor(AnchorTop)
+        gameLeftActionPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
+    end
+    if gameRightActionPanel then
+        gameRightActionPanel:removeAnchor(AnchorTop)
+        gameRightActionPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
+    end
+end
+
+function setCustomisableStatusBarsVisible(visible, placement, statsBarHeight)
+    local currentPlacement = placement or g_settings.getString('statsbar_placement')
+    if not currentPlacement or currentPlacement == "" then
+        currentPlacement = "top"
+    end
+
+    local isTopPlacement = currentPlacement:lower() == "top"
+
+    if visible then
+        if gameTopPanel then
+            gameTopPanel:setVisible(isTopPlacement)
+            if not isTopPlacement then
+                gameTopPanel:setHeight(0)
+            end
+        end
+        if gameBottomStatsBarPanel then
+            gameBottomStatsBarPanel:setVisible(not isTopPlacement)
+            if isTopPlacement then
+                gameBottomStatsBarPanel:setHeight(0)
+            end
+        end
+
+        if leftIncreaseSidePanels then leftIncreaseSidePanels:raise() end
+        if leftDecreaseSidePanels then leftDecreaseSidePanels:raise() end
+        if rightIncreaseSidePanels then rightIncreaseSidePanels:raise() end
+        if rightDecreaseSidePanels then rightDecreaseSidePanels:raise() end
+
+        ensureActionPanelsAnchoredToParentTop()
+
+        if isTopPlacement then
+            local margin = calculateActionPanelMargin(statsBarHeight or (gameTopPanel and gameTopPanel:getHeight()) or
+                SIDE_BUTTONS_HEIGHT)
+            updateActionPanelsMargin(margin)
+
+            if gameMapPanel then
+                gameMapPanel:removeAnchor(AnchorTop)
+                gameMapPanel:addAnchor(AnchorTop, 'gameTopPanel', AnchorBottom)
+            end
+        else
+            updateActionPanelsMargin(SIDE_BUTTONS_HEIGHT)
+
+            if gameMapPanel then
+                gameMapPanel:removeAnchor(AnchorTop)
+                gameMapPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
+            end
+        end
+    else
+        if gameTopPanel then
+            gameTopPanel:setVisible(false)
+            gameTopPanel:setHeight(0)
+        end
+        if gameBottomStatsBarPanel then
+            gameBottomStatsBarPanel:setVisible(false)
+            gameBottomStatsBarPanel:setHeight(0)
+        end
+
+        ensureActionPanelsAnchoredToParentTop()
+        updateActionPanelsMargin(SIDE_BUTTONS_HEIGHT)
+
+        if gameMapPanel then
+            gameMapPanel:removeAnchor(AnchorTop)
+            gameMapPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
+        end
+    end
+
+    if modules.client_topmenu and modules.client_topmenu.updatePingWidgetTopMargin then
+        modules.client_topmenu.updatePingWidgetTopMargin()
+    end
+end
+
+function updateActionPanelsForStatsBarHeight(newHeight)
+    if not gameLeftActionPanel or not gameRightActionPanel then
+        return
+    end
+
+    local currentPlacement = g_settings.getString('statsbar_placement')
+    if not currentPlacement or currentPlacement == "" then
+        currentPlacement = "top"
+    end
+
+    if currentPlacement:lower() ~= "top" then
+        return
+    end
+
+    local margin = calculateActionPanelMargin(newHeight)
+    updateActionPanelsMargin(margin)
+
+    if modules.client_topmenu and modules.client_topmenu.updatePingWidgetTopMargin then
+        modules.client_topmenu.updatePingWidgetTopMargin()
+    end
+end
+
+function hideCustomisableStatusBars()
+    if StatsBar and StatsBar.hideAll then
+        local currentDimension = g_settings.getString('statsbar_dimension')
+        if currentDimension and currentDimension ~= 'hide' then
+            g_settings.set('statsbar_dimension_saved', currentDimension)
+        end
+        local currentPlacement = g_settings.getString('statsbar_placement')
+        if currentPlacement and currentPlacement ~= '' then
+            g_settings.set('statsbar_placement_saved', currentPlacement)
+        end
+
+        StatsBar.hideAll()
+        g_settings.set('statsbar_dimension', 'hide')
+
+        if modules.game_sidebars and modules.game_sidebars.getStatsBarConfig then
+            local statsBarConfig = modules.game_sidebars.getStatsBarConfig()
+            if statsBarConfig then
+                statsBarConfig.dimension = 'hide'
+            end
+        end
+    end
+end
+
+function showCustomisableStatusBars()
+    if StatsBar and StatsBar.hideAll then
+        local dimension = g_settings.getString('statsbar_dimension_saved')
+        if not dimension or dimension == '' then
+            dimension = 'compact'
+        end
+        local placement = g_settings.getString('statsbar_placement_saved')
+        if not placement or placement == '' then
+            placement = 'top'
+        end
+
+        g_settings.set('statsbar_dimension', dimension)
+        g_settings.set('statsbar_placement', placement)
+
+        if modules.game_sidebars and modules.game_sidebars.getStatsBarConfig then
+            local statsBarConfig = modules.game_sidebars.getStatsBarConfig()
+            if statsBarConfig then
+                statsBarConfig.dimension = dimension
+                statsBarConfig.placement = placement
+            end
+        end
+
+        StatsBar.hideAll()
+        constructStatsBar(dimension:gsub("^%l", string.upper), placement)
+    end
+end
+
 function updateStatsBar(dimension, placement)
     StatsBar.updateCurrentStats(dimension, placement)
     StatsBar.updateStatsBarOption()

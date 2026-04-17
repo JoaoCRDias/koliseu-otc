@@ -340,7 +340,8 @@ function notificationsController:updateBannerPosition()
         return
     end
 
-    local statsBarHeight = modules.game_interface.StatsBar.getHeight()
+    local currentStatsBar = modules.game_interface.StatsBar.getCurrentStatsBar()
+    local statsBarHeight = currentStatsBar and currentStatsBar:getHeight() or 0
     local marginTop = statsBarHeight + BANNER_MARGIN_OFFSET
     self.ui:setMarginTop(marginTop)
     debugPrint("Banner margin-top set to:", marginTop)

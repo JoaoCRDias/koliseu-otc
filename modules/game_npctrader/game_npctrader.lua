@@ -47,7 +47,7 @@ function controllerNpcTrader:onInit()
             controllerNpcTrader:refreshPlayerGoods()
         end,
         onCloseNpcTrade = function()
-            controllerNpcTrader:onCloseNpcTrade()
+            controllerNpcTrader:closeShopOnly()
         end,
         onTalk = onNpcTalk
     })
@@ -81,6 +81,25 @@ local function collectWindowTraderWidgets(root, out)
     for _, child in ipairs(root:getChildren()) do
         collectWindowTraderWidgets(child, out)
     end
+end
+
+function controllerNpcTrader:closeShopOnly()
+    if not self:useNewNpcDialog() then
+        self:onCloseNpcTrade()
+        return
+    end
+    self.isTradeOpen = false
+    self.buyItems = {}
+    self.sellItems = {}
+    self.selectedItem = nil
+    self.tradeItems = {}
+    self.currentList = {}
+    self.allTradeItems = {}
+    self._updatingAmount = false
+    local verticalSep = self:findWidget(".verticalSep")
+    if verticalSep then verticalSep:hide() end
+    local rightPanel = self:findWidget(".rightPanel")
+    if rightPanel then rightPanel:hide() end
 end
 
 function controllerNpcTrader:onCloseNpcTrade()
@@ -123,12 +142,10 @@ function controllerNpcTrader:onCloseNpcTrade()
         end
     end
 
-    -- Destrói a UI atual pelo controller (unloadHtml)
     if controllerNpcTrader.ui and not controllerNpcTrader.ui:isDestroyed() then
         pcall(function() controllerNpcTrader:unloadHtml() end)
     end
 
-    -- Destrói qualquer janela órfã (duplicata) com id windowTrader que tenha ficado na árvore
     local root = g_ui.getRootWidget()
     if root then
         local toDestroy = {}
@@ -140,5 +157,43 @@ function controllerNpcTrader:onCloseNpcTrade()
         end
         controllerNpcTrader.ui = nil
         controllerNpcTrader.htmlId = nil
+    end
+end
+
+local ITEM_LOOT_POUCH_ID = 23721
+sellAllWhitelist = { ITEM_LOOT_POUCH_ID }
+
+function inWhiteList(clientId)
+    if not clientId then
+        clientId = 0
+    end
+    if not sellAllWhitelist then
+        return false
+    end
+    return table.contains(sellAllWhitelist, clientId)
+end
+
+function addToWhitelist(clientId)
+    if type(clientId) ~= "number" then
+        return
+    end
+    if table.contains(sellAllWhitelist, clientId) then
+        return
+    end
+    table.insert(sellAllWhitelist, clientId)
+end
+
+function removeItemInList(clientId)
+    if type(clientId) ~= "number" then
+        return
+    end
+    if not table.contains(sellAllWhitelist, clientId) then
+        return
+    end
+    for k, v in pairs(sellAllWhitelist) do
+        if v == clientId then
+            table.remove(sellAllWhitelist, k)
+            break
+        end
     end
 end

@@ -303,10 +303,11 @@ function TaskBounty.populateTaskPanel(panel, data)
     local selectBtn = panel:recursiveGetChildById('selectTaskButton')
     if selectBtn then
         if data.isCompleted then
-            -- Already completed and reward claimed
-            selectBtn:setText('Completed')
-            selectBtn:setEnabled(false)
-            selectBtn.onClick = nil
+            selectBtn:setText('Claim Reward')
+            selectBtn:setEnabled(true)
+            selectBtn.onClick = function()
+                TaskBounty.claimReward(raceId)
+            end
         elseif data.isActive and data.currentKills >= data.totalKills then
             -- Task done, ready to claim
             selectBtn:setText('Claim Reward')

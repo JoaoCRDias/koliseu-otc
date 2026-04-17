@@ -2972,7 +2972,7 @@ void ProtocolGame::parseTextMessage(const InputMessagePtr& msg)
                     continue;
                 }
 
-                g_map.addAnimatedText(std::make_shared<AnimatedText>(stdext::formatDamageKK(value[j]), color[j]), pos);
+                g_map.addAnimatedText(std::make_shared<AnimatedText>(g_app.isDamageAbbreviation() ? stdext::formatDamageKK(value[j]) : std::to_string(value[j]), color[j]), pos);
             }
             break;
         }
@@ -2987,7 +2987,7 @@ void ProtocolGame::parseTextMessage(const InputMessagePtr& msg)
 
             // Only format heal, not mana
             if (mode == Otc::MessageHeal || mode == Otc::MessageHealOthers) {
-                g_map.addAnimatedText(std::make_shared<AnimatedText>(stdext::formatDamageKK(value), color), pos);
+                g_map.addAnimatedText(std::make_shared<AnimatedText>(g_app.isDamageAbbreviation() ? stdext::formatDamageKK(value) : std::to_string(value), color), pos);
             } else {
                 g_map.addAnimatedText(std::make_shared<AnimatedText>(std::to_string(value), color), pos);
             }
@@ -4582,13 +4582,45 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
         }
 
         const uint8_t preferredCount = msg->getU8();
+        std::vector<std::map<std::string, std::string>> preferredSlots;
+        preferredSlots.reserve(preferredCount);
         for (uint8_t i = 0; i < preferredCount; ++i) {
-            msg->getU8();  // enabled
-            msg->getU16(); // preferred raceId
-            msg->getU16(); // unwanted raceId
+            const uint8_t activedList = msg->getU8();
+            const uint16_t preferredRaceId = msg->getU16();
+            const uint16_t unwantedRaceId = msg->getU16();
+
+            std::map<std::string, std::string> slotEntry;
+            slotEntry["slot"] = stringify(static_cast<int>(i) + 1);
+            slotEntry["locked"] = stringify(activedList == 0 ? 1 : 0);
+            slotEntry["preferred"] = stringify(preferredRaceId);
+            slotEntry["unwanted"] = stringify(unwantedRaceId);
+            preferredSlots.emplace_back(std::move(slotEntry));
+        }
+
+        // Read slot unlock prices (5 entries)
+        std::vector<std::string> slotPrices;
+        slotPrices.reserve(preferredCount);
+        for (uint8_t i = 0; i < preferredCount; ++i) {
+            slotPrices.push_back(stringify(msg->getU16()));
+        }
+        // Assign price to each slot
+        for (uint8_t i = 0; i < preferredSlots.size() && i < slotPrices.size(); ++i) {
+            preferredSlots[i]["price"] = slotPrices[i];
+        }
+
+        // Read remove cost
+        const uint16_t removeCost = msg->getU16();
+
+        // Read available race IDs
+        const uint16_t availableCount = msg->getU16();
+        std::vector<uint16_t> availableRaceIds;
+        availableRaceIds.reserve(availableCount);
+        for (uint16_t i = 0; i < availableCount; ++i) {
+            availableRaceIds.push_back(msg->getU16());
         }
 
         g_lua.callGlobalField("g_game", "onBountyTaskData", header, monsters, talisman);
+        g_lua.callGlobalField("g_game", "onBountyPreferredData", preferredSlots, removeCost, availableRaceIds);
         return;
     }
 
@@ -7136,6 +7168,14 @@ void ProtocolGame::parseOpenWheelWindow(const InputMessagePtr& msg)
     if (g_game.getProtocolVersion() >= 1500 && msg->getUnreadSize() > 0) {
         hasMonkQuest = msg->getU8();
         g_logger.debug(fmt::format("[Wheel C++ Parse] hasMonkQuest lido (valor={})", static_cast<int>(hasMonkQuest)));
+    }
+
+    uint16_t huntingTaskExtraPoints = 0;
+    if (msg->getUnreadSize() >= 2) {
+        huntingTaskExtraPoints = msg->getU16();
+        extraPoints += huntingTaskExtraPoints;
+        g_logger.debug(fmt::format("[Wheel C++ Parse] huntingTaskExtraPoints={} (somado a extraPoints={})",
+            static_cast<int>(huntingTaskExtraPoints), static_cast<int>(extraPoints)));
     }
 
     // Gems ativas (equipadas)

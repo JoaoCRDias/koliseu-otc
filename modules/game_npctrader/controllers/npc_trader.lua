@@ -51,6 +51,7 @@ function onOpenNpcTrade(items, currencyId, currencyName)
     if isNewSession then
         controllerNpcTrader.isTradeOpen = true
         controllerNpcTrader.widthConsole = controllerNpcTrader.TRADE_CONSOLE_WIDTH
+        controllerNpcTrader:showTradePanel()
         controllerNpcTrader.buyItems = {}
         controllerNpcTrader.sellItems = {}
         controllerNpcTrader.currencyId = currencyId or controllerNpcTrader.DEFAULT_CURRENCY_ID
@@ -155,6 +156,14 @@ function onOpenNpcTrade(items, currencyId, currencyName)
         controllerNpcTrader:filterTradeList(controllerNpcTrader.searchText or "")
         controllerNpcTrader:refreshPlayerGoods()
     end
+end
+
+function controllerNpcTrader:showTradePanel()
+    if not self.ui or self.ui:isDestroyed() then return end
+    local rightPanel = self:findWidget(".rightPanel")
+    if rightPanel then rightPanel:show() end
+    local verticalSep = self:findWidget(".verticalSep")
+    if verticalSep then verticalSep:show() end
 end
 
 function controllerNpcTrader:setTradeMode(mode)
