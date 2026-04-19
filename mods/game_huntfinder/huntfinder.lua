@@ -28,6 +28,7 @@ local function onHuntFinderOpcode(protocol, opcode, buffer)
         end
       end
       HuntInfo:updateMonsterData({
+        name = name,
         id = info.raceId,
         maxHealth = info.health,
         experience = info.experience,
@@ -103,8 +104,6 @@ function HuntFinder.init()
   connect(g_game, {
     onGameStart = onGameStart,
     onGameEnd = offline,
-    onMonsterInfo = onMonsterInfo,
-    onUpdateBestiaryMonsterData = onBestiaryData,
   })
 
   ProtocolGame.registerExtendedOpcode(HUNTFINDER_OPCODE, onHuntFinderOpcode)
@@ -125,7 +124,6 @@ function HuntFinder.terminate()
   disconnect(g_game, {
     onGameStart = onGameStart,
     onGameEnd = offline,
-    onMonsterInfo = onMonsterInfo,
   })
 
   ProtocolGame.unregisterExtendedOpcode(HUNTFINDER_OPCODE)
@@ -257,15 +255,6 @@ function hide()
   if g_client and g_client.setInputLockWidget then
     g_client.setInputLockWidget(nil)
   end
-end
-
-function onMonsterInfo(monsters)
-  HuntInfo:setMonsters(monsters)
-end
-
-function onBestiaryData(data)
-  if not HuntFinder.widget or not HuntFinder.widget:isVisible() then return end
-  HuntInfo:updateMonsterData(data)
 end
 
 function HuntFinder.requestMonsterInfo(monsterNames)

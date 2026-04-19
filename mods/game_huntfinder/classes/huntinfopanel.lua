@@ -4,9 +4,10 @@ if not HuntInfo then
         widget = nil,
         radioSelected = nil,
         lastMonsterWidget = nil,
-        trackerKillsWidget = nil, -- show kills for the tracked hunt
-        trackedHunt = nil, -- Store the currently tracked hunt
-        showingCharms = false
+        trackerKillsWidget = nil,
+        trackedHunt = nil,
+        showingCharms = false,
+        monsterWidgetsByName = {},
     }
     HuntInfo.__index = HuntInfo
 end
@@ -27,44 +28,6 @@ local function applyDirectionLocal(pos, dir)
     elseif dir == 7 then newPos.x = newPos.x - 1; newPos.y = newPos.y - 1
     end
     return newPos
-end
-
-local monsterCache = {}
-local monsterCacheBuilt = false
-
-local function buildMonsterCache()
-    if monsterCacheBuilt then return end
-    
-    -- Iterate a reasonable range of monster IDs
-    -- Using getRaceData is safer and provides the name directly
-    for id = 1, 5000 do
-        local raceData = g_things.getRaceData(id)
-        if raceData and raceData.name then
-             local name = raceData.name
-             if name and name ~= "" then
-                 monsterCache[name:lower()] = id
-             end
-        end
-    end
-    monsterCacheBuilt = true
-end
-
-local function getMonsterIdByName(name)
-    if not name then return 0 end
-
-    local races = g_things.getRacesByName(name)
-    if races and #races > 0 then
-        for _, race in ipairs(races) do
-            if race.name == name then
-                return race.raceId
-            end
-        end
-        return races[1].raceId
-    end
-
-    buildMonsterCache()
-
-    return monsterCache[name:lower()] or 0
 end
 
 local function buildItemCache()
@@ -151,15 +114,10 @@ function onSelectionChange(widget, selectedWidget)
     self.trackerKillsWidget.onCheckChange = function(seldWidget) end
     if selectedWidget then
         local serverInfo = self.monsters[selectedWidget.actionId]
-        local races = g_things.getRacesByName(selectedWidget:getText())
-        if not races or #races == 0 then
-            races = g_things.getRacesByName(selectedWidget:getText():lower())
-        end
-        local monsterId = 0
+        local monsterId = selectedWidget.actionId or 0
         local raceData = nil
 
-        if races and #races > 0 then
-            monsterId = races[1].raceId
+        if monsterId > 0 then
             raceData = g_things.getRaceData(monsterId)
         end
 
@@ -189,11 +147,12 @@ function onSelectionChange(widget, selectedWidget)
             local elements = self.widget:recursiveGetChildById('elements')
             elements:destroyChildren()
             for elementId, percent in pairs(serverInfo[6]) do
+                local name = elementName[elementId]
+                if not name then goto skipElement1 end
                 local widgetElement = g_ui.createWidget('ElementInfo', elements)
                 widgetElement.progress:setBackgroundColor('white')
                 widgetElement:setId(elementId)
                 widgetElement:setActionId(elementId)
-                local name = elementName[elementId]
                 widgetElement.icon:setImageSource('/images/game/cyclopedia/icons/monster-icon-'.. name ..'-resist')
                 widgetElement.icon:setTooltip(string.capitalize(name))
 
@@ -209,9 +168,9 @@ function onSelectionChange(widget, selectedWidget)
                     widgetElement.progress:setBackgroundColor('#18ce18')
                     widgetElement.progress:setTooltip(tr('Sensitive to %s: %d%% (weak)', name, percent))
                 end
+                ::skipElement1::
             end
         else
-            -- Clear dynamic info if no server data
             local health = self.widget:recursiveGetChildById('health')
             local experience = self.widget:recursiveGetChildById('experience')
             local speed = self.widget:recursiveGetChildById('speed')
@@ -226,12 +185,24 @@ function onSelectionChange(widget, selectedWidget)
             self.widget:recursiveGetChildById('elements'):destroyChildren()
         end
 
-        -- self.trackerKillsWidget
         if monsterId > 0 then
-            self.trackerKillsWidget:setChecked(modules.game_cyclopedia.Bestiary.monsterInTracker(monsterId))
+            local isTracked = false
+            if modules.game_cyclopedia and modules.game_cyclopedia.Cyclopedia and modules.game_cyclopedia.Cyclopedia.storedTrackerData then
+                for _, entry in pairs(modules.game_cyclopedia.Cyclopedia.storedTrackerData) do
+                    local entryId = entry.raceId or entry[1]
+                    if entryId == monsterId then
+                        isTracked = true
+                        break
+                    end
+                end
+            end
+
+            self.trackerKillsWidget.onCheckChange = nil
+            self.trackerKillsWidget:setChecked(isTracked)
             self.trackerKillsWidget:setEnabled(true)
             self.trackerKillsWidget.onCheckChange = function(seldWidget)
-                modules.game_cyclopedia.Bestiary.onTrackMonster(seldWidget:isChecked(), monsterId)
+                local checked = seldWidget:isChecked()
+                g_game.sendStatusTrackerBestiary(monsterId, checked)
             end
         else
             self.trackerKillsWidget:setChecked(false)
@@ -341,6 +312,7 @@ function HuntInfo:clear()
     end
     self.trackedHunt = nil
     self.showingCharms = false
+    self.monsterWidgetsByName = {}
 
     self.trackerKillsWidget = nil
 end
@@ -394,6 +366,7 @@ function HuntInfo:displayHunt(hunt)
     connect(self.radioSelected, { onSelectionChange = onSelectionChange })
 
     self.lastMonsterWidget = nil
+    self.monsterWidgetsByName = {}
     for _, monster in ipairs(hunt:getMonsters()) do
         local widget = g_ui.createWidget('UIWidget', creaturesInfo)
         widget:setPhantom(false)
@@ -406,27 +379,8 @@ function HuntInfo:displayHunt(hunt)
         widget:setTooltip(monster.Name)
         widget:setFont("Verdana Bold-11px")
         widget:setColor("#c0c0c0")
-
-        local races = g_things.getRacesByName(monster.Name)
-        if not races or #races == 0 then
-            races = g_things.getRacesByName(monster.Name:lower())
-        end
-
-        if races and #races > 0 then
-            local foundExact = false
-            for _, race in ipairs(races) do
-                if race.name == monster.Name then
-                    widget.actionId = race.raceId
-                    foundExact = true
-                    break
-                end
-            end
-            if not foundExact then
-                widget.actionId = races[1].raceId
-            end
-        else
-            widget.actionId = getMonsterIdByName(monster.Name)
-        end
+        widget.actionId = 0
+        self.monsterWidgetsByName[monster.Name:lower()] = widget
         widget:setTextAlign(AlignLeft)
         self.radioSelected:addWidget(widget)
         
@@ -683,14 +637,12 @@ function onSelectionChange(widget, selectedWidget)
     end
 
     if selectedWidget then
-        g_logger.debug("[HuntFinder] onSelectionChange2: name=" .. selectedWidget:getText() .. " actionId=" .. tostring(selectedWidget.actionId) .. " hasServerInfo=" .. tostring(self.monsters ~= nil and self.monsters[selectedWidget.actionId] ~= nil))
         selectedWidget:setBackgroundColor("#585858")
         selectedWidget:setColor("#FFA500")
         self.lastMonsterWidget = selectedWidget
 
         local serverInfo = self.monsters[selectedWidget.actionId]
-        
-        local monsterId = getMonsterIdByName(selectedWidget:getText())
+        local monsterId = selectedWidget.actionId or 0
         local raceData = nil
 
         if monsterId > 0 then
@@ -698,6 +650,20 @@ function onSelectionChange(widget, selectedWidget)
         end
 
         if not serverInfo then
+            local planeCreature = self.widget:recursiveGetChildById('creatureInfoOutfit')
+            if raceData and raceData.outfit then
+                planeCreature:setOutfit(raceData.outfit)
+            else
+                planeCreature:setOutfit({auxType = 13})
+            end
+
+            local mname = self.widget:recursiveGetChildById('creatureName')
+            if raceData and raceData.name then
+                mname:setText(raceData.name:capitalize())
+            else
+                mname:setText(selectedWidget:getText())
+            end
+
             local health = self.widget:recursiveGetChildById('health')
             local experience = self.widget:recursiveGetChildById('experience')
             local speed = self.widget:recursiveGetChildById('speed')
@@ -710,6 +676,9 @@ function onSelectionChange(widget, selectedWidget)
             armor:setText("?")
             mitigation:setText("?")
             self.widget:recursiveGetChildById('elements'):destroyChildren()
+
+            self.trackerKillsWidget:setChecked(false)
+            self.trackerKillsWidget:setEnabled(false)
             return
         end
 
@@ -720,12 +689,10 @@ function onSelectionChange(widget, selectedWidget)
             planeCreature:setOutfit({auxType = 13})
         end
 
-        -- self.trackerKillsWidget
         if monsterId > 0 then
             local isTracked = false
-            if Cyclopedia and Cyclopedia.storedTrackerData then
-                for _, entry in pairs(Cyclopedia.storedTrackerData) do
-                    -- Entry can be {id, ...} (server) or {raceId=id} (local opt)
+            if modules.game_cyclopedia and modules.game_cyclopedia.Cyclopedia and modules.game_cyclopedia.Cyclopedia.storedTrackerData then
+                for _, entry in pairs(modules.game_cyclopedia.Cyclopedia.storedTrackerData) do
                     local entryId = entry.raceId or entry[1]
                     if entryId == monsterId then
                         isTracked = true
@@ -733,41 +700,13 @@ function onSelectionChange(widget, selectedWidget)
                     end
                 end
             end
-            
-            self.trackerKillsWidget.onCheckChange = nil -- Avoid triggering old callback
+
+            self.trackerKillsWidget.onCheckChange = nil
             self.trackerKillsWidget:setChecked(isTracked)
             self.trackerKillsWidget:setEnabled(true)
             self.trackerKillsWidget.onCheckChange = function(seldWidget)
-                -- g_game.sendStatusTrackerBestiary(monsterId, seldWidget:isChecked())
-                
                 local checked = seldWidget:isChecked()
                 g_game.sendStatusTrackerBestiary(monsterId, checked)
-                
-                -- Optimistic update: Update local data immediately
-                if Cyclopedia and Cyclopedia.storedTrackerData then
-                    if checked then
-                        -- Add if not exists
-                        local exists = false
-                        for _, entry in pairs(Cyclopedia.storedTrackerData) do
-                            local entryId = entry.raceId or entry[1]
-                            if entryId == monsterId then exists = true; break end
-                        end
-                        if not exists then
-                            -- Insert compatible with server structure: {raceId, kills, ?, ?, maxKills}
-                            -- We use 0 as placeholders to avoid nil errors in Bestiary
-                            table.insert(Cyclopedia.storedTrackerData, {monsterId, 0, 0, 0, 1})
-                        end
-                    else
-                        -- Remove if exists
-                        for i, entry in pairs(Cyclopedia.storedTrackerData) do
-                            local entryId = entry.raceId or entry[1]
-                            if entryId == monsterId then
-                                table.remove(Cyclopedia.storedTrackerData, i)
-                                break
-                            end
-                        end
-                    end
-                end
             end
         else
             self.trackerKillsWidget:setChecked(false)
@@ -781,7 +720,11 @@ function onSelectionChange(widget, selectedWidget)
         local armor = self.widget:recursiveGetChildById('armor')
         local mitigation = self.widget:recursiveGetChildById('mitigation')
 
-        monsterName:setText(selectedWidget:getText())
+        if raceData and raceData.name then
+            monsterName:setText(raceData.name:capitalize())
+        else
+            monsterName:setText(selectedWidget:getText())
+        end
         health:setText(serverInfo[1])
         experience:setText(serverInfo[2])
         speed:setText(serverInfo[3])
@@ -791,11 +734,12 @@ function onSelectionChange(widget, selectedWidget)
         local elements = self.widget:recursiveGetChildById('elements')
         elements:destroyChildren()
         for elementId, percent in pairs(serverInfo[6]) do
+            local name = elementName[elementId]
+            if not name then goto skipElement2 end
             local widgetElement = g_ui.createWidget('ElementInfo', elements)
             widgetElement.progress:setBackgroundColor('white')
             widgetElement:setId(elementId)
             widgetElement.actionId = elementId
-            local name = elementName[elementId]
             widgetElement.icon:setImageSource('/images/game/cyclopedia/icons/monster-icon-'.. name ..'-resist')
             widgetElement.icon:setTooltip(string.capitalize(name))
 
@@ -811,6 +755,7 @@ function onSelectionChange(widget, selectedWidget)
                 widgetElement.progress:setBackgroundColor('#18ce18')
                 widgetElement.progress:setTooltip(tr('Sensitive to %s: %d%% (weak)', name, percent))
             end
+            ::skipElement2::
         end
 
         if self.showingCharms then
@@ -843,19 +788,12 @@ function onSelectionChange(widget, selectedWidget)
 end
 
 
-function HuntInfo:setMonsters(monsters)
-    self.monsters = monsters
-    if self.radioSelected then
-        local selected = self.radioSelected:getSelectedWidget()
-        if selected then
-             onSelectionChange(self.radioSelected, selected)
-        end
-    end
-end
-
 function HuntInfo:updateMonsterData(data)
     if not self.monsters then self.monsters = {} end
-    
+
+    local raceId = data.id
+    if not raceId or raceId == 0 then return end
+
     local combat = {}
     if data.combat then
         for k, v in pairs(data.combat) do
@@ -863,20 +801,33 @@ function HuntInfo:updateMonsterData(data)
         end
     end
 
-    self.monsters[data.id] = {
+    self.monsters[raceId] = {
         data.maxHealth,
         data.experience,
         data.speed,
         data.armor,
-        (data.mitigation or 0) .. "%",
+        string.format("%.2f%%", data.mitigation or 0),
         combat
     }
 
+    if data.name then
+        local w = self.monsterWidgetsByName[data.name:lower()]
+        if w then
+            w.actionId = raceId
+        end
+    end
+
     if self.radioSelected then
         local selected = self.radioSelected:getSelectedWidget()
-        if selected and selected.actionId == data.id then
+        if selected and selected.actionId == raceId then
              onSelectionChange(self.radioSelected, selected)
         end
+    end
+end
+
+function HuntInfo:updateItemId(name, id)
+    if name and id and id > 0 then
+        itemCache[name:lower()] = id
     end
 end
 
