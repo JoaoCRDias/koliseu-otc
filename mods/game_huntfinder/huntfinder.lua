@@ -28,6 +28,7 @@ function string.todivide(str, max)
 end
 
 function HuntFinder.init()
+  g_ui.importStyle('styles/huntfinder')
   HuntFinder.widget = g_ui.displayUI('styles/huntfinder')
   HuntFinder.widget:hide()
 
@@ -179,7 +180,9 @@ function show()
   HuntFinder.widget:focus()
   HuntFinder:showListPanel()
   ListPanel:displayHunts()
-  g_client.setInputLockWidget(HuntFinder.widget)
+  if g_client and g_client.setInputLockWidget then
+    g_client.setInputLockWidget(HuntFinder.widget)
+  end
 
   HuntFinder.searchText:setText("")
   HuntFinder.searchQuery = nil
@@ -198,7 +201,9 @@ end
 
 function hide()
   HuntFinder.widget:hide()
-  g_client.setInputLockWidget(nil)
+  if g_client and g_client.setInputLockWidget then
+    g_client.setInputLockWidget(nil)
+  end
 end
 
 function onMonsterInfo(monsters)

@@ -65,5 +65,7 @@ Module
     - game_autoloot
     - client_ui_inspector
     - game_npctrader
+    - game_huntfinder
+    - game_realminimap
   @onLoad: init()
   @onUnload: terminate()

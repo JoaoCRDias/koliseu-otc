@@ -245,13 +245,11 @@ HuntWidget < UIButton
 
 ListPanel < Panel
   anchors.fill: parent
-  TextList
+  Panel
     id: hunts
     anchors.fill: parent
     image-source: /images/ui/background
     image-border: 2
-    vertical-scrollbar: huntListScrollBar
-    keep-scroll-range: true
     padding-top: 9
     padding-left: 9
     layout:

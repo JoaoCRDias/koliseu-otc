@@ -9,6 +9,10 @@ local self = MapFinder
 
 function MapFinder.init()
     self.widget = HuntFinder.widget:recursiveGetChildById('minimap')
+    if not self.widget then
+        g_logger.error("[HuntFinder] MapFinder init: minimap widget not found")
+        return
+    end
 
     if RealMap and RealMap.setRegion then
         pcall(function() RealMap.setRegion(self.widget) end)
@@ -39,6 +43,7 @@ function MapFinder:clear()
 end
 
 function MapFinder:onFloorChange(widget, newPos, oldPos)
+    if not self.widget then return end
     if newPos.z > 7 then
         self.widget.view = "minimap"
         self.widget:setBackgroundColor("#000000ff")
@@ -49,6 +54,7 @@ function MapFinder:onFloorChange(widget, newPos, oldPos)
 end
 
 function MapFinder:setHuntPosition(position)
+    if not self.widget then return end
     if (position.x == 0 and position.y == 0 and position.z == 0) then
         return
     end

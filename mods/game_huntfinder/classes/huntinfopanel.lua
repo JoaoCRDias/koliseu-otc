@@ -256,42 +256,57 @@ function onSelectionChange(widget, selectedWidget)
 end
 
 function HuntInfo.init()
-    self.widget = HuntFinder.widget:recursiveGetChildById('huntInfoPanel')
-    self.radioSelected = UIRadioGroup.create()
-    self.statsPanel = self.widget:recursiveGetChildById('statsPanel')
-    self.creatureCharmPanel = self.widget:recursiveGetChildById('creatureCharmPanel')
-    self.creatureInfoButton = self.widget:recursiveGetChildById('creatureInfoButton')
-    self.charmImage = self.widget:recursiveGetChildById('charmImage')
-    self.charmOpacity = self.widget:recursiveGetChildById('charmOpacity')
-    self.trackerKillsWidget = self.widget:recursiveGetChildById('trackerKills')
-    self.floorUp = self.widget:recursiveGetChildById('floorUp')
-    self.floorDown = self.widget:recursiveGetChildById('floorDown')
-    
-    self.floorUp.onClick = function()
-        local minimap = self.widget:recursiveGetChildById('minimap')
-        if minimap then
-            minimap:floorUp(1)
+    local ok, err = pcall(function()
+        self.widget = HuntFinder.widget:recursiveGetChildById('huntInfoPanel')
+        if not self.widget then
+            g_logger.error("[HuntFinder] HuntInfo init: huntInfoPanel not found")
+            return
         end
-    end
+        self.radioSelected = UIRadioGroup.create()
+        self.statsPanel = self.widget:recursiveGetChildById('statsPanel')
+        self.creatureCharmPanel = self.widget:recursiveGetChildById('creatureCharmPanel')
+        self.creatureInfoButton = self.widget:recursiveGetChildById('creatureInfoButton')
+        self.charmImage = self.widget:recursiveGetChildById('charmImage')
+        self.charmOpacity = self.widget:recursiveGetChildById('charmOpacity')
+        self.trackerKillsWidget = self.widget:recursiveGetChildById('trackerKills')
+        self.floorUp = self.widget:recursiveGetChildById('floorUp')
+        self.floorDown = self.widget:recursiveGetChildById('floorDown')
 
-    self.floorDown.onClick = function()
-        local minimap = self.widget:recursiveGetChildById('minimap')
-        if minimap then
-            minimap:floorDown(1)
+        if self.floorUp then
+            self.floorUp.onClick = function()
+                local minimap = self.widget:recursiveGetChildById('minimap')
+                if minimap then
+                    minimap:floorUp(1)
+                end
+            end
         end
-    end
-    
-    connect(self.radioSelected, { onSelectionChange = onSelectionChange })
 
-    self.showingCharms = false
-    self:updateButtonState()
-    self.creatureInfoButton.onClick = function()
-        self.showingCharms = not self.showingCharms
-        self:updatePanels()
-        self:updateButtonState()
-        if self.showingCharms and self.radioSelected:getSelectedWidget() then
-            onSelectionChange(nil, self.radioSelected:getSelectedWidget())
+        if self.floorDown then
+            self.floorDown.onClick = function()
+                local minimap = self.widget:recursiveGetChildById('minimap')
+                if minimap then
+                    minimap:floorDown(1)
+                end
+            end
         end
+
+        connect(self.radioSelected, { onSelectionChange = onSelectionChange })
+
+        self.showingCharms = false
+        if self.creatureInfoButton then
+            self:updateButtonState()
+            self.creatureInfoButton.onClick = function()
+                self.showingCharms = not self.showingCharms
+                self:updatePanels()
+                self:updateButtonState()
+                if self.showingCharms and self.radioSelected:getSelectedWidget() then
+                    onSelectionChange(nil, self.radioSelected:getSelectedWidget())
+                end
+            end
+        end
+    end)
+    if not ok then
+        g_logger.error("[HuntFinder] HuntInfo init crashed: " .. tostring(err))
     end
 end
 
@@ -332,7 +347,14 @@ function HuntInfo:updateButtonState()
 end
 
 function HuntInfo:displayHunt(hunt)
-    self.currentHunt = hunt -- Store the current hunt
+    self.currentHunt = hunt
+    if not self.widget then
+        HuntInfo.init()
+    end
+    if not self.widget then
+        g_logger.error("[HuntFinder] displayHunt: huntInfoPanel widget not found")
+        return
+    end
     MapFinder:setHuntPosition(hunt:getPosition())
     local huntName = self.widget:getChildById('huntName')
     local huntLevel = self.widget:recursiveGetChildById('huntLevel')

@@ -20,12 +20,27 @@ end
 local self = ListPanel
 
 function ListPanel.init()
-    self.widget = HuntFinder.widget:recursiveGetChildById('listPanel')
-    self.huntWidget = self.widget:getChildById('hunts')
-    self.huntScrollBar = self.widget:getChildById('huntListScrollBar')
-    self.searchInputBox = HuntFinder.widget:recursiveGetChildById("searchInputBox")
-    self:setupSmartSpinBox(self.searchInputBox)
-    self.searchInputBox:updatePossibleValues(HuntConfig:getHuntsLevelList())
+    local ok, err = pcall(function()
+        self.widget = HuntFinder.widget:recursiveGetChildById('listPanel')
+        if not self.widget then
+            g_logger.error("[HuntFinder] init: listPanel not found")
+            return
+        end
+        self.huntWidget = self.widget:recursiveGetChildById('hunts')
+        if not self.huntWidget then
+            g_logger.error("[HuntFinder] init: hunts panel not found")
+            return
+        end
+        self.huntScrollBar = HuntFinder.widget:recursiveGetChildById('huntListScrollBar')
+        self.searchInputBox = HuntFinder.widget:recursiveGetChildById("searchInputBox")
+        if self.searchInputBox then
+            self:setupSmartSpinBox(self.searchInputBox)
+            self.searchInputBox:updatePossibleValues(HuntConfig:getHuntsLevelList())
+        end
+    end)
+    if not ok then
+        g_logger.error("[HuntFinder] init crashed: " .. tostring(err))
+    end
 end
 
 function ListPanel:setupSmartSpinBox(spinbox)
@@ -114,15 +129,19 @@ end
 
 function ListPanel:displayHunts()
     if not self.widget or not self.huntWidget then
+        ListPanel.init()
+    end
+    if not self.widget or not self.huntWidget then
+        g_logger.error("[HuntFinder] displayHunts: widget or huntWidget is nil after re-init")
         return
     end
 
     local hunts = HuntConfig:getHuntByVocation(HuntFinder.vocation, self)
     if not hunts or #hunts == 0 then
+        g_logger.warning("[HuntFinder] displayHunts: no hunts found (vocation=" .. tostring(HuntFinder.vocation) .. ", dataCount=" .. #HuntConfig.data .. ")")
         return
     end
 
-    -- Move tracked hunt to the top, preserve original order for others
     local reorderedHunts = {}
     local trackedHunt = HuntInfo.trackedHunt
     if trackedHunt then
@@ -134,10 +153,13 @@ function ListPanel:displayHunts()
         end
     end
 
-    self.listCapacity = (math.floor(self.huntWidget:getHeight() / self.listWidgetHeight)) * 3
+    local calculatedCapacity = (math.floor(self.huntWidget:getHeight() / self.listWidgetHeight)) * 3
+    self.listCapacity = math.max(6, calculatedCapacity)
     self.listMinWidgets = 0
     self.listPool = {}
     self.listData = reorderedHunts
+
+    g_logger.debug("[HuntFinder] displayHunts: " .. #reorderedHunts .. " hunts, capacity=" .. self.listCapacity .. ", huntWidget height=" .. self.huntWidget:getHeight())
 
     local usedCount = 0
     local currentIndex = 1
@@ -148,6 +170,7 @@ function ListPanel:displayHunts()
 
         local widget = self.huntWidget:recursiveGetChildById("widget" .. currentIndex)
         if not widget then
+            g_logger.debug("[HuntFinder] widget" .. currentIndex .. " not found")
             goto continue
         end
 
@@ -213,19 +236,19 @@ function ListPanel:buildWidget(widget, hunt)
     local highlightHunt = widget:recursiveGetChildById('highlightHunt')
     local trackingHunt = widget:recursiveGetChildById('trackingHunt')
 
-
-
     widget.onClick = function() HuntFinder:showHuntInfo(hunt) end
     widget:setVisible(true)
 
-    huntName:setText(hunt:getName() or "Unknown")
-    huntLocation:setText(hunt:getLocation() or "Unknown")
-    huntLevel:setText(tostring(hunt:getLevel()) .. "+" or "0+")
-    huntLootHour:setText(hunt:getLootHour() or "N/A")
-    huntXpHour:setText(hunt:getXPHour() or "N/A")
+    if huntName then huntName:setText(hunt:getName() or "Unknown") end
+    if huntLocation then huntLocation:setText(hunt:getLocation() or "Unknown") end
+    if huntLevel then huntLevel:setText(tostring(hunt:getLevel() or 0) .. "+") end
+    if huntLootHour then huntLootHour:setText(hunt:getLootHour() or "N/A") end
+    if huntXpHour then huntXpHour:setText(hunt:getXPHour() or "N/A") end
 
     if highlightHunt then
         highlightHunt:setVisible(HuntInfo.trackedHunt == hunt)
+    end
+    if trackingHunt then
         trackingHunt:setVisible(HuntInfo.trackedHunt == hunt)
     end
 
@@ -239,33 +262,33 @@ function ListPanel:buildWidget(widget, hunt)
         end
 
         local tooltipLabel = widget:recursiveGetChildById('tooltipLabel' .. i)
-        if not tooltipLabel then
-            goto continue_monster
-        end
 
-        local monster = monsters[i + 1]
+        local monster = monsters and monsters[i + 1]
         if not monster or not monster.Name then
             monsterWidget:setVisible(false)
-            tooltipLabel:removeTooltip("")
-            tooltipLabel:setVisible(false)
+            if tooltipLabel then
+                tooltipLabel:setVisible(false)
+            end
             goto continue_monster
         end
 
         monsterWidget:setVisible(true)
         monsterWidget:setTooltip(monster.Name)
 
-        tooltipLabel:setTooltip(monster.Name)
-        tooltipLabel:setVisible(true)
-        tooltipLabel.onClick = function() HuntFinder:showHuntInfo(hunt) end
-
-        local races = g_things.getRacesByName(monster.Name)
-        if not races or #races == 0 then
-            races = g_things.getRacesByName(monster.Name:lower())
+        if tooltipLabel then
+            tooltipLabel:setTooltip(monster.Name)
+            tooltipLabel:setVisible(true)
+            tooltipLabel.onClick = function() HuntFinder:showHuntInfo(hunt) end
         end
 
-        if races and #races > 0 then
-            local raceData = g_things.getRaceData(races[1].raceId)
-            if raceData and raceData.outfit then
+        local ok, races = pcall(function() return g_things.getRacesByName(monster.Name) end)
+        if ok and races and #races == 0 then
+            ok, races = pcall(function() return g_things.getRacesByName(monster.Name:lower()) end)
+        end
+
+        if ok and races and #races > 0 then
+            local raceOk, raceData = pcall(function() return g_things.getRaceData(races[1].raceId) end)
+            if raceOk and raceData and raceData.outfit then
                 monsterWidget:setOutfit(raceData.outfit)
             else
                 monsterWidget:setOutfit({auxType = 13})

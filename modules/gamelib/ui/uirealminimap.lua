@@ -403,7 +403,7 @@ function UIRealMinimap:onMouseRelease(pos, button)
     local widgetInfo = self:getWidgetInfoFromPoint(pos)
     if widgetInfo then
       local menu = g_ui.createWidget('PopupMenu')
-      if g_client then g_client.setInputLockWidget(nil) end
+      if g_client and g_client.setInputLockWidget then g_client.setInputLockWidget(nil) end
       menu:setGameMenu(true)
       menu:addOption(tr('Delete mark'), function()
         if widgetInfo.fromUIRealMinimap then
@@ -465,7 +465,7 @@ function UIRealMinimap:createFlagWindow(pos)
     modules.game_cyclopedia.Cyclopedia.endGame()
   end
   self.flagWindow = g_ui.createWidget('MinimapFlagWindow', rootWidget)
-  if g_client then g_client.setInputLockWidget(self.flagWindow) end
+  if g_client and g_client.setInputLockWidget then g_client.setInputLockWidget(self.flagWindow) end
 
   local positionLabel = self.flagWindow:getChildById('position')
   local description = self.flagWindow:getChildById('description')
