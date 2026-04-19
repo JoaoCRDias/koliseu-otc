@@ -483,7 +483,7 @@ function HuntInfo:displayHunt(hunt)
                         local menu = g_ui.createWidget('PopupMenu')
                         menu:setGameMenu(true)
                         menu:addOption(tr('Cyclopedia Info'), function() modules.game_cyclopedia.CyclopediaItems.onRedirect(itemId) end)
-                        local buttonText = (QuickLoot.lootExists and QuickLoot:lootExists(itemId)) and 'Remove from Loot List' or 'Add to Loot List'
+                        local buttonText = (QuickLoot and QuickLoot.lootExists and QuickLoot:lootExists(itemId)) and 'Remove from Loot List' or 'Add to Loot List'
                         menu:addOption(tr(buttonText), function() self:onAddToLootList(itemId) end)
                         menu:display(mousePos)
                     end
