@@ -482,7 +482,11 @@ function HuntInfo:displayHunt(hunt)
                     if mouseButton == MouseRightButton then
                         local menu = g_ui.createWidget('PopupMenu')
                         menu:setGameMenu(true)
-                        menu:addOption(tr('Cyclopedia Info'), function() modules.game_cyclopedia.CyclopediaItems.onRedirect(itemId) end)
+                        menu:addOption(tr('Cyclopedia Info'), function()
+                            if modules.game_cyclopedia and modules.game_cyclopedia.CyclopediaItems then
+                                modules.game_cyclopedia.CyclopediaItems.onRedirect(itemId)
+                            end
+                        end)
                         local buttonText = (QuickLoot and QuickLoot.lootExists and QuickLoot:lootExists(itemId)) and 'Remove from Loot List' or 'Add to Loot List'
                         menu:addOption(tr(buttonText), function() self:onAddToLootList(itemId) end)
                         menu:display(mousePos)
@@ -864,12 +868,11 @@ function HuntInfo:updateMonsterData(data)
 end
 
 function HuntInfo:onAddToLootList(itemId)
-    if modules.game_quickloot then
-        if QuickLoot.lootExists and not QuickLoot:lootExists(itemId) then
-            QuickLoot:addLootList(itemId)
-        else
-            QuickLoot:removeLootList(itemId)
-        end
+    if not QuickLoot then return end
+    if QuickLoot.lootExists and not QuickLoot:lootExists(itemId) then
+        QuickLoot:addLootList(itemId)
+    else
+        QuickLoot:removeLootList(itemId)
     end
 end
 
