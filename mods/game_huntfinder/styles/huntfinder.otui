@@ -581,7 +581,7 @@ HuntInfoPanel < Panel
       margin-top: 7
       image-source: /game_cyclopedia/images/ui/panel-background
       padding: 1 1 1 1
-      UIMinimap
+      UIRealMinimap
         id: minimap
         draggable: false
         focusable: false

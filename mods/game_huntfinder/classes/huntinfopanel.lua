@@ -564,9 +564,13 @@ function HuntInfo:displayHunt(hunt)
             self.trackedHunt = hunt
             modules.game_minimap.setPath(hunt:getCoordinates())
             
-            local routeCoords = hunt:getCoordinates()
+            local wayCoords = hunt:getCoordinates()
+            local routeCoords = hunt:getRouteCoordinates()
+            
             if routeCoords and table.size(routeCoords) > 0 then
                  MapFinder:setRoutePath(routeCoords)
+            elseif wayCoords and table.size(wayCoords) > 0 then
+                 MapFinder:setRoutePath(wayCoords)
             else
                  local player = g_game.getLocalPlayer()
                  local endPos = hunt:getTemplePosition()
@@ -854,8 +858,8 @@ function HuntInfo:updateMonsterData(data)
     
     local combat = {}
     if data.combat then
-        for i=1,8 do
-            combat[i-1] = data.combat[i]
+        for k, v in pairs(data.combat) do
+            combat[k] = v
         end
     end
 
@@ -868,15 +872,8 @@ function HuntInfo:updateMonsterData(data)
         combat
     }
 
-    g_logger.debug(string.format("[HuntFinder] updateMonsterData: raceId=%d hp=%s xp=%s armor=%s monstersCount=%d",
-        data.id, tostring(data.maxHealth), tostring(data.experience), tostring(data.armor), #self.monsters))
-
     if self.radioSelected then
         local selected = self.radioSelected:getSelectedWidget()
-        if selected then
-            g_logger.debug(string.format("[HuntFinder] updateMonsterData: selected.actionId=%s data.id=%s match=%s",
-                tostring(selected.actionId), tostring(data.id), tostring(selected.actionId == data.id)))
-        end
         if selected and selected.actionId == data.id then
              onSelectionChange(self.radioSelected, selected)
         end
