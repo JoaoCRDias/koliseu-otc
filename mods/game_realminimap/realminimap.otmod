@@ -1,0 +1,8 @@
+Module
+  name: game_realminimap
+  description: Manage real minimap with high-res tiles
+  author: jopheno (adapted)
+  sandboxed: true
+  scripts: [ realminimap, markers, regions ]
+  @onLoad: init()
+  @onUnload: terminate()

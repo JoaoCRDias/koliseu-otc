@@ -90,6 +90,27 @@ public:
     }
     bool isUseStaticMinimap() const { return m_useStaticMinimap; }
 
+    // Region overlay system for game_realminimap
+    struct RegionOverlay {
+        uint32_t id;
+        Position fromPos;
+        Position toPos;
+        Size size;
+        std::string imagePath;
+        Color markedColor;
+        bool enabled{ false };
+    };
+
+    uint32_t loadRegion(const std::string& imagePath, const Position& fromPos, float colorFactor, int fromScale, int toScale, const Color& markedColor);
+    void enableRegion(uint32_t regionId);
+    void disableRegion(uint32_t regionId);
+    bool hasClickedRegion(uint32_t regionId, const Position& mapPos);
+    std::tuple<std::string, std::string> getAreaNameById(uint32_t areaId);
+    void clearRegions();
+
+    // Extended loadImage for multi-resolution tile support
+    bool loadImageEx(const std::string& fileName, const std::string& viewType, const Position& topLeft, float tilesPerPixel, int fromScale, int toScale);
+
 protected:
     virtual void onZoomChange(int zoom, int oldZoom);
     virtual void onCameraPositionChange(const Position& position, const Position& oldPosition);
@@ -105,4 +126,8 @@ private:
     bool m_satelliteMode{ false };
     bool m_useStaticMinimap{ false };
     float m_floorSeparatorOpacity{ 1.0f };
+
+    // Region overlay data
+    std::unordered_map<uint32_t, RegionOverlay> m_regions;
+    uint32_t m_nextRegionId{ 1 };
 };

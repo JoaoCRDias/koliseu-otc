@@ -630,3 +630,78 @@ function ensureMinimapVisible()
     return
   end
 end
+
+-- Path tracking functions for huntfinder integration
+local trackedPathWidgets = {}
+local trackedRouteWidgets = {}
+
+function setPath(coordinates)
+  clearPath()
+  if not minimapWidget or not coordinates then return end
+
+  local function addPathPointsRecursive(tbl)
+    for k, v in pairs(tbl) do
+      if type(v) == 'table' then
+        if v.x and v.y and v.z then
+          local widget = g_ui.createWidget('UIWidget', minimapWidget)
+          widget:setSize({width = 11, height = 11})
+          widget:setIcon('/images/game/minimap/waypoint')
+          widget.pos = v
+          widget.type = "pathWaypoint"
+          widget:setPhantom(true)
+          minimapWidget:centerInPosition(widget, v)
+          table.insert(trackedPathWidgets, widget)
+        else
+          addPathPointsRecursive(v)
+        end
+      end
+    end
+  end
+
+  addPathPointsRecursive(coordinates)
+end
+
+function clearPath()
+  for _, w in ipairs(trackedPathWidgets) do
+    if w and w.destroy then w:destroy() end
+  end
+  trackedPathWidgets = {}
+end
+
+function setRoutePath(points)
+  clearRoutePath()
+  if not minimapWidget or not points then return end
+
+  for _, pos in ipairs(points) do
+    if pos.x and pos.y and pos.z then
+      local widget = g_ui.createWidget('UIWidget', minimapWidget)
+      widget:setSize({width = 3, height = 3})
+      widget:setBackgroundColor("#FFFF00")
+      widget.pos = pos
+      widget.type = "routePoint"
+      widget:setPhantom(true)
+      minimapWidget:centerInPosition(widget, pos)
+      table.insert(trackedRouteWidgets, widget)
+    end
+  end
+end
+
+function clearRoutePath()
+  for _, w in ipairs(trackedRouteWidgets) do
+    if w and w.destroy then w:destroy() end
+  end
+  trackedRouteWidgets = {}
+end
+
+function loadMarks()
+  local file = '/mods/game_realminimap/markers.lua'
+  if g_resources.fileExists(file) then
+    local content = g_resources.readFileContents(file)
+    local chunk = loadstring(content)
+    if chunk then
+      chunk()
+      return markers
+    end
+  end
+  return {}
+end

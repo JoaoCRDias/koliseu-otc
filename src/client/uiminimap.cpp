@@ -165,3 +165,54 @@ void UIMinimap::onStyleApply(const std::string_view styleName, const OTMLNodePtr
             setMinZoom(node->value<int>());
     }
 }
+
+uint32_t UIMinimap::loadRegion(const std::string& imagePath, const Position& fromPos, float colorFactor, int fromScale, int toScale, const Color& markedColor)
+{
+    const uint32_t id = m_nextRegionId++;
+    RegionOverlay overlay;
+    overlay.id = id;
+    overlay.fromPos = fromPos;
+    overlay.imagePath = imagePath;
+    overlay.markedColor = markedColor;
+    overlay.enabled = false;
+    m_regions[id] = overlay;
+    return id;
+}
+
+void UIMinimap::enableRegion(uint32_t regionId)
+{
+    auto it = m_regions.find(regionId);
+    if (it != m_regions.end())
+        it->second.enabled = true;
+}
+
+void UIMinimap::disableRegion(uint32_t regionId)
+{
+    auto it = m_regions.find(regionId);
+    if (it != m_regions.end())
+        it->second.enabled = false;
+}
+
+bool UIMinimap::hasClickedRegion(uint32_t regionId, const Position& mapPos)
+{
+    auto it = m_regions.find(regionId);
+    if (it == m_regions.end())
+        return false;
+    const auto& region = it->second;
+    return mapPos.x >= region.fromPos.x && mapPos.y >= region.fromPos.y && mapPos.z == region.fromPos.z;
+}
+
+std::tuple<std::string, std::string> UIMinimap::getAreaNameById(uint32_t areaId)
+{
+    return { "Unknown", "Unknown" };
+}
+
+void UIMinimap::clearRegions()
+{
+    m_regions.clear();
+}
+
+bool UIMinimap::loadImageEx(const std::string& fileName, const std::string& viewType, const Position& topLeft, float tilesPerPixel, int fromScale, int toScale)
+{
+    return g_minimap.loadImage(fileName, topLeft, tilesPerPixel);
+}

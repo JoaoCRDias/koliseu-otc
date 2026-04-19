@@ -1,0 +1,9 @@
+Module
+  name: game_huntfinder
+  description: Hunt Finder - find best hunting spots
+  author: R!ck && ZLukSrT#8740 && Christianlb (adapted)
+  sandboxed: true
+  dependencies: [ game_interface ]
+  scripts: [ huntfinder, classes/map, classes/configuration, classes/hunt, classes/listpanel, classes/huntinfopanel ]
+  @onLoad: HuntFinder.init()
+  @onUnload: HuntFinder.terminate()
