@@ -256,12 +256,10 @@ function onSelectionChange(widget, selectedWidget)
 end
 
 function HuntInfo.init()
+    if not HuntFinder.widget then return end
     local ok, err = pcall(function()
         self.widget = HuntFinder.widget:recursiveGetChildById('huntInfoPanel')
-        if not self.widget then
-            g_logger.error("[HuntFinder] HuntInfo init: huntInfoPanel not found")
-            return
-        end
+        if not self.widget then return end
         self.radioSelected = UIRadioGroup.create()
         self.statsPanel = self.widget:recursiveGetChildById('statsPanel')
         self.creatureCharmPanel = self.widget:recursiveGetChildById('creatureCharmPanel')
@@ -457,7 +455,9 @@ function HuntInfo:displayHunt(hunt)
                                 modules.game_cyclopedia.Cyclopedia.Items.onRedirect(itemId) 
                             end
                         end)
-                        local buttonText = (QuickLoot and QuickLoot.lootExists and QuickLoot.lootExists(itemId)) and 'Remove from Loot List' or 'Add to Loot List'
+                        local ql = QuickLoot or (modules.game_quickloot and modules.game_quickloot.QuickLoot)
+                        local inList = ql and ql.lootExists and ql.lootExists(itemId)
+                        local buttonText = inList and 'Remove from Loot List' or 'Add to Loot List'
                         menu:addOption(tr(buttonText), function() self:onAddToLootList(itemId) end)
                         menu:display(mousePos)
                     end
@@ -491,8 +491,10 @@ function HuntInfo:displayHunt(hunt)
                                 modules.game_cyclopedia.Cyclopedia.Items.onRedirect(itemId)
                             end
                         end)
-                        local buttonText = (QuickLoot and QuickLoot.lootExists and QuickLoot.lootExists(itemId)) and 'Remove from Loot List' or 'Add to Loot List'
-                        menu:addOption(tr(buttonText), function() self:onAddToLootList(itemId) end)
+                        local ql = QuickLoot or (modules.game_quickloot and modules.game_quickloot.QuickLoot)
+                        local inList2 = ql and ql.lootExists and ql.lootExists(itemId)
+                        local buttonText2 = inList2 and 'Remove from Loot List' or 'Add to Loot List'
+                        menu:addOption(tr(buttonText2), function() self:onAddToLootList(itemId) end)
                         menu:display(mousePos)
                     end
                 end
@@ -662,6 +664,7 @@ function onSelectionChange(widget, selectedWidget)
     end
 
     if selectedWidget then
+        g_logger.debug("[HuntFinder] onSelectionChange2: name=" .. selectedWidget:getText() .. " actionId=" .. tostring(selectedWidget.actionId) .. " hasServerInfo=" .. tostring(self.monsters ~= nil and self.monsters[selectedWidget.actionId] ~= nil))
         selectedWidget:setBackgroundColor("#585858")
         selectedWidget:setColor("#FFA500")
         self.lastMonsterWidget = selectedWidget
@@ -846,8 +849,6 @@ function HuntInfo:updateMonsterData(data)
     
     local combat = {}
     if data.combat then
-        -- Bestiary sends 1-8 (Physical, Fire, Earth, Energy, Ice, Holy, Death, Healing)
-        -- HuntInfo expects 0-7 (Physical, Fire, Earth, Energy, Ice, Holy, Death, Healing)
         for i=1,8 do
             combat[i-1] = data.combat[i]
         end
@@ -862,9 +863,15 @@ function HuntInfo:updateMonsterData(data)
         combat
     }
 
+    g_logger.debug(string.format("[HuntFinder] updateMonsterData: raceId=%d hp=%s xp=%s armor=%s monstersCount=%d",
+        data.id, tostring(data.maxHealth), tostring(data.experience), tostring(data.armor), #self.monsters))
+
     if self.radioSelected then
         local selected = self.radioSelected:getSelectedWidget()
-        -- Refresh if we are looking at this monster
+        if selected then
+            g_logger.debug(string.format("[HuntFinder] updateMonsterData: selected.actionId=%s data.id=%s match=%s",
+                tostring(selected.actionId), tostring(data.id), tostring(selected.actionId == data.id)))
+        end
         if selected and selected.actionId == data.id then
              onSelectionChange(self.radioSelected, selected)
         end
@@ -872,25 +879,28 @@ function HuntInfo:updateMonsterData(data)
 end
 
 function HuntInfo:onAddToLootList(itemId)
-    if not QuickLoot then
-        g_logger.debug("[HuntFinder] onAddToLootList: QuickLoot module not loaded")
+    local ql = QuickLoot or (modules.game_quickloot and modules.game_quickloot.QuickLoot)
+    g_logger.info("[HuntFinder] onAddToLootList called with itemId=" .. tostring(itemId) .. " ql=" .. tostring(ql ~= nil))
+    if not ql then
+        g_logger.warning("[HuntFinder] onAddToLootList: QuickLoot module not available")
         return
     end
-    if not QuickLoot.data then
-        g_logger.debug("[HuntFinder] onAddToLootList: QuickLoot.data not initialized")
+    if not ql.data then
+        g_logger.warning("[HuntFinder] onAddToLootList: QuickLoot.data not initialized")
         return
     end
-    local inList = QuickLoot.lootExists and QuickLoot.lootExists(itemId)
+    if not ql.addLootList then
+        g_logger.warning("[HuntFinder] onAddToLootList: QuickLoot.addLootList not found")
+        return
+    end
+    local inList = ql.lootExists and ql.lootExists(itemId)
+    g_logger.info("[HuntFinder] onAddToLootList: inList=" .. tostring(inList))
     if not inList then
-        if QuickLoot.addLootList then
-            QuickLoot.addLootList(itemId)
-            g_logger.debug("[HuntFinder] onAddToLootList: added itemId " .. itemId)
-        end
+        ql.addLootList(itemId)
+        g_logger.info("[HuntFinder] onAddToLootList: added itemId " .. itemId)
     else
-        if QuickLoot.removeLootList then
-            QuickLoot.removeLootList(itemId)
-            g_logger.debug("[HuntFinder] onAddToLootList: removed itemId " .. itemId)
-        end
+        ql.removeLootList(itemId)
+        g_logger.info("[HuntFinder] onAddToLootList: removed itemId " .. itemId)
     end
 end
 

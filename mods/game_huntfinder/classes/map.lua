@@ -11,7 +11,23 @@ function MapFinder.init()
     local ok, err = pcall(function()
         self.widget = HuntFinder.widget:recursiveGetChildById('minimap')
         if not self.widget then
-            g_logger.error("[HuntFinder] MapFinder init: minimap widget not found")
+            local hip = HuntFinder.widget:recursiveGetChildById('huntInfoPanel')
+            if hip then
+                g_logger.warning("[HuntFinder] MapFinder: huntInfoPanel found but no 'minimap' child. Children of huntInfoPanel:")
+                local rp = hip:recursiveGetChildById('rightPanel')
+                if rp then
+                    for _, c in ipairs(rp:getChildren()) do
+                        g_logger.warning("[HuntFinder]   rightPanel child: " .. c:getId() .. " (" .. c:getClassName() .. ")")
+                        for _, gc in ipairs(c:getChildren()) do
+                            g_logger.warning("[HuntFinder]     -> " .. gc:getId() .. " (" .. gc:getClassName() .. ")")
+                        end
+                    end
+                else
+                    g_logger.warning("[HuntFinder]   rightPanel not found in huntInfoPanel")
+                end
+            else
+                g_logger.warning("[HuntFinder] MapFinder: huntInfoPanel not found either")
+            end
             return
         end
 

@@ -20,17 +20,12 @@ end
 local self = ListPanel
 
 function ListPanel.init()
+    if not HuntFinder.widget then return end
     local ok, err = pcall(function()
         self.widget = HuntFinder.widget:recursiveGetChildById('listPanel')
-        if not self.widget then
-            g_logger.error("[HuntFinder] init: listPanel not found")
-            return
-        end
+        if not self.widget then return end
         self.huntWidget = self.widget:recursiveGetChildById('hunts')
-        if not self.huntWidget then
-            g_logger.error("[HuntFinder] init: hunts panel not found")
-            return
-        end
+        if not self.huntWidget then return end
         self.huntScrollBar = HuntFinder.widget:recursiveGetChildById('huntListScrollBar')
         self.searchInputBox = HuntFinder.widget:recursiveGetChildById("searchInputBox")
         if self.searchInputBox then
@@ -39,7 +34,7 @@ function ListPanel.init()
         end
     end)
     if not ok then
-        g_logger.error("[HuntFinder] init crashed: " .. tostring(err))
+        g_logger.error("[HuntFinder] ListPanel.init crashed: " .. tostring(err))
     end
 end
 
@@ -128,11 +123,11 @@ function ListPanel:canDrawHunt(hunt)
 end
 
 function ListPanel:displayHunts()
+    if not HuntFinder.widget then return end
     if not self.widget or not self.huntWidget then
         ListPanel.init()
     end
     if not self.widget or not self.huntWidget then
-        g_logger.error("[HuntFinder] displayHunts: widget or huntWidget is nil after re-init")
         return
     end
 

@@ -229,6 +229,7 @@ function onMonsterInfo(monsters)
 end
 
 function onBestiaryData(data)
+  g_logger.debug("[HuntFinder] onBestiaryData: widget=" .. tostring(HuntFinder.widget ~= nil) .. " visible=" .. tostring(HuntFinder.widget and HuntFinder.widget:isVisible()))
   if not HuntFinder.widget or not HuntFinder.widget:isVisible() then return end
   HuntInfo:updateMonsterData(data)
 end
