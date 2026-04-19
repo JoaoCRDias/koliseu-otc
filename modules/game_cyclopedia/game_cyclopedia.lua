@@ -55,6 +55,7 @@ function controllerCyclopedia:onInit()
 end
 
 function controllerCyclopedia:onGameStart()
+    g_logger.info("[Cyclopedia] onGameStart started")
     if g_game.getClientVersion() >= 1310 then
         CyclopediaButton = modules.game_mainpanel.addToggleButton('CyclopediaButton', tr('Cyclopedia'),
             '/images/options/cooldowns', function() toggle("items") end, false, 4)
@@ -89,7 +90,9 @@ function controllerCyclopedia:onGameStart()
         }
 
         g_ui.importStyle("cyclopedia_widgets")
+        g_logger.info("[Cyclopedia] cyclopedia_widgets imported OK")
         g_ui.importStyle("cyclopedia_pages")
+        g_logger.info("[Cyclopedia] cyclopedia_pages imported OK")
 
         connect(g_game, {
             -- bestiary

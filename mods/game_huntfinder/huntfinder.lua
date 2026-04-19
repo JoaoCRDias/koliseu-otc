@@ -28,8 +28,22 @@ function string.todivide(str, max)
 end
 
 function HuntFinder.init()
-  g_ui.importStyle('styles/huntfinder')
+  g_logger.info("[HuntFinder] init started")
+  local ok, err = pcall(function()
+    g_ui.importStyle('styles/huntfinder')
+  end)
+  if not ok then
+    g_logger.error("[HuntFinder] importStyle failed: " .. tostring(err))
+    return
+  end
+  g_logger.info("[HuntFinder] importStyle OK")
+
   HuntFinder.widget = g_ui.displayUI('styles/huntfinder')
+  if not HuntFinder.widget then
+    g_logger.error("[HuntFinder] displayUI returned nil — skipping init")
+    return
+  end
+  g_logger.info("[HuntFinder] displayUI OK")
   HuntFinder.widget:hide()
 
   HuntFinder.searchInputBox = HuntFinder.widget:recursiveGetChildById('searchInputBox')
@@ -66,6 +80,7 @@ function HuntFinder.init()
 end
 
 function toggle()
+  if not HuntFinder.widget then return end
   if HuntFinder.widget:isVisible() then
     hide()
   else
@@ -80,9 +95,9 @@ function HuntFinder.terminate()
     onMonsterInfo = onMonsterInfo,
   })
 
-  ListPanel:clear()
-  MapFinder:clear()
-  HuntInfo:clear()
+  if ListPanel then ListPanel:clear() end
+  if MapFinder then MapFinder:clear() end
+  if HuntInfo then HuntInfo:clear() end
   if HuntFinder.widget then
     HuntFinder.widget:destroy()
     HuntFinder.widget = nil
@@ -165,6 +180,7 @@ function HuntFinder:showHuntInfo(hunt)
 end
 
 function onGameStart()
+  if not HuntFinder.widget then return end
   ListPanel.init()
   HuntInfo.init()
   MapFinder.init()
@@ -175,6 +191,7 @@ function offline()
 end
 
 function show()
+  if not HuntFinder.widget then return end
   HuntFinder.widget:show(true)
   HuntFinder.widget:raise()
   HuntFinder.widget:focus()
@@ -200,6 +217,7 @@ function show()
 end
 
 function hide()
+  if not HuntFinder.widget then return end
   HuntFinder.widget:hide()
   if g_client and g_client.setInputLockWidget then
     g_client.setInputLockWidget(nil)

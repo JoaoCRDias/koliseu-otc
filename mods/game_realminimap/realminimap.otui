@@ -1,3 +1,8 @@
+RealMinimap < UIRealMinimap
+  draggable: true
+  focusable: false
+  color: black
+
 MainWindow
   id: minimapWindow
   size: 800 600

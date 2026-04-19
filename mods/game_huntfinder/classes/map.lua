@@ -8,28 +8,33 @@ end
 local self = MapFinder
 
 function MapFinder.init()
-    self.widget = HuntFinder.widget:recursiveGetChildById('minimap')
-    if not self.widget then
-        g_logger.error("[HuntFinder] MapFinder init: minimap widget not found")
-        return
-    end
-
-    if RealMap and RealMap.setRegion then
-        pcall(function() RealMap.setRegion(self.widget) end)
-    end
-
-    if g_game.getLocalPlayer() and g_game.getLocalPlayer():getPosition() then
-        self.widget:setCameraPosition(g_game.getLocalPlayer():getPosition())
-        if self.widget.setCrossPosition then
-            self.widget:setCrossPosition(g_game.getLocalPlayer():getPosition())
+    local ok, err = pcall(function()
+        self.widget = HuntFinder.widget:recursiveGetChildById('minimap')
+        if not self.widget then
+            g_logger.error("[HuntFinder] MapFinder init: minimap widget not found")
+            return
         end
-    end
-    self.widget:setZoom(2)
 
-    self.widget.view = "minimap"
-    self.widget:setBackgroundColor("#274DA6")
-    self.widget.onFloorChange = function(widget, newPos, oldPos)
-        self:onFloorChange(widget, newPos, oldPos)
+        if RealMap and RealMap.setRegion then
+            pcall(function() RealMap.setRegion(self.widget) end)
+        end
+
+        if g_game.getLocalPlayer() and g_game.getLocalPlayer():getPosition() then
+            self.widget:setCameraPosition(g_game.getLocalPlayer():getPosition())
+            if self.widget.setCrossPosition then
+                self.widget:setCrossPosition(g_game.getLocalPlayer():getPosition())
+            end
+        end
+        self.widget:setZoom(2)
+
+        self.widget.view = "minimap"
+        self.widget:setBackgroundColor("#274DA6")
+        self.widget.onFloorChange = function(widget, newPos, oldPos)
+            self:onFloorChange(widget, newPos, oldPos)
+        end
+    end)
+    if not ok then
+        g_logger.error("[HuntFinder] MapFinder.init crashed: " .. tostring(err))
     end
 end
 

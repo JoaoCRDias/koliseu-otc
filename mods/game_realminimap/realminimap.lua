@@ -30,6 +30,7 @@ local flagToFilePath = {
 }
 
 function init()
+  g_ui.importStyle('realminimap')
   minimapWindow = g_ui.displayUI('realminimap')
 
   minimapWidget = minimapWindow:recursiveGetChildById('realMinimap')

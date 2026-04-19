@@ -666,7 +666,13 @@ function Cyclopedia.Items.onChangeCustomPrice(widget)
 end
 
 function showItems()
+    g_logger.info("[Cyclopedia.Items] showItems called")
     UI = g_ui.loadUI("items", contentContainer)
+    if not UI then
+        g_logger.error("[Cyclopedia.Items] loadUI returned nil!")
+        return
+    end
+    g_logger.info("[Cyclopedia.Items] UI loaded OK")
     UI:show()
     Cyclopedia.Items.VocFilter = false
     Cyclopedia.Items.LevelFilter = false
@@ -1174,7 +1180,7 @@ function Cyclopedia.selectItemCategory(id)
 end
 
 function Cyclopedia.loadItemsCategories()
-    local types = g_things.findThingTypeByAttr(ThingAttrCyclopedia, 0)
+    local types = g_things.findThingTypeByAttr(ThingAttrMarket, 0)
     local tempItemList = {}
     local CATEGORY_OTHERS = 9 -- fallback category for items without marketData
 
@@ -1676,10 +1682,19 @@ function Cyclopedia.Items.onRedirect(itemId)
         end
 
         if not data then
+            local thingType = g_things.getThingType(itemId, ThingCategoryItem)
+            if thingType then
+                local marketData = thingType:getMarketData()
+                if not marketData or table.empty(marketData) or not marketData.category then
+                    g_logger.debug(string.format("[onRedirect] itemId %d exists but has no Cyclopedia market data — not redirectable.", itemId))
+                    finish()
+                    return
+                end
+            end
             if tries < maxTries then
                 addEvent(step)
             else
-                g_logger.error(string.format("[onRedirect] itemId %d nao encontrado em AllItemList.", itemId))
+                g_logger.debug(string.format("[onRedirect] itemId %d not found in AllItemList after %d tries.", itemId, maxTries))
                 finish()
             end
             return

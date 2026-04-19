@@ -872,11 +872,25 @@ function HuntInfo:updateMonsterData(data)
 end
 
 function HuntInfo:onAddToLootList(itemId)
-    if not QuickLoot then return end
-    if QuickLoot.lootExists and not QuickLoot.lootExists(itemId) then
-        QuickLoot.addLootList(itemId)
+    if not QuickLoot then
+        g_logger.debug("[HuntFinder] onAddToLootList: QuickLoot module not loaded")
+        return
+    end
+    if not QuickLoot.data then
+        g_logger.debug("[HuntFinder] onAddToLootList: QuickLoot.data not initialized")
+        return
+    end
+    local inList = QuickLoot.lootExists and QuickLoot.lootExists(itemId)
+    if not inList then
+        if QuickLoot.addLootList then
+            QuickLoot.addLootList(itemId)
+            g_logger.debug("[HuntFinder] onAddToLootList: added itemId " .. itemId)
+        end
     else
-        QuickLoot.removeLootList(itemId)
+        if QuickLoot.removeLootList then
+            QuickLoot.removeLootList(itemId)
+            g_logger.debug("[HuntFinder] onAddToLootList: removed itemId " .. itemId)
+        end
     end
 end
 

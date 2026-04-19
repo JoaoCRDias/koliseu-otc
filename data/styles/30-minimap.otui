@@ -81,10 +81,6 @@ Minimap < UIMinimap
     id: resetButton
     @onClick: self:getParent():reset()
 
-RealMinimap < UIRealMinimap
-  draggable: true
-  focusable: false
-  color: black
 
 
 // Minimap Flag Create Window
