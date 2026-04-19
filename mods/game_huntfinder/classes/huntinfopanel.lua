@@ -453,8 +453,12 @@ function HuntInfo:displayHunt(hunt)
                         local menu = g_ui.createWidget('PopupMenu')
                         menu:setGameMenu(true)
                         menu:addOption(tr('Cyclopedia Info'), function() 
-                            modules.game_cyclopedia.CyclopediaItems.onRedirect(itemId) 
+                            if modules.game_cyclopedia and modules.game_cyclopedia.Cyclopedia and modules.game_cyclopedia.Cyclopedia.Items and modules.game_cyclopedia.Cyclopedia.Items.onRedirect then
+                                modules.game_cyclopedia.Cyclopedia.Items.onRedirect(itemId) 
+                            end
                         end)
+                        local buttonText = (QuickLoot and QuickLoot.lootExists and QuickLoot.lootExists(itemId)) and 'Remove from Loot List' or 'Add to Loot List'
+                        menu:addOption(tr(buttonText), function() self:onAddToLootList(itemId) end)
                         menu:display(mousePos)
                     end
                 end
@@ -483,11 +487,11 @@ function HuntInfo:displayHunt(hunt)
                         local menu = g_ui.createWidget('PopupMenu')
                         menu:setGameMenu(true)
                         menu:addOption(tr('Cyclopedia Info'), function()
-                            if modules.game_cyclopedia and modules.game_cyclopedia.CyclopediaItems then
-                                modules.game_cyclopedia.CyclopediaItems.onRedirect(itemId)
+                            if modules.game_cyclopedia and modules.game_cyclopedia.Cyclopedia and modules.game_cyclopedia.Cyclopedia.Items and modules.game_cyclopedia.Cyclopedia.Items.onRedirect then
+                                modules.game_cyclopedia.Cyclopedia.Items.onRedirect(itemId)
                             end
                         end)
-                        local buttonText = (QuickLoot and QuickLoot.lootExists and QuickLoot:lootExists(itemId)) and 'Remove from Loot List' or 'Add to Loot List'
+                        local buttonText = (QuickLoot and QuickLoot.lootExists and QuickLoot.lootExists(itemId)) and 'Remove from Loot List' or 'Add to Loot List'
                         menu:addOption(tr(buttonText), function() self:onAddToLootList(itemId) end)
                         menu:display(mousePos)
                     end
@@ -869,10 +873,10 @@ end
 
 function HuntInfo:onAddToLootList(itemId)
     if not QuickLoot then return end
-    if QuickLoot.lootExists and not QuickLoot:lootExists(itemId) then
-        QuickLoot:addLootList(itemId)
+    if QuickLoot.lootExists and not QuickLoot.lootExists(itemId) then
+        QuickLoot.addLootList(itemId)
     else
-        QuickLoot:removeLootList(itemId)
+        QuickLoot.removeLootList(itemId)
     end
 end
 
