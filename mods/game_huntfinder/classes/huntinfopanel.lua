@@ -15,6 +15,20 @@ local self = HuntInfo
 local itemCache = {}
 local itemCacheBuilt = false
 
+local function applyDirectionLocal(pos, dir)
+    local newPos = {x = pos.x, y = pos.y, z = pos.z}
+    if dir == 0 then newPos.y = newPos.y - 1
+    elseif dir == 1 then newPos.x = newPos.x + 1
+    elseif dir == 2 then newPos.y = newPos.y + 1
+    elseif dir == 3 then newPos.x = newPos.x - 1
+    elseif dir == 4 then newPos.x = newPos.x + 1; newPos.y = newPos.y - 1
+    elseif dir == 5 then newPos.x = newPos.x + 1; newPos.y = newPos.y + 1
+    elseif dir == 6 then newPos.x = newPos.x - 1; newPos.y = newPos.y + 1
+    elseif dir == 7 then newPos.x = newPos.x - 1; newPos.y = newPos.y - 1
+    end
+    return newPos
+end
+
 local monsterCache = {}
 local monsterCacheBuilt = false
 
@@ -546,54 +560,35 @@ function HuntInfo:displayHunt(hunt)
     end
 
     trackHuntOnMap.onCheckChange = function(widget, checked)
-        print("HuntFinder: Track path checkbox changed: " .. tostring(checked))
         if checked then
             self.trackedHunt = hunt
-            print("HuntFinder: Setting path and route.")
             modules.game_minimap.setPath(hunt:getCoordinates())
             
-            local routeCoords = hunt:getCoordinates()  -- WayPath - route TO the hunt
-            print("HuntFinder: wayPath coords size: " .. (routeCoords and table.size(routeCoords) or "nil"))
+            local routeCoords = hunt:getCoordinates()
             if routeCoords and table.size(routeCoords) > 0 then
                  MapFinder:setRoutePath(routeCoords)
             else
-                 -- Calculate dynamic path from player to temple/start
-                 print("HuntFinder: Static route missing, calculating dynamic path...")
                  local player = g_game.getLocalPlayer()
                  local endPos = hunt:getTemplePosition()
                  
                  if player and endPos and endPos.x ~= 0 then
                      local startPos = player:getPosition()
-                     local path, result = g_map.findPath(startPos, endPos, 50000, 0)
+                     local path = g_map.findPath(startPos, endPos, 50000, 0)
                      if path and #path > 0 then
-                         print("HuntFinder: Dynamic path generated (" .. #path .. " steps).")
                          local points = {}
                          local currentPos = {x=startPos.x, y=startPos.y, z=startPos.z}
                          
                          table.insert(points, {x=currentPos.x, y=currentPos.y, z=currentPos.z})
                          for _, dir in ipairs(path) do
-                            if dir == 0 then currentPos.y = currentPos.y - 1
-                            elseif dir == 1 then currentPos.x = currentPos.x + 1
-                            elseif dir == 2 then currentPos.y = currentPos.y + 1
-                            elseif dir == 3 then currentPos.x = currentPos.x - 1
-                            elseif dir == 4 then currentPos.x = currentPos.x + 1; currentPos.y = currentPos.y - 1
-                            elseif dir == 5 then currentPos.x = currentPos.x + 1; currentPos.y = currentPos.y + 1
-                            elseif dir == 6 then currentPos.x = currentPos.x - 1; currentPos.y = currentPos.y + 1
-                            elseif dir == 7 then currentPos.x = currentPos.x - 1; currentPos.y = currentPos.y - 1
-                            end
+                            currentPos = applyDirectionLocal(currentPos, dir)
                             table.insert(points, {x=currentPos.x, y=currentPos.y, z=currentPos.z})
                          end
                          MapFinder:setRoutePath(points)
-                     else
-                         print("HuntFinder: Dynamic path calculation failed or path too long.")
                      end
-                 else
-                     print("HuntFinder: Cannot calculate path (missing player or target).")
                  end
             end
         else
             self.trackedHunt = nil
-            print("HuntFinder: Clearing path.")
             modules.game_minimap.clearPath()
             modules.game_minimap.clearRoutePath()
         end

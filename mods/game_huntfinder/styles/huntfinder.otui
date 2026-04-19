@@ -581,13 +581,13 @@ HuntInfoPanel < Panel
       margin-top: 7
       image-source: /game_cyclopedia/images/ui/panel-background
       padding: 1 1 1 1
-      Minimap
+      UIMinimap
         id: minimap
+        draggable: false
+        focusable: false
+        cross: true
+        color: black
         anchors.fill: parent
-        @onHoverPosition: |
-          function(self, mapPos)
-              -- todo
-          end
       Button
         id: floorUp
         size: 20 20

@@ -8,26 +8,11 @@ end
 local self = MapFinder
 
 function MapFinder.init()
+    if not HuntFinder.widget then return end
     local ok, err = pcall(function()
         self.widget = HuntFinder.widget:recursiveGetChildById('minimap')
         if not self.widget then
-            local hip = HuntFinder.widget:recursiveGetChildById('huntInfoPanel')
-            if hip then
-                g_logger.warning("[HuntFinder] MapFinder: huntInfoPanel found but no 'minimap' child. Children of huntInfoPanel:")
-                local rp = hip:recursiveGetChildById('rightPanel')
-                if rp then
-                    for _, c in ipairs(rp:getChildren()) do
-                        g_logger.warning("[HuntFinder]   rightPanel child: " .. c:getId() .. " (" .. c:getClassName() .. ")")
-                        for _, gc in ipairs(c:getChildren()) do
-                            g_logger.warning("[HuntFinder]     -> " .. gc:getId() .. " (" .. gc:getClassName() .. ")")
-                        end
-                    end
-                else
-                    g_logger.warning("[HuntFinder]   rightPanel not found in huntInfoPanel")
-                end
-            else
-                g_logger.warning("[HuntFinder] MapFinder: huntInfoPanel not found either")
-            end
+            g_logger.warning("[HuntFinder] MapFinder: minimap widget not found inside huntInfoPanel")
             return
         end
 
@@ -55,10 +40,7 @@ function MapFinder.init()
 end
 
 function MapFinder:clear()
-    if not self.widget then
-        return
-    end
-
+    if not self.widget then return end
     self.widget:destroyChildren()
     self.widget = nil
 end
@@ -76,7 +58,7 @@ end
 
 function MapFinder:setHuntPosition(position)
     if not self.widget then return end
-    if (position.x == 0 and position.y == 0 and position.z == 0) then
+    if not position or (position.x == 0 and position.y == 0 and position.z == 0) then
         return
     end
     self.widget:setCameraPosition(position)
@@ -107,7 +89,6 @@ local function flattenRouteCoordinates(routeCoords)
     local waypoints = {}
 
     if routeCoords[1] and routeCoords[1].x then
-        print("[HuntFinder] Coords already flat format")
         return routeCoords
     end
 
@@ -117,14 +98,14 @@ local function flattenRouteCoordinates(routeCoords)
     end
     table.sort(floors)
 
-    print("[HuntFinder] Found " .. #floors .. " floors in route data")
+    g_logger.debug("[HuntFinder] Found " .. #floors .. " floors in route data")
 
     for _, floorKey in ipairs(floors) do
         local segments = routeCoords[floorKey]
         if type(segments) == "table" then
-            for segIdx, segment in ipairs(segments) do
+            for _, segment in ipairs(segments) do
                 if type(segment) == "table" then
-                    for wpIdx, waypoint in ipairs(segment) do
+                    for _, waypoint in ipairs(segment) do
                         if waypoint.x then
                             table.insert(waypoints, {x = waypoint.x, y = waypoint.y, z = waypoint.z})
                         end
@@ -134,7 +115,7 @@ local function flattenRouteCoordinates(routeCoords)
         end
     end
 
-    print("[HuntFinder] Flattened to " .. #waypoints .. " waypoints")
+    g_logger.debug("[HuntFinder] Flattened to " .. #waypoints .. " waypoints")
     return waypoints
 end
 
@@ -148,7 +129,7 @@ function MapFinder:addLocalPath(coordinates)
     if not self.widget then return end
 
     local function addPointsRecursive(tbl)
-        for k, v in pairs(tbl) do
+        for _, v in pairs(tbl) do
             if type(v) == 'table' then
                 if v.x and v.y and v.z then
                     if self.widget.addPathPoint then
@@ -207,25 +188,22 @@ function MapFinder:expandRouteWithPathfinding(waypoints)
     local expandedPath = {}
     local pointSampleRate = 3
 
-    print("[HuntFinder] Expanding route with " .. #waypoints .. " waypoints")
+    g_logger.debug("[HuntFinder] Expanding route with " .. #waypoints .. " waypoints")
 
     for i = 1, #waypoints - 1 do
         local startPos = waypoints[i]
         local endPos = waypoints[i + 1]
 
         if not startPos or not startPos.x or not endPos or not endPos.x then
-            print("[HuntFinder] Invalid waypoint at index " .. i)
             goto continue
         end
 
         table.insert(expandedPath, {x = startPos.x, y = startPos.y, z = startPos.z})
 
         if startPos.z ~= endPos.z then
-            print("[HuntFinder] Floor transition at waypoint " .. i .. ": z=" .. startPos.z .. " -> z=" .. endPos.z)
+            g_logger.debug("[HuntFinder] Floor transition at waypoint " .. i .. ": z=" .. startPos.z .. " -> z=" .. endPos.z)
             goto continue
         end
-
-        local pathFound = false
 
         local success, path = pcall(function()
             return g_map.findPath(startPos, endPos, 10000, 0)
@@ -243,8 +221,7 @@ function MapFinder:expandRouteWithPathfinding(waypoints)
                     table.insert(expandedPath, {x = currentPos.x, y = currentPos.y, z = currentPos.z})
                 end
             end
-            pathFound = true
-            print("[HuntFinder] Pathfinding success: " .. #path .. " steps between waypoints " .. i .. " and " .. (i+1))
+            g_logger.debug("[HuntFinder] Pathfinding: " .. #path .. " steps between waypoints " .. i .. "-" .. (i+1))
         end
 
         ::continue::
@@ -255,29 +232,21 @@ function MapFinder:expandRouteWithPathfinding(waypoints)
         table.insert(expandedPath, {x = lastWaypoint.x, y = lastWaypoint.y, z = lastWaypoint.z})
     end
 
-    print("[HuntFinder] Expanded path has " .. #expandedPath .. " points")
-
+    g_logger.debug("[HuntFinder] Expanded path: " .. #expandedPath .. " points")
     return expandedPath
 end
 
 function MapFinder:setRoutePath(routePath)
-    print("[HuntFinder] setRoutePath called")
     if modules.game_minimap then
         if routePath and table.size(routePath) > 0 then
             local waypoints = flattenRouteCoordinates(routePath)
 
-            print("[HuntFinder] After flatten: " .. #waypoints .. " waypoints")
-
-            if #waypoints == 0 then
-                print("[HuntFinder] No valid waypoints found after flattening")
-                return
-            end
+            if #waypoints == 0 then return end
 
             if #waypoints == 1 then
                 local player = g_game.getLocalPlayer()
                 if player then
                     local playerPos = player:getPosition()
-                    print("[HuntFinder] Only 1 waypoint, adding player at: " .. playerPos.x .. "," .. playerPos.y .. "," .. playerPos.z)
                     table.insert(waypoints, 1, {x = playerPos.x, y = playerPos.y, z = playerPos.z})
                 end
             end
@@ -287,10 +256,8 @@ function MapFinder:setRoutePath(routePath)
             end)
 
             if success and expandedRoute then
-                print("[HuntFinder] Expansion success, points: " .. #expandedRoute)
                 modules.game_minimap.setRoutePath(expandedRoute)
             else
-                print("[HuntFinder] Expansion failed: " .. tostring(expandedRoute))
                 modules.game_minimap.setRoutePath(waypoints)
             end
             return
@@ -303,7 +270,7 @@ function MapFinder:setRoutePath(routePath)
         local endPos = self.huntPosition
 
         if startPos and endPos and endPos.x ~= 0 then
-            local path, result = g_map.findPath(startPos, endPos, 50000, 0)
+            local path = g_map.findPath(startPos, endPos, 50000, 0)
             if path and #path > 0 then
                 local points = {}
                 local currentPos = {x = startPos.x, y = startPos.y, z = startPos.z}
