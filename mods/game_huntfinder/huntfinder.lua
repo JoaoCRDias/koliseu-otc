@@ -13,6 +13,37 @@ HuntFinder = {
   sortType = 1,
 }
 
+local HUNTFINDER_OPCODE = 252
+
+local function onHuntFinderOpcode(protocol, opcode, buffer)
+  local status, data = pcall(json.decode, buffer)
+  if not status or not data then return end
+
+  if data.action == "allMonsterInfo" and data.data then
+    for name, info in pairs(data.data) do
+      local combat = {}
+      if info.elements then
+        for k, v in pairs(info.elements) do
+          combat[tonumber(k)] = v
+        end
+      end
+      HuntInfo:updateMonsterData({
+        id = info.raceId,
+        maxHealth = info.health,
+        experience = info.experience,
+        speed = info.speed,
+        armor = info.armor,
+        mitigation = info.mitigation,
+        combat = combat,
+      })
+    end
+  elseif data.action == "itemIds" and data.data then
+    for name, id in pairs(data.data) do
+      HuntInfo:updateItemId(name, id)
+    end
+  end
+end
+
 function string.todivide(str, max)
     local new = ""
     local count = 0
@@ -76,6 +107,8 @@ function HuntFinder.init()
     onUpdateBestiaryMonsterData = onBestiaryData,
   })
 
+  ProtocolGame.registerExtendedOpcode(HUNTFINDER_OPCODE, onHuntFinderOpcode)
+
   HuntFinder.topMenuButton = modules.client_topmenu.addLeftGameButton('huntFinderButton', tr('Hunt Finder'), '/images/topbuttons/huntfinder-mini', toggle)
 end
 
@@ -94,6 +127,8 @@ function HuntFinder.terminate()
     onGameEnd = offline,
     onMonsterInfo = onMonsterInfo,
   })
+
+  ProtocolGame.unregisterExtendedOpcode(HUNTFINDER_OPCODE)
 
   if ListPanel then ListPanel:clear() end
   if MapFinder then MapFinder:clear() end
@@ -229,7 +264,22 @@ function onMonsterInfo(monsters)
 end
 
 function onBestiaryData(data)
-  g_logger.debug("[HuntFinder] onBestiaryData: widget=" .. tostring(HuntFinder.widget ~= nil) .. " visible=" .. tostring(HuntFinder.widget and HuntFinder.widget:isVisible()))
   if not HuntFinder.widget or not HuntFinder.widget:isVisible() then return end
   HuntInfo:updateMonsterData(data)
+end
+
+function HuntFinder.requestMonsterInfo(monsterNames)
+  if not monsterNames or #monsterNames == 0 then return end
+  local protocol = g_game.getProtocolGame()
+  if not protocol then return end
+  local msg = json.encode({action = "allMonsterInfo", monsters = monsterNames})
+  protocol:sendExtendedOpcode(HUNTFINDER_OPCODE, msg)
+end
+
+function HuntFinder.requestItemIds(itemNames)
+  if not itemNames or #itemNames == 0 then return end
+  local protocol = g_game.getProtocolGame()
+  if not protocol then return end
+  local msg = json.encode({action = "itemIds", items = itemNames})
+  protocol:sendExtendedOpcode(HUNTFINDER_OPCODE, msg)
 end

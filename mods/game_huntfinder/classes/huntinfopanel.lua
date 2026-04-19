@@ -37,17 +37,19 @@ end
 
 local function getMonsterIdByName(name)
     if not name then return 0 end
-    
-    -- Try direct lookup first
+
     local races = g_things.getRacesByName(name)
     if races and #races > 0 then
+        for _, race in ipairs(races) do
+            if race.name == name then
+                return race.raceId
+            end
+        end
         return races[1].raceId
     end
 
-    -- Build cache if needed
     buildMonsterCache()
-    
-    -- Try lowercase lookup from cache
+
     return monsterCache[name:lower()] or 0
 end
 
@@ -397,9 +399,19 @@ function HuntInfo:displayHunt(hunt)
         end
 
         if races and #races > 0 then
-            widget.actionId = races[1].raceId
+            local foundExact = false
+            for _, race in ipairs(races) do
+                if race.name == monster.Name then
+                    widget.actionId = race.raceId
+                    foundExact = true
+                    break
+                end
+            end
+            if not foundExact then
+                widget.actionId = races[1].raceId
+            end
         else
-            widget.actionId = 0
+            widget.actionId = getMonsterIdByName(monster.Name)
         end
         widget:setTextAlign(AlignLeft)
         self.radioSelected:addWidget(widget)
@@ -414,6 +426,14 @@ function HuntInfo:displayHunt(hunt)
     end
 
     self.radioSelected:selectWidget(self.radioSelected:getFirstWidget())
+
+    local monsterNames = {}
+    for _, monster in ipairs(hunt:getMonsters()) do
+        if monster.Name then
+            table.insert(monsterNames, monster.Name)
+        end
+    end
+    HuntFinder.requestMonsterInfo(monsterNames)
 
     local imbuiContentPanel = self.widget:recursiveGetChildById('imbuiContentPanel')
     local imbues = hunt:getRecommendedImbuesByVocation(HuntFinder.vocation)
@@ -691,16 +711,6 @@ function onSelectionChange(widget, selectedWidget)
             armor:setText("?")
             mitigation:setText("?")
             self.widget:recursiveGetChildById('elements'):destroyChildren()
-            
-            if monsterId > 0 then
-                -- Use new custom opcode to bypass bestiary unlock check
-                if g_game.requestMonsterInfo then
-                    g_game.requestMonsterInfo(monsterId)
-                else
-                    print("Warning: g_game.requestMonsterInfo not found, falling back to BestiarySearch")
-                    g_game.requestBestiarySearch(monsterId)
-                end
-            end
             return
         end
 
