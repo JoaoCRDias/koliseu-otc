@@ -93,9 +93,9 @@ if ENABLE_SERVERS then
         -- @field protocol Protocol identifier used by the application
         -- @field httpLogin Enables HTTP-based login on the server
         -- @field useAuthenticator Enables additional authentication layer
-        --asdasd
-        ["http://localhost/api/login"] = {
-            port = 5173,
+        --
+        ["http://127.0.0.1/login.php"] = {
+            port = 80,
             protocol = 1523,
             httpLogin = true,
             useAuthenticator = false
@@ -110,12 +110,12 @@ if ENABLE_SERVERS then
         -- @field protocol Protocol identifier used by the server
         -- @field httpLogin Indicates if the server allows HTTP login
         --
-        -- ["http://127.0.0.1/login.php"] = {
-        --     port = 80,
-        --     protocol = 1523,
-        --     httpLogin = true,
-        --     useAuthenticator = false
-        -- }
+        ["http://127.0.0.1/api/login.php"] = {
+            port = 80,
+            protocol = 1523,
+            httpLogin = true,
+            useAuthenticator = false
+        }
     }
 end
 

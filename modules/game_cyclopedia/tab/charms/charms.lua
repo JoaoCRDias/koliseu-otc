@@ -975,12 +975,14 @@ function Cyclopedia.loadCharms(charmsData)
         local internalId = charmData.id
         if internalId and charms[internalId] then
             local charm = charms[internalId]
-            charmData.name = charmData.name ~= "" and charmData.name or charm.name
-            charmData.description = charmData.description ~= "" and charmData.description or charm.description
-            charmData.internalId = internalId
-            charmData.typePriority = charm.type
-            charmData.category = charm.category
-            table.insert(formattedData, charmData)
+            local copy = {}
+            for k, v in pairs(charmData) do copy[k] = v end
+            copy.name = copy.name ~= "" and copy.name or charm.name
+            copy.description = copy.description ~= "" and copy.description or charm.description
+            copy.internalId = internalId
+            copy.typePriority = charm.type
+            copy.category = charm.category
+            table.insert(formattedData, copy)
         end
     end
 
