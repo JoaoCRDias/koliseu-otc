@@ -676,7 +676,7 @@ function setRoutePath(points)
     if pos.x and pos.y and pos.z then
       local widget = g_ui.createWidget('UIWidget', minimapWidget)
       widget:setSize({width = 3, height = 3})
-      widget:setBackgroundColor("#FFFF00")
+      widget:setBackgroundColor("#A020F0")
       widget.pos = pos
       widget.type = "routePoint"
       widget:setPhantom(true)

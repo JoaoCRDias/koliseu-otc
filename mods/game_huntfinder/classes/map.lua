@@ -124,7 +124,7 @@ function MapFinder:drawLocalRoute(points)
             if not cameraZ or pos.z == cameraZ then
                 local dot = g_ui.createWidget('UIWidget', self.widget)
                 dot:setSize({width = 3, height = 3})
-                dot:setBackgroundColor("#FFFF00")
+                dot:setBackgroundColor("#A020F0")
                 dot:setPhantom(true)
                 self.widget:centerInPosition(dot, pos)
                 table.insert(self.localRouteWidgets, dot)
