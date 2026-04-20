@@ -134,8 +134,8 @@ function Cyclopedia.Charms.previewProfile(profileName)
             pTier = pe.tier or 0
             pRaceId = pe.raceId or 0
         elseif isEmptyPreset then
-            -- Perfil novo sem nenhuma runa gravada: tier é global (do servidor), assignments ficam em branco.
-            pTier = c.tier or 0
+            -- Perfil novo sem nenhuma runa gravada: folha em branco.
+            pTier = 0
             pRaceId = 0
         else
             -- Preset com dados: runas sem linha no JSON espelham o último pacote do servidor.
@@ -1485,14 +1485,15 @@ function Cyclopedia.actionCharmButton(widget)
 
     if type == "Unlock" then
         local function yesCallback()
-            -- Unlocking a charm tier is a global server operation (spends charm points
-            -- shared across all profiles). Never do this locally/per-profile.
-            if isModernUI then
+            if previewProfile then
+                CharmProfile.updateLocalCharm(previewProfile, data.id, 1, 0)
+            elseif isModernUI then
                 g_game.BuyCharmRune(data.id, 0, 0)
+                scheduleRefreshCharmsFromServer()
             else
                 g_game.BuyCharmRune(data.id)
+                scheduleRefreshCharmsFromServer()
             end
-            scheduleRefreshCharmsFromServer()
             if confirmWindow then
                 confirmWindow:destroy()
                 confirmWindow = nil
@@ -1649,10 +1650,13 @@ function Cyclopedia.actionCharmButton(widget)
     end
     if isModernUI and type:match("^Upgrade") then
         local function yesCallback()
-            -- Upgrading a charm tier is a global server operation (spends charm points
-            -- shared across all profiles). Never do this locally/per-profile.
-            g_game.BuyCharmRune(data.id, 0, 0)
-            scheduleRefreshCharmsFromServer()
+            if previewProfile then
+                local currentTier = data.tier or 0
+                CharmProfile.updateLocalCharm(previewProfile, data.id, currentTier + 1, data.raceId or 0)
+            else
+                g_game.BuyCharmRune(data.id, 0, 0)
+                scheduleRefreshCharmsFromServer()
+            end
             if confirmWindow then
                 confirmWindow:destroy()
                 confirmWindow = nil
