@@ -134,8 +134,8 @@ function Cyclopedia.Charms.previewProfile(profileName)
             pTier = pe.tier or 0
             pRaceId = pe.raceId or 0
         elseif isEmptyPreset then
-            -- Perfil novo sem nenhuma runa gravada: folha em branco (não copiar o último snapshot/aplicado).
-            pTier = 0
+            -- Perfil novo sem nenhuma runa gravada: tier é global (do servidor), assignments ficam em branco.
+            pTier = c.tier or 0
             pRaceId = 0
         else
             -- Preset com dados: runas sem linha no JSON espelham o último pacote do servidor.
