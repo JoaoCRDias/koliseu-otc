@@ -216,9 +216,9 @@ local function onOpcode(protocol, opcode, data)
         end
         if data.activeProfile and data.activeProfile ~= "" then
             currentApplied = data.activeProfile
-            -- Force the combo to select the server's active profile,
-            -- overriding any local Default that ensureLocalDefault may have set.
-            pendingSelectProfile = data.activeProfile
+            if not pendingSelectProfile then
+                pendingSelectProfile = data.activeProfile
+            end
         else
             local defaultNamed = nil
             for _, p in ipairs(profilesList) do
@@ -236,6 +236,9 @@ local function onOpcode(protocol, opcode, data)
         if cb.onListReceived then cb.onListReceived() end
 
     elseif data.action == "saved" then
+        if data.name then
+            pendingSelectProfile = data.name
+        end
         if cb.onMessage then
             cb.onMessage(string.format("Charm profile '%s' saved.", data.name or ""))
         end
