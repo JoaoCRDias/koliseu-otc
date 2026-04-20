@@ -516,34 +516,32 @@ function HuntInfo:displayHunt(hunt)
     trackHuntOnMap.onCheckChange = function(widget, checked)
         if checked then
             self.trackedHunt = hunt
-            modules.game_minimap.setPath(hunt:getCoordinates())
-            
+
             local wayCoords = hunt:getCoordinates()
-            local routeCoords = hunt:getRouteCoordinates()
-            
-            if routeCoords and table.size(routeCoords) > 0 then
-                 MapFinder:setRoutePath(routeCoords)
-            elseif wayCoords and table.size(wayCoords) > 0 then
-                 MapFinder:setRoutePath(wayCoords)
-            else
-                 local player = g_game.getLocalPlayer()
-                 local endPos = hunt:getTemplePosition()
-                 
-                 if player and endPos and endPos.x ~= 0 then
-                     local startPos = player:getPosition()
-                     local path = g_map.findPath(startPos, endPos, 50000, 0)
-                     if path and #path > 0 then
-                         local points = {}
-                         local currentPos = {x=startPos.x, y=startPos.y, z=startPos.z}
-                         
-                         table.insert(points, {x=currentPos.x, y=currentPos.y, z=currentPos.z})
-                         for _, dir in ipairs(path) do
+            if wayCoords and table.size(wayCoords) > 0 then
+                modules.game_minimap.setPath(wayCoords)
+            end
+
+            local huntPos = hunt:getPosition()
+            local player = g_game.getLocalPlayer()
+
+            if player and huntPos and huntPos.x ~= 0 then
+                local startPos = player:getPosition()
+                if startPos then
+                    local success, path = pcall(function()
+                        return g_map.findPath(startPos, huntPos, 50000, 0)
+                    end)
+                    if success and path and #path > 0 then
+                        local points = {}
+                        local currentPos = {x = startPos.x, y = startPos.y, z = startPos.z}
+                        table.insert(points, {x = currentPos.x, y = currentPos.y, z = currentPos.z})
+                        for _, dir in ipairs(path) do
                             currentPos = applyDirectionLocal(currentPos, dir)
-                            table.insert(points, {x=currentPos.x, y=currentPos.y, z=currentPos.z})
-                         end
-                         MapFinder:setRoutePath(points)
-                     end
-                 end
+                            table.insert(points, {x = currentPos.x, y = currentPos.y, z = currentPos.z})
+                        end
+                        modules.game_minimap.setRoutePath(points)
+                    end
+                end
             end
         else
             self.trackedHunt = nil
