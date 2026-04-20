@@ -2,6 +2,7 @@ local UI = nil
 local TypeCharmRadioGroup = nil
 local isModernUI = false
 local loadCharmsRecursionDepth = 0
+local charms = nil
 Cyclopedia.Charms = Cyclopedia.Charms or {}
 
 -- Server often omits GameServerBestiaryCharmsData (216) right after BuyCharmRune; re-request bestiary
@@ -156,15 +157,15 @@ function Cyclopedia.Charms.previewProfile(profileName)
         for charmId, row in pairs(lk) do
             local t = row.tier or 0
             if t > 0 then
-                local charmEntry = charms[charmId]
+                local charmEntry = charms and charms[charmId]
                 if charmEntry and charmEntry.points then
                     local cost = 0
                     for ti = 1, t do
                         cost = cost + (charmEntry.points[ti] or 0)
                     end
-                    if charmEntry.category == 1 then -- charmCategory_t.CHARM_MAJOR
+                    if charmEntry.category == 1 then
                         majorUsed = majorUsed + cost
-                    elseif charmEntry.category == 2 then -- charmCategory_t.CHARM_MINOR
+                    elseif charmEntry.category == 2 then
                         minorUsed = minorUsed + cost
                     end
                 end
@@ -369,7 +370,7 @@ local charmRune_t = {
     CHARM_OVERFLUX = 24
 }
 
-local charms = {
+charms = {
     [charmRune_t.CHARM_WOUND] = {
         name = "Wound",
         description = "Triggers on a creature with a %s%% chance to deal 5%% of its initial HP as physical damage.",
