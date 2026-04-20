@@ -245,11 +245,14 @@ HuntWidget < UIButton
 
 ListPanel < Panel
   anchors.fill: parent
-  Panel
+  ScrollablePanel
     id: hunts
     anchors.fill: parent
     image-source: /images/ui/background
     image-border: 2
+    phantom: false
+    vertical-scrollbar: huntListScrollBar
+    keep-scroll-range: true
     padding-top: 9
     padding-left: 9
     layout:
@@ -270,10 +273,9 @@ ListPanel < Panel
     anchors.bottom: prev.bottom
     anchors.right: prev.right
     margin-bottom: 1
-    margin-right: -255
+    margin-right: 0
     margin-top: 1
     step: 1
-    phantom: true
 
 HuntInfoPanel < Panel
   anchors.fill: parent
