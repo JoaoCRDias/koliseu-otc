@@ -4671,7 +4671,7 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
             items.emplace_back(std::move(entry));
         }
 
-        msg->getU8(); // difficultyMultiplier
+        const uint8_t difficultyMultiplier = msg->getU8();
         const uint32_t killTaskXp = msg->getU32();
         const uint32_t deliveryTaskXp = msg->getU32();
         const uint8_t completedKillTasks = msg->getU8();
@@ -4719,6 +4719,23 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
             entry["minLevel"] = stringify(difficultyMinLevels[i]);
             difficulties.emplace_back(std::move(entry));
         }
+
+        g_logger.debug(
+            "[WeeklyTask][Parse] anyCreature={}/{} killTaskCount={} deliveryTaskCount={} monsters={} items={} difficulties={} difficultyMultiplier={} unlockedDifficulty={} weeklyProgressFinished={} resetTimestamp={} taskPoints={} soulseals={}",
+            anyCreatureCurrent,
+            anyCreatureTotal,
+            killTaskCount,
+            deliveryTaskCount,
+            monsters.size(),
+            items.size(),
+            difficulties.size(),
+            difficultyMultiplier,
+            unlockedDifficulty,
+            weeklyProgressFinished,
+            resetTimestamp,
+            taskPoints,
+            soulseals
+        );
 
         g_lua.callGlobalField("g_game", "onWeeklyTaskData", header, monsters, items, difficulties);
         return;

@@ -1516,11 +1516,39 @@ void ProtocolGame::sendBountyTaskAction(const uint8_t actionType, const uint16_t
 
 void ProtocolGame::sendWeeklyTaskAction(const uint8_t actionType, const uint16_t param)
 {
+    uint8_t option = 0xFF;
+    bool hasParam = false;
     switch (actionType) {
-        case 0: sendTaskBoardActionU8(9, static_cast<uint8_t>(param)); break;
-        case 1: sendTaskBoardActionU8(8, static_cast<uint8_t>(param)); break;
-        case 2: sendTaskBoardAction(1); break;
-        default: break;
+        case 0: {
+            // difficulty IDs in the UI are 1-indexed (i+1 in the C++ parser),
+            // but the server expects 0-indexed difficulty (0=Beginner, 1=Adept, 2=Expert, 3=Master).
+            const uint8_t serverDifficulty = static_cast<uint8_t>(param) > 0 ? static_cast<uint8_t>(param) - 1 : 0;
+            option = 9;
+            hasParam = true;
+            sendTaskBoardActionU8(option, serverDifficulty);
+            g_logger.debug("[WeeklyTask][Send] actionType={} option={} uiId={} serverDifficulty={}", actionType, option, static_cast<uint8_t>(param), serverDifficulty);
+            break;
+        }
+        case 1:
+            option = 8;
+            hasParam = true;
+            sendTaskBoardActionU8(option, static_cast<uint8_t>(param));
+            break;
+        case 2:
+            option = 1;
+            sendTaskBoardAction(option);
+            break;
+        default:
+            g_logger.warning("[WeeklyTask][Send] Unknown actionType={} param={}", actionType, param);
+            return;
+    }
+
+    if (actionType != 0) {
+        if (hasParam) {
+            g_logger.debug("[WeeklyTask][Send] actionType={} option={} param={}", actionType, option, static_cast<uint8_t>(param));
+        } else {
+            g_logger.debug("[WeeklyTask][Send] actionType={} option={} (no param)", actionType, option);
+        }
     }
 }
 

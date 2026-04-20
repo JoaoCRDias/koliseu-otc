@@ -79,6 +79,14 @@ end
 -- ─── Server data handler ─────────────────────────────────────────────
 
 function TaskWeekly.onServerData(header, monsters, items, difficulties)
+    g_logger.debug(string.format(
+        '[WeeklyTask][Lua][onServerData] headerDifficulty=%s monsters=%d items=%d difficulties=%d',
+        tostring(header and header.difficulty),
+        monsters and #monsters or 0,
+        items and #items or 0,
+        difficulties and #difficulties or 0
+    ))
+
     -- Always update the kill tracker
     if Tracker and Tracker.Weekly then
         Tracker.Weekly.loadFromServerData(monsters)
@@ -147,8 +155,10 @@ function TaskWeekly.onServerData(header, monsters, items, difficulties)
         })
     end
 
-    -- Determine if difficulty selection modal should show
-    data.selectedTaskDifficulty = (data.difficulty == 0)
+    -- Determine if difficulty selection modal should show.
+    -- Show only when no tasks exist yet (monsters list is empty),
+    -- even if difficulty == 0 (level 8 Beginner always gets unlockedDifficulty=0 from server).
+    data.selectedTaskDifficulty = (data.difficulty == 0) and (#data.monsters == 0)
 
     TaskWeekly.loadData(data)
 end
@@ -223,6 +233,16 @@ end
 function TaskWeekly.loadData(data)
     TaskWeekly.clearDynamicWidgets()
 
+    g_logger.debug(string.format(
+        '[WeeklyTask][Lua][loadData] difficulty=%d selectedTaskDifficulty=%s monsters=%d items=%d completedKill=%d completedDelivery=%d',
+        data.difficulty,
+        tostring(data.selectedTaskDifficulty),
+        #data.monsters,
+        #data.items,
+        data.completedKillTasks,
+        data.completedDeliveryTasks
+    ))
+
     -- Boost Kills button - opens store for Weekly Double Kill Boost
     local boostKillsBtn = taskHuntWindow:recursiveGetChildById('boostKillsWeekly')
     if boostKillsBtn and not boostKillsBtn._bound then
@@ -261,6 +281,7 @@ function TaskWeekly.loadData(data)
     local killGrid = taskHuntWindow:recursiveGetChildById('killTasksGrid')
     if killGrid then
         local monsterCount = #data.monsters
+        local visibleKillCards = 0
 
         -- Disable grid layout updates to prevent cascading side effects
         local killLayout = killGrid:getLayout()
@@ -273,6 +294,7 @@ function TaskWeekly.loadData(data)
             if i > monsterCount then
                 card:setVisible(false)
             else
+                visibleKillCards = visibleKillCards + 1
                 local monsterData = data.monsters[i]
                 card:setVisible(true)
                 card.taskRaceId = monsterData.raceId
@@ -333,12 +355,19 @@ function TaskWeekly.loadData(data)
             killLayout:enableUpdates()
             killLayout:update()
         end
+
+        g_logger.debug(string.format(
+            '[WeeklyTask][Lua][loadData] killGridCardsVisible=%d totalGridCards=%d',
+            visibleKillCards,
+            killGrid:getChildCount()
+        ))
     end
 
     -- Fill delivery task cards
     local deliveryGrid = taskHuntWindow:recursiveGetChildById('deliveryTasksGrid')
     if deliveryGrid then
         local itemCount = #data.items
+        local visibleDeliveryCards = 0
 
         -- Disable grid layout updates to prevent cascading internalUpdate()
         -- side effects that swap visibility between cards
@@ -352,6 +381,7 @@ function TaskWeekly.loadData(data)
             if i > itemCount then
                 card:setVisible(false)
             else
+                visibleDeliveryCards = visibleDeliveryCards + 1
                 local itemData = data.items[i]
                 local previewItemId = itemData.clientId > 0 and itemData.clientId or itemData.itemId
                 card:setVisible(true)
@@ -486,6 +516,12 @@ function TaskWeekly.loadData(data)
             layout:enableUpdates()
             layout:update()
         end
+
+        g_logger.debug(string.format(
+            '[WeeklyTask][Lua][loadData] deliveryGridCardsVisible=%d totalGridCards=%d',
+            visibleDeliveryCards,
+            deliveryGrid:getChildCount()
+        ))
     end
 
     -- XP label
@@ -686,6 +722,7 @@ function TaskWeekly.showDifficultyModal(data)
         btn.onClick = function()
             if not btn:isOn() then return end
             -- Send difficulty selection to server
+            g_logger.debug(string.format('[WeeklyTask][Lua][selectDifficulty] id=%d name=%s minLevel=%d playerLevel=%d', diff.id, diff.name, diff.minLevel, data.currentPlayerLevel))
             g_game.weeklyTaskAction(ACTION_SELECT_DIFFICULTY, diff.id)
             TaskWeekly.destroyModal()
         end
