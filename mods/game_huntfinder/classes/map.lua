@@ -1,6 +1,8 @@
 if not MapFinder then
     MapFinder = {
-        widget = nil
+        widget = nil,
+        localRouteWidgets = {},
+        localWaypointWidgets = {}
     }
     MapFinder.__index = MapFinder
 end
@@ -8,61 +10,43 @@ end
 local self = MapFinder
 
 function MapFinder.init()
-    if not HuntFinder.widget then return end
-    local ok, err = pcall(function()
-        self.widget = HuntFinder.widget:recursiveGetChildById('minimap')
-        if not self.widget then
-            g_logger.warning("[HuntFinder] MapFinder: minimap widget not found inside huntInfoPanel")
-            return
-        end
+end
 
-        if RealMap and RealMap.setRegion then
-            pcall(function() RealMap.setRegion(self.widget) end)
-        end
+function MapFinder:ensureWidget()
+    if self.widget then return true end
+    if not HuntFinder.widget then return false end
+    self.widget = HuntFinder.widget:recursiveGetChildById('minimap')
+    if not self.widget then return false end
 
-        if g_game.getLocalPlayer() and g_game.getLocalPlayer():getPosition() then
-            self.widget:setCameraPosition(g_game.getLocalPlayer():getPosition())
-            if self.widget.setCrossPosition then
-                self.widget:setCrossPosition(g_game.getLocalPlayer():getPosition())
-            end
-        end
-        self.widget:setZoom(2)
-
-        self.widget.view = "minimap"
-        self.widget:setBackgroundColor("#274DA6")
-        self.widget.onFloorChange = function(widget, newPos, oldPos)
-            self:onFloorChange(widget, newPos, oldPos)
-        end
-    end)
-    if not ok then
-        g_logger.error("[HuntFinder] MapFinder.init crashed: " .. tostring(err))
+    self.widget:load()
+    self.widget:setZoom(2)
+    self.widget.onFloorChange = function(widget, newPos, oldPos)
+        self:onFloorChange(widget, newPos, oldPos)
     end
+    return true
 end
 
 function MapFinder:clear()
-    if not self.widget then return end
-    self.widget:destroyChildren()
+    self:clearLocalRoute()
+    if self.widget then
+        self.widget:destroyChildren()
+    end
     self.widget = nil
 end
 
 function MapFinder:onFloorChange(widget, newPos, oldPos)
     if not self.widget then return end
-    if newPos.z > 7 then
-        self.widget.view = "minimap"
-        self.widget:setBackgroundColor("#000000ff")
-    else
-        self.widget.view = "minimap"
-        self.widget:setBackgroundColor("#274DA6")
-    end
 end
 
 function MapFinder:setHuntPosition(position)
-    if not self.widget then return end
+    if not self:ensureWidget() then return end
     if not position or (position.x == 0 and position.y == 0 and position.z == 0) then
         return
     end
     self.widget:setCameraPosition(position)
-    MapFinder:onFloorChange(self.widget, position, {x = 0, y = 0, z = 0})
+    if self.widget.setCrossPosition then
+        self.widget:setCrossPosition(position)
+    end
 end
 
 function MapFinder:setPath(coordinates)
@@ -98,8 +82,6 @@ local function flattenRouteCoordinates(routeCoords)
     end
     table.sort(floors)
 
-    g_logger.debug("[HuntFinder] Found " .. #floors .. " floors in route data")
-
     for _, floorKey in ipairs(floors) do
         local segments = routeCoords[floorKey]
         if type(segments) == "table" then
@@ -115,67 +97,78 @@ local function flattenRouteCoordinates(routeCoords)
         end
     end
 
-    g_logger.debug("[HuntFinder] Flattened to " .. #waypoints .. " waypoints")
     return waypoints
 end
 
-function MapFinder:clearLocalPath()
-    if self.widget and self.widget.clearPath then
-        self.widget:clearPath()
+function MapFinder:clearLocalRoute()
+    for _, w in ipairs(self.localRouteWidgets) do
+        if w and w.destroy then w:destroy() end
     end
+    self.localRouteWidgets = {}
+
+    for _, w in ipairs(self.localWaypointWidgets) do
+        if w and w.destroy then w:destroy() end
+    end
+    self.localWaypointWidgets = {}
 end
 
-function MapFinder:addLocalPath(coordinates)
-    if not self.widget then return end
+function MapFinder:drawLocalRoute(points)
+    if not self.widget or not points then return end
 
-    local function addPointsRecursive(tbl)
-        for _, v in pairs(tbl) do
-            if type(v) == 'table' then
-                if v.x and v.y and v.z then
-                    if self.widget.addPathPoint then
-                        self.widget:addPathPoint(v)
-                    end
-                else
-                    addPointsRecursive(v)
-                end
+    local cameraZ = nil
+    local camPos = self.widget:getCameraPosition()
+    if camPos then cameraZ = camPos.z end
+
+    for _, pos in ipairs(points) do
+        if pos.x and pos.y and pos.z then
+            if not cameraZ or pos.z == cameraZ then
+                local dot = g_ui.createWidget('UIWidget', self.widget)
+                dot:setSize({width = 3, height = 3})
+                dot:setBackgroundColor("#FFFF00")
+                dot:setPhantom(true)
+                self.widget:centerInPosition(dot, pos)
+                table.insert(self.localRouteWidgets, dot)
             end
         end
     end
-
-    addPointsRecursive(coordinates)
 end
 
-function MapFinder:addLocalWaypoints(waypoints)
-    if not self.widget then return end
-    for _, wp in ipairs(waypoints) do
-        if wp.x and wp.y and wp.z then
-            if self.widget.addWaypoint then
-                self.widget:addWaypoint(wp)
-            end
+function MapFinder:drawLocalWaypoints(waypoints)
+    if not self.widget or not waypoints then return end
+
+    for _, pos in ipairs(waypoints) do
+        if pos.x and pos.y and pos.z then
+            local wp = g_ui.createWidget('UIWidget', self.widget)
+            wp:setSize({width = 11, height = 11})
+            wp:setIcon('/images/game/minimap/waypoint')
+            wp:setPhantom(true)
+            self.widget:centerInPosition(wp, pos)
+            table.insert(self.localWaypointWidgets, wp)
         end
     end
 end
 
 function MapFinder:setLocalRoutePath(routeCoords)
-    if not self.widget then return end
+    if not self:ensureWidget() then return end
 
-    self:clearLocalPath()
+    self:clearLocalRoute()
 
     if not routeCoords then return end
 
-    if routeCoords[1] and routeCoords[1].x then
-        for _, wp in ipairs(routeCoords) do
-            if self.widget.addWaypoint then self.widget:addWaypoint(wp) end
-            if self.widget.addPathPoint then self.widget:addPathPoint(wp) end
-        end
-        return
-    end
+    local waypoints = flattenRouteCoordinates(routeCoords)
+    if #waypoints == 0 then return end
 
-    for floorKey, floorSegments in pairs(routeCoords) do
-        local floor = tonumber(floorKey)
-        if floor and type(floorSegments) == "table" then
-            if self.widget.makeWaypoints then self.widget:makeWaypoints(floorSegments, floor) end
-            if self.widget.makeRouth then self.widget:makeRouth(floorSegments, floor) end
+    self:drawLocalWaypoints(waypoints)
+
+    local cameraPos = self.widget:getCameraPosition()
+    if cameraPos and #waypoints >= 2 then
+        local success, expanded = pcall(function()
+            return self:expandRouteWithPathfinding(waypoints)
+        end)
+        if success and expanded and #expanded > 0 then
+            self:drawLocalRoute(expanded)
+        else
+            self:drawLocalRoute(waypoints)
         end
     end
 end
@@ -188,8 +181,6 @@ function MapFinder:expandRouteWithPathfinding(waypoints)
     local expandedPath = {}
     local pointSampleRate = 3
 
-    g_logger.debug("[HuntFinder] Expanding route with " .. #waypoints .. " waypoints")
-
     for i = 1, #waypoints - 1 do
         local startPos = waypoints[i]
         local endPos = waypoints[i + 1]
@@ -201,7 +192,6 @@ function MapFinder:expandRouteWithPathfinding(waypoints)
         table.insert(expandedPath, {x = startPos.x, y = startPos.y, z = startPos.z})
 
         if startPos.z ~= endPos.z then
-            g_logger.debug("[HuntFinder] Floor transition at waypoint " .. i .. ": z=" .. startPos.z .. " -> z=" .. endPos.z)
             goto continue
         end
 
@@ -221,7 +211,6 @@ function MapFinder:expandRouteWithPathfinding(waypoints)
                     table.insert(expandedPath, {x = currentPos.x, y = currentPos.y, z = currentPos.z})
                 end
             end
-            g_logger.debug("[HuntFinder] Pathfinding: " .. #path .. " steps between waypoints " .. i .. "-" .. (i+1))
         end
 
         ::continue::
@@ -232,7 +221,6 @@ function MapFinder:expandRouteWithPathfinding(waypoints)
         table.insert(expandedPath, {x = lastWaypoint.x, y = lastWaypoint.y, z = lastWaypoint.z})
     end
 
-    g_logger.debug("[HuntFinder] Expanded path: " .. #expandedPath .. " points")
     return expandedPath
 end
 
