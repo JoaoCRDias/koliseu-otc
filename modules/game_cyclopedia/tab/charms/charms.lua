@@ -121,8 +121,6 @@ function Cyclopedia.Charms.previewProfile(profileName)
     CharmProfile.clearPreview()
 
     local profileLookup = CharmProfile.buildCharmLookup(profileName) or {}
-    local profileCharmsList = CharmProfile.getProfileCharms(profileName)
-    local isEmptyPreset = not profileCharmsList or #profileCharmsList == 0
     local fdById = {}
     for _, c in ipairs(Cyclopedia.formattedCharmsData) do
         if c.id ~= nil then fdById[c.id] = c end
@@ -134,14 +132,9 @@ function Cyclopedia.Charms.previewProfile(profileName)
         if pe then
             pTier = pe.tier or 0
             pRaceId = pe.raceId or 0
-        elseif isEmptyPreset then
-            -- Perfil novo sem nenhuma runa gravada: folha em branco.
+        else
             pTier = 0
             pRaceId = 0
-        else
-            -- Preset com dados: runas sem linha no JSON espelham o último pacote do servidor.
-            pTier = c.tier or 0
-            pRaceId = c.raceId or 0
         end
         lookup[id] = {
             tier = pTier,
