@@ -207,11 +207,7 @@ local function onOpcode(protocol, opcode, data)
         profilesLoaded = true
         if #profilesList == 0 then
             pendingSelectProfile = "Default"
-            local charmsPayload = {}
-            if type(CharmProfile.getSaveCharmsSnapshot) == "function" then
-                charmsPayload = CharmProfile.getSaveCharmsSnapshot() or {}
-            end
-            sendAction("save", { name = "Default", charms = charmsPayload, skipPoints = true })
+            sendAction("save", { name = "Default", charms = {} })
             return
         end
         if data.activeProfile and data.activeProfile ~= "" then
