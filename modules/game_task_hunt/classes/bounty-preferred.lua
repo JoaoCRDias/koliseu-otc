@@ -10,9 +10,10 @@ local ACTION_REMOVE_UNWANTED = 5
 
 local preferredWindow = nil
 local cachedSlots = {}
-local cachedRemoveCost = 0
-local cachedAvailableRaceIds = {}
 local selectedRaceId = 0
+
+local SLOT_UNLOCK_COSTS = { 0, 300, 600, 900, 1200 }
+local CLEAR_COST = 10
 
 function BountyPreferred.init()
     if not taskHuntWindow then return end
@@ -93,14 +94,10 @@ function BountyPreferred.terminate()
     end
     selectedRaceId = 0
     cachedSlots = {}
-    cachedRemoveCost = 0
-    cachedAvailableRaceIds = {}
 end
 
-function BountyPreferred.onServerData(slots, removeCost, availableRaceIds)
+function BountyPreferred.onServerData(slots)
     cachedSlots = slots
-    cachedRemoveCost = removeCost
-    cachedAvailableRaceIds = availableRaceIds
 
     if preferredWindow and preferredWindow:isVisible() then
         BountyPreferred.populateMonsterList()
@@ -136,17 +133,15 @@ function BountyPreferred.populateMonsterList()
         if unwId > 0 then usedRaceIds[unwId] = true end
     end
 
-    -- Build sorted list of monsters (excluding already assigned)
+    -- Build sorted list of monsters from bestiary (excluding already assigned)
     local sortedMonsters = {}
-    for _, raceId in ipairs(cachedAvailableRaceIds) do
-        if not usedRaceIds[raceId] then
-            local raceData = g_things.getRaceData(raceId)
-            local name = raceData and raceData.name or 'Unknown'
+    local allRaces = g_things.getRacesByName(filter)
+    for _, raceData in ipairs(allRaces) do
+        local raceId = raceData.raceId
+        if raceId > 0 and not usedRaceIds[raceId] then
+            local name = raceData.name or 'Unknown'
             name = name:capitalize()
-
-            if filter == '' or name:lower():find(filter, 1, true) then
-                table.insert(sortedMonsters, { raceId = raceId, name = name, raceData = raceData })
-            end
+            table.insert(sortedMonsters, { raceId = raceId, name = name, raceData = raceData })
         end
     end
 
@@ -217,7 +212,7 @@ function BountyPreferred.populateSlots()
         local locked = tonumber(slotData.locked) == 1
         local preferredId = tonumber(slotData.preferred) or 0
         local unwantedId = tonumber(slotData.unwanted) or 0
-        local price = tonumber(slotData.price) or 0
+        local price = SLOT_UNLOCK_COSTS[slotNum] or 0
 
         local slotWidget = preferredWindow:recursiveGetChildById('slot' .. slotNum)
         if not slotWidget then goto continue end
@@ -315,7 +310,7 @@ function BountyPreferred.setupSlotColumn(col, slotNum, raceId, colType)
         clearBtn:setVisible(hasMonster)
         local player = g_game.getLocalPlayer()
         local balance = player and player:getResourceBalance(ResourceTypes.BOUNTY_POINTS) or 0
-        local canAfford = balance >= cachedRemoveCost
+        local canAfford = balance >= CLEAR_COST
         clearBtn:setEnabled(canAfford)
         clearBtn.onClick = function()
             local actionType = isPreferred and ACTION_REMOVE_PREFERRED or ACTION_REMOVE_UNWANTED
@@ -328,7 +323,7 @@ function BountyPreferred.setupSlotColumn(col, slotNum, raceId, colType)
         clearCost:setVisible(hasMonster)
         local costLabel = clearCost:recursiveGetChildById('costLabel')
         if costLabel then
-            costLabel:setText(tostring(cachedRemoveCost))
+            costLabel:setText(tostring(CLEAR_COST))
         end
     end
 end

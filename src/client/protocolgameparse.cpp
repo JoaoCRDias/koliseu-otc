@@ -4597,30 +4597,8 @@ void ProtocolGame::parseTaskBoardData(const InputMessagePtr& msg)
             preferredSlots.emplace_back(std::move(slotEntry));
         }
 
-        // Read slot unlock prices (5 entries)
-        std::vector<std::string> slotPrices;
-        slotPrices.reserve(preferredCount);
-        for (uint8_t i = 0; i < preferredCount; ++i) {
-            slotPrices.push_back(stringify(msg->getU16()));
-        }
-        // Assign price to each slot
-        for (uint8_t i = 0; i < preferredSlots.size() && i < slotPrices.size(); ++i) {
-            preferredSlots[i]["price"] = slotPrices[i];
-        }
-
-        // Read remove cost
-        const uint16_t removeCost = msg->getU16();
-
-        // Read available race IDs
-        const uint16_t availableCount = msg->getU16();
-        std::vector<uint16_t> availableRaceIds;
-        availableRaceIds.reserve(availableCount);
-        for (uint16_t i = 0; i < availableCount; ++i) {
-            availableRaceIds.push_back(msg->getU16());
-        }
-
         g_lua.callGlobalField("g_game", "onBountyTaskData", header, monsters, talisman);
-        g_lua.callGlobalField("g_game", "onBountyPreferredData", preferredSlots, removeCost, availableRaceIds);
+        g_lua.callGlobalField("g_game", "onBountyPreferredData", preferredSlots);
         return;
     }
 
@@ -5657,6 +5635,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
 
             const uint8_t preySlotsUnlocked = msg->getU8();
             const uint8_t preyWildcards = msg->getU8();
+            const uint8_t hasPermanentWeeklyTaskExpansion = msg->getU8();
             const uint8_t instantRewards = msg->getU8();
             const bool hasCharmExpansion = static_cast<bool>(msg->getU8());
             const uint8_t hirelingsObtained = msg->getU8();
@@ -5681,10 +5660,7 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
                 houseItems.emplace_back(itemId, itemName, count);
             }
 
-            if (g_game.getClientVersion() >= 1521) {
-                msg->getU8();
-            }
-            g_lua.callGlobalField("g_game", "onParseCyclopediaStoreSummary", xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked, preyWildcards, instantRewards, hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems);
+            g_lua.callGlobalField("g_game", "onParseCyclopediaStoreSummary", xpBoostTime, dailyRewardXpBoostTime, blessings, preySlotsUnlocked, preyWildcards, hasPermanentWeeklyTaskExpansion, instantRewards, hasCharmExpansion, hirelingsObtained, hirelingSkills, houseItems);
             break;
         }
         case Otc::CYCLOPEDIA_CHARACTERINFO_INSPECTION:
@@ -5727,20 +5703,16 @@ void ProtocolGame::parseCyclopediaCharacterInfo(const InputMessagePtr& msg)
             CyclopediaCharacterOffenceStats data;
 
             data.critChanceTotal = msg->getDouble();
+            data.critChanceFlat = msg->getDouble();
             data.critChanceEquipament = msg->getDouble();
-            if (g_game.getClientVersion() >= 1510) {
-                data.critChanceFlat = msg->getDouble();
-            }
             data.critChanceImbuement = msg->getDouble();
             data.critChanceWheel = msg->getDouble();
             data.critChanceConcoction = msg->getDouble();
 
             // Critical hit damage
             data.critDamageTotal = msg->getDouble();
+            data.critDamageFlat = msg->getDouble();
             data.critDamageEquipament = msg->getDouble();
-            if (g_game.getClientVersion() >= 1510) {
-                data.critDamageFlat = msg->getDouble();
-            }
             data.critDamageImbuement = msg->getDouble();
             data.critDamageWheel = msg->getDouble();
             data.critDamageConcoction = msg->getDouble();
