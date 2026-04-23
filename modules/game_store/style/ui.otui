@@ -117,7 +117,7 @@ StoreLightFlatPanel < UIWidget
   image-source:  /game_store/images/panel_container
   image-border: 3
 
-StoreButton < UIButton
+StoreButton < UIStoreButton
   font: verdana-11px-antialised
   color: #dfdfdfff
   size: 106 23

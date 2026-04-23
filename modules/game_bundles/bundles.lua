@@ -133,7 +133,7 @@ function onGameStart()
         if g_game.isOnline() then
             createBundlesBarWidget()
         end
-    end, 300)
+    end, 500)
 end
 
 function onGameEnd()
@@ -164,7 +164,22 @@ function createBundlesBarWidget()
         return
     end
 
-    mainRightPanel:addChild(bundlesBarWidget)
+    local children = mainRightPanel:getChildren()
+    local insertIndex = #children + 1
+    for i, child in ipairs(children) do
+        if child:getId() == 'minimapWindow' then
+            insertIndex = i + 1
+            for j = insertIndex, #children do
+                local cid = children[j]:getId()
+                if cid == 'BattlePassBarWidget' or cid == 'battlePassBarBtn' or cid == 'BundlesBarWidget' or cid == 'bundlesBarBtn' then
+                    insertIndex = j + 1
+                end
+            end
+            break
+        end
+    end
+
+    mainRightPanel:insertChild(insertIndex, bundlesBarWidget)
 
     if mainRightPanel.fitAllChildren then
         mainRightPanel:fitAllChildren()
