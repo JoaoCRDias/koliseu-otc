@@ -98,7 +98,7 @@ function init()
     connect(g_game, {
         onGameStart = onGameStart,
         onGameEnd = onGameEnd
-    })
+    }, true)
 
     if g_game.isOnline() then
         onGameStart()
