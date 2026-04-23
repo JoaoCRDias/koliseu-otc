@@ -1,0 +1,117 @@
+MainWindow
+  id: purchaseConfirmWindow
+  !text: 'Confirmation of Purchase'
+  size: 420 182
+  @onEscape: |
+    closeConfirmation()
+
+  Label
+    id: header
+    text-align: left
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-right: 10
+    height: 20
+    text-wrap: true
+    text-vertical-auto-resize: true
+    color: #C0C0C0FF
+
+  UIWidget
+    id: showOffBackground
+    anchors.left: parent.left
+    anchors.top: parent.top
+    image-source: /images/ui/textedit
+    image-border: 2
+    margin-top: 20
+    size: 80 80
+
+  UIItem
+    id: item
+    size: 48 48
+    anchors.centerIn: showOffBackground
+    texture-center: true
+    item-count: 100
+    phantom: true
+    virtual: true
+
+  UIWidget
+    id: descriptionbackground
+    anchors.left: showOffBackground.right
+    anchors.top: showOffBackground.top
+    anchors.bottom: showOffBackground.bottom
+    anchors.right: parent.right
+    margin-left: 10
+    image-source: /images/ui/textedit
+    image-border: 2
+
+  Label
+    id: name
+    anchors.left: descriptionbackground.left
+    anchors.bottom: descriptionbackground.verticalCenter
+    color: #C0C0C0FF
+    margin-bottom: 2
+    margin-left: 10
+    !text: '100x Great Health Potion'
+
+  Label
+    id: price
+    anchors.left: name.left
+    anchors.top: descriptionbackground.verticalCenter
+    color: #C0C0C0FF
+    margin-top: 2
+    !text: 'Price: 18'
+    text-horizontal-auto-resize: true
+
+  UIWidget
+    id: icon
+    size: 12 12
+    anchors.left: price.right
+    anchors.verticalCenter: price.verticalCenter
+    margin-left: 5
+    image-source: /images/store/regularcoin
+
+  HorizontalSeparator
+    id: separator
+    anchors.left: parent.left
+    anchors.top: showOffBackground.bottom
+    anchors.right: parent.right
+    margin-top: 10
+
+  Button
+    id: cancel
+    anchors.right: parent.right
+    anchors.top: separator.bottom
+    font: cipsoftFont
+    color: white
+    width: 45
+    margin-top: 10
+    !text: 'close'
+    @onClick: |
+      closeConfirmation()
+
+  Button
+    id: buy
+    anchors.right: cancel.left
+    anchors.top: cancel.top
+    image-source: /images/store/button_blue
+    image-clip: 0 0 98 40
+    text-offset: 0 0
+    font: cipsoftFont
+    color: white
+    width: 45
+    margin-right: 5
+    !text: 'buy'
+
+    $pressed !disabled:
+      text-offset: 1 1
+      image-clip: 98 0 98 40
+
+    $disabled:
+      text-offset: 1 1
+      image-source: /images/ui/button
+      image-clip: 0 0 22 23
+      color: #6F6D6AFF
+
+    $hover !disabled:
+      image-clip: 0 0 98 40

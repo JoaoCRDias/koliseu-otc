@@ -1,0 +1,10 @@
+Module
+  name: game_bundles
+  description: Bundles system
+  author: Marcosvf132
+  website: https://deusot.com/
+  sandboxed: true
+  autoload: true
+  scripts: [ bundles ]
+  @onLoad: init()
+  @onUnload: terminate()

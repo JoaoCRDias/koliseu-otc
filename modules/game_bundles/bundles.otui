@@ -1,0 +1,751 @@
+BundleStarIcon < UIWidget
+  image-source: /resources/task_star
+  image-clip: 0 0 9 10
+  gif-frames: 16
+  gif-duration: 100
+  gif-rect: 9 10
+  size: 9 10
+  enabled: false
+
+  $disabled:
+    gif-frames: 0
+    gif-duration: 0
+    image-source: /images/game/prey/prey_nostar
+    image-clip: 0 0 9 10
+
+BundleItem < UIWidget
+  id: preview
+  image-source: /images/ui/containerslot
+  image-border: 3
+  size: 34 34
+
+  UIWidget
+    id: image
+    anchors.centerIn: parent
+    phantom: true
+    size: 32 32
+    visible: false
+
+  UIItem
+    id: item
+    anchors.centerIn: parent
+    virtual: true
+    phantom: true
+    size: 32 32
+    visible: false
+
+  UICreature
+    id: creature
+    anchors.centerIn: parent
+    virtual: false
+    phantom: true
+    size: 34 34
+    visible: false
+    animate: true
+    idleanimate: true
+
+  UIWidget
+    id: count
+    font: verdana-11px-rounded
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    margin-right: 2
+    text-align: right
+    text-horizontal-auto-resize: true
+    phantom: true
+    color: white
+    !text: '0'
+
+  UIWidget
+    id: effect
+    anchors.fill: parent
+    image-source: /resources/battlepass_sloteffect
+    opacity: 0.5
+    phantom: true
+    gif-frames: 28
+    gif-duration: 75
+    gif-rect: 34 34
+    size: 34 34
+    phantom: true
+
+  UIWidget
+    id: ribbon
+    anchors.fill: parent
+    image-source: /resources/battlepass_slotribbon
+    phantom: true
+    size: 34 34
+    enabled: true
+
+    $disabled:
+      image-source: /resources/bundle_slotribbon
+
+BundleEntrySmall < UIWidget
+  image-source: /resources/bundles/bundle_gray_border
+  image-clip: 104 0 104 104
+  image-shader: map_snow
+  image-border: 5
+  width: 300
+
+  UIWidget
+    id: background
+    image-source: /resources/bundles/bundle_background
+    anchors.fill: parent
+    margin: 3
+    phantom: true
+
+  UIWidget
+    id: corner1
+    image-source: /resources/bundles/bundle_corner
+    image-clip: 37 0 37 37
+    size: 37 37
+    phantom: true
+    anchors.top: parent.top
+    anchors.left: parent.left
+    rotation: 270
+    margin-top: 3
+    margin-left: 3
+    image-shader: map_snow
+
+  UIWidget
+    id: corner2
+    image-source: /resources/bundles/bundle_corner
+    image-clip: 37 0 37 37
+    size: 37 37
+    phantom: true
+    anchors.top: parent.top
+    anchors.right: parent.right
+    rotation: 0
+    margin-top: 3
+    margin-right: 3
+    image-shader: map_snow
+
+  UIWidget
+    id: corner3
+    image-source: /resources/bundles/bundle_corner
+    image-clip: 37 0 37 37
+    size: 37 37
+    phantom: true
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    rotation: 180
+    margin-bottom: 3
+    margin-left: 3
+    image-shader: map_snow
+
+  UIWidget
+    id: corner4
+    image-source: /resources/bundles/bundle_corner
+    image-clip: 37 0 37 37
+    size: 37 37
+    phantom: true
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    rotation: 90
+    margin-bottom: 3
+    margin-right: 3
+    image-shader: map_snow
+
+  ScrollablePanel
+    id: list
+    image-source: /resources/bundles/bundle_gray_border
+    image-clip: 104 0 104 104
+    image-border: 5
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-top: 35
+    margin-left: 22
+    margin-right: 22
+    height: 165
+    vertical-scrollbar: listScrollBar
+    padding-left: 9
+    padding-top: 9
+    padding-bottom: 5
+    layout:
+      type: grid
+      cell-size: 34 34
+      cell-spacing: 4
+      flow: true
+
+  VerticalScrollBar
+    id: listScrollBar
+    anchors.top: list.top
+    anchors.bottom: list.bottom
+    anchors.right: list.right
+    margin-top: 4
+    margin-right: 4
+    margin-bottom: 4
+    step: 10
+    pixels-scroll: true
+
+  UIWidget
+    id: rewardsTitle
+    image-source: /resources/bundles/bundle_small_border
+    image-clip: 286 0 286 23
+    image-border-top: 4
+    image-border-bottom: 4
+    image-border-left: 20
+    image-border-right: 20
+    anchors.verticalCenter: list.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 1
+    size: 175 23
+
+    UIWidget
+      id: timestamp
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.verticalCenter: parent.verticalCenter
+      text-auto-resize: true
+      !text: 'Apenas para você!'
+      color: #fed762ff
+
+    BundleStarIcon
+      id: star2
+      anchors.verticalCenter: timestamp.verticalCenter
+      anchors.left: timestamp.right
+      enabled: true
+      margin-left: 5
+
+    BundleStarIcon
+      id: star1
+      anchors.verticalCenter: timestamp.verticalCenter
+      anchors.right: timestamp.left
+      enabled: true
+      margin-right: 5
+
+  UIWidget
+    id: buttonsBorder
+    image-source: /resources/bundles/bundle_gray_border
+    image-clip: 104 0 104 104
+    image-border: 5
+    anchors.top: list.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 16
+    size: 165 50
+    padding: 4
+
+    UIWidget
+      id: balance
+      padding: 1
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 20
+      focusable: false
+
+      Label
+        id: text
+        margin-right: 2
+        text-auto-resize: true
+        anchors.centerIn: parent
+        color: #6be277ff
+        !text: '2,000'
+
+      UIWidget
+        anchors.left: text.right
+        anchors.verticalCenter: text.verticalCenter
+        margin-left: 5
+        image-source: /resources/icons_currency
+        image-clip: 12 0 12 12
+        !tooltip: 'Gold Coins'
+        size: 12 12
+
+    StoreButton 
+      id: buy
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: balance.bottom
+      anchors.bottom: parent.bottom
+      !text: 'Adquirir ja!'
+      color: #C0C0C0
+      !buttoncolor: 'blue'
+      font: verdana-11px-rounded
+      text-offset: 0 3
+
+      $disabled:
+        image-clip: 98 0 98 40
+        icon-offset: 1 1
+        color: #7f7f7fff
+
+  UIWidget
+    id: buttonsBorderEffect
+    anchors.centerIn: buttonsBorder
+    image-source: /resources/bundles/bundle_small_gray_border_2
+    image-clip: 0 0 177 63
+    gif-frames: 10
+    gif-duration: 100
+    gif-rect: 177 63
+    size: 177 63
+    phantom: true
+
+BundleEntry < UIWidget
+  image-source: /resources/bundles/bundle_gray_border
+  image-shader: map_snow
+  image-border: 5
+  width: 300
+
+  UIWidget
+    id: background
+    image-source: /resources/bundles/bundle_background
+    anchors.fill: parent
+    margin: 3
+    phantom: true
+
+  UIWidget
+    id: corner1
+    image-source: /resources/bundles/bundle_corner
+    image-clip: 0 0 37 37
+    size: 37 37
+    phantom: true
+    anchors.top: parent.top
+    anchors.left: parent.left
+    rotation: 270
+    margin-top: 3
+    margin-left: 3
+    image-shader: map_snow
+
+  UIWidget
+    id: corner2
+    image-source: /resources/bundles/bundle_corner
+    image-clip: 0 0 37 37
+    size: 37 37
+    phantom: true
+    anchors.top: parent.top
+    anchors.right: parent.right
+    rotation: 0
+    margin-top: 3
+    margin-right: 3
+    image-shader: map_snow
+
+  UIWidget
+    id: corner3
+    image-source: /resources/bundles/bundle_corner
+    image-clip: 0 0 37 37
+    size: 37 37
+    phantom: true
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    rotation: 180
+    margin-bottom: 3
+    margin-left: 3
+    image-shader: map_snow
+
+  UIWidget
+    id: corner4
+    image-source: /resources/bundles/bundle_corner
+    image-clip: 0 0 37 37
+    size: 37 37
+    phantom: true
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    rotation: 90
+    margin-bottom: 3
+    margin-right: 3
+    image-shader: map_snow
+
+  UIWidget
+    id: title
+    image-source: /resources/bundles/bundle_title_border
+    image-border-top: 3
+    image-border-bottom: 3
+    image-border-left: 22
+    image-border-right: 22
+    text-horizontal-auto-resize: true
+    height: 29
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    margin-top: 8
+    padding-left: 25
+    padding-right: 25
+    font: verdana-16px-rounded-degrade
+    !text: 'Ascendente'
+    color: #e2ffef
+    text-offset: 0 2
+
+  BundleStarIcon
+    id: star3
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: title.bottom
+    enabled: true
+
+  BundleStarIcon
+    id: star2
+    anchors.right: star3.left
+    anchors.verticalCenter: star3.verticalCenter
+    margin-right: 3
+    enabled: true
+
+  BundleStarIcon
+    id: star1
+    anchors.right: star2.left
+    anchors.verticalCenter: star2.verticalCenter
+    margin-right: 3
+    enabled: true
+
+  BundleStarIcon
+    id: star4
+    anchors.left: star3.right
+    anchors.verticalCenter: star3.verticalCenter
+    margin-left: 3
+    enabled: true
+
+  BundleStarIcon
+    id: star5
+    anchors.left: star4.right
+    anchors.verticalCenter: star4.verticalCenter
+    margin-left: 3
+    enabled: true
+
+  UIWidget
+    id: imageBackground
+    image-source: /resources/bundles/bundle_gray_border
+    image-border: 5
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: title.bottom
+    margin-left: 8
+    margin-right: 8
+    margin-top: 10
+    height: 160
+
+    UIWidget
+      id: image
+      size: 276 152
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 4
+      margin-left: 4
+      phantom: true
+
+  UIWidget
+    id: ribbon
+    image-source: /resources/bundles/bundle_ribbon
+    image-clip: 0 0 77 27
+    anchors.right: imageBackground.right
+    anchors.bottom: imageBackground.bottom
+    margin-bottom: 2
+    margin-right: -6
+    size: 77 27
+    phantom: true
+
+    UIWidget
+      id: text
+      anchors.fill: parent
+      margin-left: 14
+      margin-top: 4
+      margin-bottom: 10
+      margin-right: 6
+      phantom: true
+      !text: '25% OFF'
+      font: verdana-11px-rounded
+
+  UIWidget
+    id: soulbound
+    size: 77 21
+    image-source: /resources/bundles/bundle_soulbound
+    anchors.bottom: imageBackground.bottom
+    anchors.left: imageBackground.left
+    phantom: true
+
+  ScrollablePanel
+    id: list
+    image-source: /resources/bundles/bundle_gray_border
+    image-border: 5
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: imageBackground.bottom
+    margin-top: 25
+    margin-left: 22
+    margin-right: 22
+    height: 165
+    vertical-scrollbar: listScrollBar
+    padding-left: 10
+    padding-top: 10
+    padding-bottom: 5
+    layout:
+      type: grid
+      cell-size: 34 34
+      cell-spacing: 4
+      flow: true
+
+  VerticalScrollBar
+    id: listScrollBar
+    anchors.top: list.top
+    anchors.bottom: list.bottom
+    anchors.right: list.right
+    margin-top: 4
+    margin-right: 4
+    margin-bottom: 4
+    step: 10
+    pixels-scroll: true
+
+  UIWidget
+    id: rewardsTitle
+    image-source: /resources/bundles/bundle_small_border
+    image-border-top: 4
+    image-border-bottom: 4
+    image-border-left: 20
+    image-border-right: 20
+    anchors.verticalCenter: list.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 1
+    size: 175 23
+
+    UIWidget
+      id: timestamp
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.verticalCenter: parent.verticalCenter
+      text-auto-resize: true
+      !text: 'Por tempo limitado!'
+      color: #62f6fe
+      margin-right: 8
+
+    UIWidget
+      id: iconTimer
+      anchors.verticalCenter: timestamp.verticalCenter
+      anchors.left: timestamp.right
+      margin-left: 5
+      size: 12 13
+      image-source: /resources/icon_timer_bundles_1
+      image-clip: 0 0 12 13
+      gif-frames: 21
+      gif-duration: 100
+      gif-rect: 12 13
+
+  UIWidget
+    id: buttonsBorder
+    image-source: /resources/bundles/bundle_gray_border
+    image-border: 5
+    anchors.top: list.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 17
+    size: 165 50
+    padding: 4
+
+    UIWidget
+      id: balance
+      padding: 1
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 20
+      focusable: false
+
+      Label
+        id: text
+        margin-right: 2
+        text-auto-resize: true
+        anchors.centerIn: parent
+        color: #6be277ff
+        !text: '2,000'
+
+      UIWidget
+        anchors.left: text.right
+        anchors.verticalCenter: text.verticalCenter
+        margin-left: 5
+        image-source: /images/store/transferablecoin
+        image-fixed-ratio: true
+        image-size: 12 12
+        tooltip: Transferable Tibia Coins
+
+    StoreButton 
+      id: buy
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: balance.bottom
+      anchors.bottom: parent.bottom
+      !text: 'Adquirir ja!'
+      color: #C0C0C0
+      !buttoncolor: 'blue'
+      font: verdana-11px-rounded
+      text-offset: 0 3
+
+      $disabled:
+        image-clip: 98 0 98 40
+        icon-offset: 1 1
+        color: #7f7f7fff
+
+  UIWidget
+    id: buttonsBorderEffect
+    anchors.centerIn: buttonsBorder
+    image-source: /resources/bundles/bundle_small_gray_border_1
+    image-clip: 0 0 177 63
+    gif-frames: 10
+    gif-duration: 100
+    gif-rect: 177 63
+    size: 177 63
+    phantom: true
+
+MainWindow
+  id: bundlesWindow
+  !text: tr('Pacotes')
+  size: 1310 580
+  optimized: true
+  @onEscape: hide()
+
+  FlatPanel
+    id: goldBalance
+    padding: 1
+    size: 140 20
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    image-source: /images/ui/button_verydarkgrey_down
+    image-border: 4
+    padding-top: 3
+    focusable: false
+    layout:
+      type: horizontalBox
+      align-right: true
+
+    Label
+      id: regular
+      margin-right: 2
+      text-auto-resize: true
+      color: #b9b9b9ff
+      text: 0
+
+    UIWidget
+      margin-right: 5
+      image-source: /resources/icons_currency
+      image-clip: 0 0 12 12
+      size: 12 12
+      margin-top: 2
+      tooltip: Gold coin
+
+  FlatPanel
+    id: balance
+    padding: 1
+    size: 140 20
+    anchors.left: goldBalance.right
+    anchors.bottom: parent.bottom
+    margin-left: 10
+    image-source: /images/ui/button_verydarkgrey_down
+    image-border: 4
+    padding-top: 3
+    focusable: false
+    layout:
+      type: horizontalBox
+      align-right: true
+
+    Label
+      id: regular
+      margin-right: 2
+      text-auto-resize: true
+      color: #b9b9b9ff
+      text: 0
+
+    UIWidget
+      margin-right: 5
+      image-source: /images/store/transferablecoin
+      image-fixed-ratio: true
+      image-size: 12 12
+      margin-top: 2
+      tooltip: Transferable Tibia Coins
+
+  StoreButton
+    anchors.left: balance.right
+    anchors.bottom: balance.bottom
+    anchors.top: balance.top
+    margin-left: 5
+    !text: tr('Get Coins')
+    width: 60
+    font: cipsoftFont
+    @onClick: |
+      g_platform.openUrl("https://your-store-url.com")
+
+  Button
+    !text: tr('Close')
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    anchors.top: balance.top
+    font: cipsoftFont
+    color: white
+    width: 45
+    @onClick: hide()
+
+  HorizontalSeparator
+    id: separator
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: prev.top
+    margin-bottom: 10
+
+  UIWidget
+    id: companylogo
+    anchors.right: parent.right
+    anchors.top: parent.top
+    focusable: false
+    image-source: /resources/company_logo
+    phantom: true
+    size: 164 44
+    gif-frames: 25
+    gif-duration: 100
+    gif-rect: 164 44
+    margin-right: 70
+    margin-top: 20
+
+  UIWidget
+    id: specialDescription
+    anchors.right: specialList.right
+    anchors.left: specialList.left
+    anchors.top: companylogo.bottom
+    anchors.bottom: specialList.top
+    margin-top: 20
+    margin-bottom: 10
+    margin-left: 5
+    color: #C0C0C0
+    !text: 'Para ajudar aos jogadores a progredir de forma justa para todos, agora sera possivel adquirir um pacote especial por semana utilizando apenas Gold Coins!\n\nCada personagem esta limitado a 1 compra por semana deste pacote especial!'
+    text-wrap: true
+    text-align: topLeft
+
+  Panel
+    id: specialList
+    image-source: /resources/task_list_background
+    padding: 1
+    image-border: 4
+    focusable: true
+    anchors.right: parent.right
+    anchors.left: separator2.left
+    anchors.top: companylogo.bottom
+    anchors.bottom: separator2.bottom
+    margin-top: 142
+    margin-left: 12
+    padding: 5
+
+    BundleEntrySmall
+      anchors.fill: parent
+
+  VerticalSeparator
+    id: separator2
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: separator.top
+    margin-bottom: 5
+    margin-right: 325
+
+  ScrollablePanel
+    id: list
+    image-source: /resources/task_list_background
+    padding: 1
+    image-border: 4
+    focusable: true
+    anchors.right: separator2.left
+    anchors.left: parent.left
+    anchors.top: separator2.top
+    anchors.bottom: separator2.bottom
+    horizontal-scrollbar: listScrollBar
+    margin-right: 10
+    padding: 5
+    padding-bottom: 15
+    layout:
+      type: horizontalBox
+      spacing: 5
+
+  HorizontalScrollBar
+    id: listScrollBar
+    anchors.left: list.left
+    anchors.right: list.right
+    anchors.bottom: list.bottom
+    step: 10
+    pixels-scroll: true
+    margin: 2
