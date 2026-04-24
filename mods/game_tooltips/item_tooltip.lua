@@ -56,7 +56,15 @@ local implicits = {
   ["a_ice"] = "Ice Protection",
   ["a_holy"] = "Holy Protection",
   ["a_death"] = "Death Protection",
-  ["a_all"] = "Protection All"
+  ["a_all"] = "Protection All",
+  ["sml_energy"] = "Energy Magic Level",
+  ["sml_earth"] = "Earth Magic Level",
+  ["sml_fire"] = "Fire Magic Level",
+  ["sml_lifedrain"] = "Lifedrain Magic Level",
+  ["sml_healing"] = "Healing Magic Level",
+  ["sml_ice"] = "Ice Magic Level",
+  ["sml_holy"] = "Holy Magic Level",
+  ["sml_death"] = "Death Magic Level"
 }
 
 local impPercent = {
