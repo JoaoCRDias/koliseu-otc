@@ -790,6 +790,11 @@ void ProtocolGame::parseBugReport(const InputMessagePtr& msg)
     g_game.setCanReportBugs(canReportBugs);
 }
 
+void ProtocolGame::parseMultiOfflineTrainingDialog(const InputMessagePtr& /*msg*/)
+{
+    m_localPlayer->openMultiOfflineTrainingDialog();
+}
+
 void ProtocolGame::parseNpcChatWindow(const InputMessagePtr& msg)
 {
     const uint8_t status = msg->getU8();
