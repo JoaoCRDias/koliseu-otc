@@ -1,3 +1,5 @@
+skillController = Controller:new()
+
 skillsWindow = nil
 skillsButton = nil
 skillsSettings = nil
@@ -126,11 +128,6 @@ function skillController:onTerminate()
     Keybind.delete("Windows", "Show/hide skills windows")
     skillsWindow:destroy()
     skillsButton:destroy()
-
-skillController = Controller:new()
-
-skillsWindow = nil
-    skillsButton = nil
 end
 
 local SKILL_GROUPS = {
