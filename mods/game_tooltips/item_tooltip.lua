@@ -224,7 +224,7 @@ function onHoverChange(widget, hovered)
               request.source = "inventory"
               request.slotIndex = slotIndex
             end
-          elseif parent:getClass() == "UIGameContainer" or parentId:find("container") then
+          elseif parentId:find("container") or parentId:find("Container") then
             request.source = "container"
             local containerPanel = parent
             while containerPanel do
@@ -262,7 +262,7 @@ function buildItemTooltip(item)
   local name = item.name
   local desc = item.desc
   local reqLvl = item.reqLvl or 0
-  local type = item.type
+  local itemTypeStr = item.type
   local attack = item.attack
   local defense = item.defense
   local extraDefense = item.extraDefense
@@ -277,7 +277,7 @@ function buildItemTooltip(item)
   local imbuementSlots = item.imbuementSlots or 0
   local imbuements = item.imbuements
   local containerSize = item.containerSize
-  local isEquipment = type ~= ""
+  local isEquipment = itemTypeStr ~= ""
 
   itemWeightLabel:setText(formatWeight(weight))
 
@@ -311,7 +311,7 @@ function buildItemTooltip(item)
 
   local hasStats = false
 
-  if type == "Sword" or type == "Club" or type == "Axe" or type == "Fist" then
+  if itemTypeStr == "Sword" or itemTypeStr == "Club" or itemTypeStr == "Axe" or itemTypeStr == "Fist" then
     if attack > 0 or defense > 0 or extraDefense > 0 then
       addSeparator()
       addEmpty(5)
@@ -320,7 +320,7 @@ function buildItemTooltip(item)
       if defense > 0 then addString("Defense: " .. defense, Colors.Default) end
       if extraDefense > 0 then addString("Extra-Defense: +" .. extraDefense, Colors.Default) end
     end
-  elseif type == "Distance" then
+  elseif itemTypeStr == "Distance" then
     if attack > 0 or hitChance > 0 or shootRange > 0 then
       addSeparator()
       addEmpty(5)
@@ -329,28 +329,28 @@ function buildItemTooltip(item)
       if hitChance > 0 then addString("Hit Chance: +" .. hitChance .. "%", Colors.Default) end
       if shootRange > 0 then addString("Shoot Range: " .. shootRange, Colors.Default) end
     end
-  elseif type == "Ammunition" then
+  elseif itemTypeStr == "Ammunition" then
     if attack > 0 then
       addSeparator()
       addEmpty(5)
       hasStats = true
       addString("Attack: " .. attack, Colors.Default)
     end
-  elseif type == "Shield" then
+  elseif itemTypeStr == "Shield" then
     if defense > 0 then
       addSeparator()
       addEmpty(5)
       hasStats = true
       addString("Defense: " .. defense, Colors.Default)
     end
-  elseif type == "Wand" then
+  elseif itemTypeStr == "Wand" then
     if attack > 0 then
       addSeparator()
       addEmpty(5)
       hasStats = true
       addString("Attack: " .. attack, Colors.Default)
     end
-  elseif type == "Armor" then
+  elseif itemTypeStr == "Armor" then
     if armor > 0 or defense > 0 then
       addSeparator()
       addEmpty(5)
