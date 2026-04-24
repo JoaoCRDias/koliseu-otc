@@ -95,7 +95,6 @@ function init()
     connect(g_game, {
         onGameEnd = onGameEnd
     })
-    end
 end
 
 function terminate()
