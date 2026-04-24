@@ -1944,3 +1944,15 @@ void ProtocolGame::sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,
     send(msg);
     g_logger.debug("[Wheel C++ Send] Pacote enviado com sucesso.");
 }
+
+void ProtocolGame::sendStartOfflineTraining(const uint8_t skillType)
+{
+    if (skillType > Otc::Fishing) {
+        return;
+    }
+
+    const auto& msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientStartOfflineTraining);
+    msg->addU8(skillType);
+    send(msg);
+}

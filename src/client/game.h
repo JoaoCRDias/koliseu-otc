@@ -472,6 +472,9 @@ public:
     void openWheel(uint32_t playerId);
     void sendApplyWheelPoints(const std::vector<uint16_t>& slotPoints,uint16_t greenGem,uint16_t redGem,uint16_t acquaGem,uint16_t purpleGem);
     void gemAction(uint8_t actionType, uint8_t param, uint8_t pos);
+
+    void sendStartOfflineTraining(const uint8_t skillType);
+
     void openWheelOfDestiny(uint32_t playerId);
     void applyWheelOfDestiny(const std::vector<uint16_t>& wheelPointsVec, const std::vector<uint16_t>& activeGemsVec);
 

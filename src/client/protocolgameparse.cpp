@@ -110,6 +110,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
                 case Proto::GameServerBugReport:
                     parseBugReport(msg);
                     break;
+                case Proto::GameServerMultiOfflineTrainingDialog:
+                    parseMultiOfflineTrainingDialog(msg);
+                    break;
                 case Proto::GameServerNpcChatWindow:
                     parseNpcChatWindow(msg);
                     break;

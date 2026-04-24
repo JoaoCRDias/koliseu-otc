@@ -67,8 +67,8 @@ local function setupUIButtons()
     end
 end
 
-function init()
-    connect(LocalPlayer, {
+function skillController:onInit()
+    skillController:registerEvents(LocalPlayer, {
         onExperienceChange = onExperienceChange,
         onLevelChange = onLevelChange,
         onHealthChange = onHealthChange,
@@ -85,6 +85,7 @@ function init()
         onBaseMagicLevelChange = onBaseMagicLevelChange,
         onSkillChange = onSkillChange,
         onBaseSkillChange = onBaseSkillChange,
+        -- 14.12
         onFlatDamageHealingChange = onFlatDamageHealingChange,
         onAttackInfoChange = onAttackInfoChange,
         onConvertedDamageChange = onConvertedDamageChange,
@@ -93,11 +94,9 @@ function init()
         onCombatAbsorbValuesChange = onCombatAbsorbValuesChange,
         onForgeBonusesChange = onForgeBonusesChange,
         onExperienceRateChange = onExperienceRateChange,
-        onStoreExpBoostTimeChange = onStoreExpBoostTimeChange
-    })
-    connect(g_game, {
-        onGameStart = online,
-        onGameEnd = offline
+        onStoreExpBoostTimeChange = onStoreExpBoostTimeChange,
+        -- 15.24
+        onMultiOfflineTrainingDialog = onMultiOfflineTrainingDialog
     })
 
     skillsButton = modules.game_mainpanel.addToggleButton('skillsButton', tr('Skills') .. ' (Alt+S)',
@@ -121,50 +120,16 @@ function init()
 
     setupUIButtons()
     skillsWindow:setup()
-    if g_game.isOnline() then
-        online()
-        skillsWindow:setupOnStart()
-    end
 end
 
-function terminate()
-    disconnect(LocalPlayer, {
-        onExperienceChange = onExperienceChange,
-        onLevelChange = onLevelChange,
-        onHealthChange = onHealthChange,
-        onManaChange = onManaChange,
-        onSoulChange = onSoulChange,
-        onFreeCapacityChange = onFreeCapacityChange,
-        onTotalCapacityChange = onTotalCapacityChange,
-        onStaminaChange = onStaminaChange,
-        onOfflineTrainingChange = onOfflineTrainingChange,
-        onRegenerationChange = onRegenerationChange,
-        onSpeedChange = onSpeedChange,
-        onBaseSpeedChange = onBaseSpeedChange,
-        onMagicLevelChange = onMagicLevelChange,
-        onBaseMagicLevelChange = onBaseMagicLevelChange,
-        onSkillChange = onSkillChange,
-        onBaseSkillChange = onBaseSkillChange,
-        onFlatDamageHealingChange = onFlatDamageHealingChange,
-        onAttackInfoChange = onAttackInfoChange,
-        onConvertedDamageChange = onConvertedDamageChange,
-        onImbuementsChange = onImbuementsChange,
-        onDefenseInfoChange = onDefenseInfoChange,
-        onCombatAbsorbValuesChange = onCombatAbsorbValuesChange,
-        onForgeBonusesChange = onForgeBonusesChange,
-        onExperienceRateChange = onExperienceRateChange,
-        onStoreExpBoostTimeChange = onStoreExpBoostTimeChange
-    })
-    disconnect(g_game, {
-        onGameStart = online,
-        onGameEnd = offline
-    })
-
+function skillController:onTerminate()
     Keybind.delete("Windows", "Show/hide skills windows")
     skillsWindow:destroy()
     skillsButton:destroy()
 
-    skillsWindow = nil
+skillController = Controller:new()
+
+skillsWindow = nil
     skillsButton = nil
 end
 
@@ -782,7 +747,7 @@ function update()
     end
 end
 
-function online()
+function skillController:onGameStart()
     -- Restore skills window position from saved settings (with delay to ensure panels are ready)
     scheduleEvent(function()
         if skillsWindow then
@@ -954,7 +919,7 @@ local function resetTable(t)
     end
 end
 
-function offline()
+function skillController:onGameEnd()
     skillsWindow:setParent(nil, true)
     if expSpeedEvent then
         expSpeedEvent:cancel()
