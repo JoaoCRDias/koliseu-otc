@@ -132,6 +132,18 @@ UIWidget
       &scrollSize: 21
 
   SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionCheckBoxMarked
+      id: showItemTooltips
+      !text: tr('Show Item Tooltips')
+      !tooltip: tr('Show detailed tooltip when hovering over items in inventory and containers.')
+
+  SmallReversedQtPanel
     id: GameEffectSource
     anchors.left: parent.left
     anchors.right: parent.right

@@ -1208,4 +1208,5 @@ return {
     },   
     showInfoBanner                     = true,
     displayNpcDialogWindow             = true,
+    showItemTooltips                   = true,
 }
