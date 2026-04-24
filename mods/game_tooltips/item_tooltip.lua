@@ -286,17 +286,13 @@ function buildItemTooltip(item)
     itemSprite:setItemCount(item.count)
   end
 
-  local tierWidget = itemSprite.tier
-  if tier and tier > 0 and tierWidget then
-    local normalizedTier = math.min(math.max(tier, 1), 18)
-    local xOffset = (normalizedTier - 1) * 18 + 1
-    tierWidget:setImageClip({ x = xOffset, y = 0, width = 18, height = 16 })
-    tierWidget:setSize("18 16")
-    tierWidget:setImageSource('/images/inventory/tiers-strip-big')
-    tierWidget:setImageSize("18 16")
-    tierWidget:setVisible(true)
-  elseif tierWidget then
-    tierWidget:setVisible(false)
+  if tier and tier > 0 then
+    if ItemsDatabase and ItemsDatabase.setTier then
+      ItemsDatabase.setTier(itemSprite, tier, false)
+    end
+  else
+    local tierWidget = itemSprite.tier
+    if tierWidget then tierWidget:setVisible(false) end
   end
 
   name = name:gsub("(%a)(%a+)", function(a, b)

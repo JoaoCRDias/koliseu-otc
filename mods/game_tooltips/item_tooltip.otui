@@ -38,18 +38,12 @@ FlatPanel
 
     UIWidget
       id: tier
-      size: 18 16
-      image-source: /images/inventory/tiers-strip-big
-      image-clip: 0 0 18 16
-      image-size: 18 16
       anchors.bottom: parent.bottom
       anchors.right: parent.right
       margin-bottom: -2
       margin-right: -2
-      phantom: true
-      focusable: false
       visible: false
-      image-smooth: true
+      phantom: true
 
   Panel
     id: labels
