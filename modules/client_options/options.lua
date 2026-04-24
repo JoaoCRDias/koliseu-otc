@@ -539,6 +539,11 @@ function show()
     controller.ui:show()
     controller.ui:raise()
     controller.ui:focus()
+
+    local keyboardDelay = getOption('hotkeyDelay')
+    if keyboardDelay ~= nil then
+        setOption('hotkeyDelay', keyboardDelay, true)
+    end
 end
 
 function hide()

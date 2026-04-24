@@ -1,4 +1,82 @@
+local KEYBOARD_DELAY_DEFAULT = 250
+
+local function getKeyboardDelayState(value)
+    if value < 50 then
+        return '#d33c3c', tr('The selected keyboard delay is very low. It is very likely that you will experience problems moving your character.')
+    end
+
+    if value < KEYBOARD_DELAY_DEFAULT then
+        return '#dfa34f', tr('The selected keyboard delay is quite low. It is possible that you experience problems moving your character.')
+    end
+
+    return '#c0c0c0ff', tr('Use the slider to increase or lower your keyboard delay. A higher keyboard delay might be helpful for players experiencing movement problems when using very fast characters.')
+end
+
+local function updateKeyboardDelayWidget(value, panels)
+    local widget = panels.generalPanel and panels.generalPanel:recursiveGetChildById('hotkeyDelay')
+    if not widget then
+        return
+    end
+
+    local color, tooltip = getKeyboardDelayState(value)
+    widget:setText(tr('Keyboard Delay: %d ms', value))
+    widget:setColor(color)
+    widget:setTooltip(tooltip)
+
+    local tooltipWidget = widget:recursiveGetChildById('toolTipWidget')
+    if tooltipWidget then
+        tooltipWidget:setImageColor(color)
+    end
+end
+
+local function syncKeyboardDelayState(options, panels)
+    local useDefault = options.useDefaultKeyboardDelay and options.useDefaultKeyboardDelay.value
+    local delayWidget = panels.generalPanel and panels.generalPanel:recursiveGetChildById('hotkeyDelay')
+    if delayWidget then
+        delayWidget:setEnabled(not useDefault)
+    end
+
+    if modules.game_walk and modules.game_walk.applyKeyboardDelay then
+        modules.game_walk.applyKeyboardDelay(options.hotkeyDelay.value)
+    end
+
+    updateKeyboardDelayWidget(options.hotkeyDelay.value, panels)
+end
+
+local function refreshWalkTurnKeys()
+    if modules.game_walk and modules.game_walk.refreshTurnModifierKeys then
+        modules.game_walk.refreshTurnModifierKeys()
+    end
+end
+
 return {
+    useDefaultKeyboardDelay             = {
+        value = true,
+        action = function(value, options, controller, panels, extraWidgets)
+            if value then
+                modules.client_options.setOption('hotkeyDelay', KEYBOARD_DELAY_DEFAULT)
+            end
+            syncKeyboardDelayState(options, panels)
+        end
+    },
+    rotateWithCtrl                     = {
+        value = true,
+        action = function()
+            refreshWalkTurnKeys()
+        end
+    },
+    rotateWithShift                    = {
+        value = false,
+        action = function()
+            refreshWalkTurnKeys()
+        end
+    },
+    rotateWithAlt                      = {
+        value = false,
+        action = function()
+            refreshWalkTurnKeys()
+        end
+    },
     vsync                             = {
         value = true,
         action = function(value, options, controller, panels, extraWidgets)
@@ -157,7 +235,7 @@ return {
     autoChaseOverride                 = true,
     talkOnRightClick                  = false,
     moveStack                         = true,
-    alwaysTurnToMovement              = false,
+    alwaysTurnToDirection              = true,
     showStatusMessagesInConsole       = true,
     showEventMessagesInConsole        = true,
     showInfoMessagesInConsole         = true,
@@ -359,9 +437,12 @@ return {
         end
     },
     hotkeyDelay                       = {
-        value = 70,
+        value = KEYBOARD_DELAY_DEFAULT,
         action = function(value, options, controller, panels, extraWidgets)
-            panels.generalPanel:recursiveGetChildById('hotkeyDelay'):setText(string.format('Hotkey delay: %sms', value))
+            if options.useDefaultKeyboardDelay and options.useDefaultKeyboardDelay.value and value ~= KEYBOARD_DELAY_DEFAULT then
+                modules.client_options.setOption('useDefaultKeyboardDelay', false)
+            end
+            syncKeyboardDelayState(options, panels)
         end
     },
     crosshair                         = {

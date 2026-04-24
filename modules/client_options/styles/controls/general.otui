@@ -16,6 +16,38 @@ UIWidget
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: prev.bottom
+    height: 22
+    margin-top: 7
+
+    OptionCheckBoxMarked
+      id: useDefaultKeyboardDelay
+      !text: tr('Use Default Keyboard Delay (250 ms)')
+      !tooltip: tr('Uses the default keyboard delay from the global client.')
+
+  SmallReversedQtPanel
+    id: hotkeyDelay_label
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+
+    OptionScaleScrollMarked
+      id: hotkeyDelay
+      !text: tr('Keyboard Delay: 250 ms')
+      !tooltip: tr('Use the slider to increase or lower your keyboard delay. A higher keyboard delay might be helpful for players experiencing movement problems when using very fast characters.')
+      anchors.fill: parent
+      &minimumScrollValue: 10
+      &maximumScrollValue: 1000
+      &scrollSize: 1
+      @onSetup: |
+        local value = modules.client_options.getOption('hotkeyDelay')
+        self:setText(tr('Keyboard Delay: %d ms', value))
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
     height: 32
     margin-top: 7
 
@@ -61,6 +93,73 @@ UIWidget
     anchors.top: prev.bottom
     margin-top: 7
     height: 22
+    
+    Label
+      id: rotateHoldLabel
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 18
+      color: #c0c0c0ff
+      !text: tr('To Rotate Your Character Hold:')
+      !tooltip: tr('Enable one or more modifiers; hold any selected combination plus an arrow key to rotate.')
+
+    QtCheckBox
+      id: rotateWithCtrl
+      anchors.left: rotateHoldLabel.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 12
+      width: 42
+      !text: tr('Ctrl')
+      !tooltip: tr('Rotate by holding Ctrl + movement key.')
+      @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+
+    QtCheckBox
+      id: rotateWithShift
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 6
+      width: 46
+      !text: tr('Shift')
+      !tooltip: tr('Rotate by holding Shift + movement key.')
+      @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+
+    QtCheckBox
+      id: rotateWithAlt
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 6
+      width: 38
+      !text: tr('Alt')
+      !tooltip: tr('Rotate by holding Alt + movement key.')
+      @onCheckChange: modules.client_options.setOption(self:getId(), self:isChecked())
+
+    UIWidget
+      id: rotateModifierInfo
+      image-source: /images/icons/show_gui_help_grey
+      size: 12 12
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 3
+      !tooltip: tr('Enable one or more modifiers; hold any selected combination plus an arrow key to rotate.')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
+  
+    OptionCheckBoxMarked
+      id: alwaysTurnToDirection
+      !text: tr('Always turn towards the direction of movement')
+      !tooltip: tr('If enabled, your character will turn toward the movement direction even when movement is blocked.')
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 22
   
     OptionCheckBox
       id: autoChaseOverride
@@ -96,36 +195,10 @@ UIWidget
     margin-top: 7
     height: 22
   
-    OptionCheckBox
+    OptionCheckBoxMarked
       id: moveStack
-      text: Pressione CTRL para arrastar pilhas completas
-
-    UIWidget
-      image-source: /images/icons/show_gui_help_grey
-      size: 12 12
-      anchors.right: parent.right
-      anchors.verticalCenter: parent.verticalCenter
-      margin-right: 3
-      tooltip: Se esta opcao estiver ativada, voce tambem arrastara a pilha completa ao mover varios itens iguais.
-
-  SmallReversedQtPanel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-  
-    OptionCheckBox
-      id: alwaysTurnToMovement
-      text: Sempre virar para a direção do movimento
-
-    UIWidget
-      image-source: /images/icons/show_gui_help_grey
-      size: 12 12
-      anchors.right: parent.right
-      anchors.verticalCenter: parent.verticalCenter
-      margin-right: 3
-      tooltip: Se ativado, seu personagem vai virar para a direção do movimento mesmo quando o caminho estiver bloqueado.
+      !text: tr('Press CTRL to Drag Complete Stacks')
+      !tooltip: tr('If this option is enabled, you will also drag the complete stack while moving several of the same item.')
 
   SmallReversedQtPanel
     anchors.left: parent.left
@@ -161,25 +234,6 @@ UIWidget
       id: displayText
       !text: tr('Display text messages')
       
-  SmallReversedQtPanel
-    id: hotkeyDelay_label
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: prev.bottom
-    margin-top: 7
-    height: 22
-
-    OptionScaleScroll
-      id: hotkeyDelay
-      !text: tr('Hotkey delay: 30ms')
-      anchors.fill: parent
-      &minimumScrollValue: 30
-      &maximumScrollValue: 250
-      &scrollSize: 21
-      @onSetup: |
-        local value = modules.client_options.getOption('hotkeyDelay')
-        self:setText(tr('Hotkey delay: %dms', value))
-
   SmallReversedQtPanel
     anchors.left: parent.left
     anchors.right: parent.right
