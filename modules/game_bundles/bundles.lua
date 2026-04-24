@@ -421,7 +421,7 @@ function onBundles(balance, goldBalance, list)
                         reward.count:setText(formatPriceNumber(block.count))
                     end
                     local ok, name = pcall(function() return reward.item:getItem():getName() end)
-                    reward:setTooltip(comma_value(block.count) .. "x " .. (ok and name or tostring(block.item)))
+                    reward:setTooltip(comma_value(block.count) .. "x " .. (ok and name or block.itemName or tostring(block.item)))
                 elseif block.type == enums.rewards.coin then
                     reward.count:clearText()
 
@@ -429,7 +429,7 @@ function onBundles(balance, goldBalance, list)
                     reward.item:setItemId(37317)
                     reward.count:setText(formatPriceNumber(block.count))
                     local ok, name = pcall(function() return reward.item:getItem():getName() end)
-                    reward:setTooltip(comma_value(block.count) .. "x " .. (ok and name or "Coins"))
+                    reward:setTooltip(comma_value(block.count) .. "x " .. (ok and name or block.itemName or "Coins"))
                 elseif block.type == enums.rewards.outfit then
                     reward.count:clearText()
 

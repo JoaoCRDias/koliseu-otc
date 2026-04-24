@@ -104,7 +104,7 @@ PhantomMiniWindow
       anchors.left: specials.left
       anchors.right: specials.right
       anchors.top: specials.top
-      margin-top: 25
+      margin-top: 47
       image-source: /resources/button_bundle
       image-clip: 0 0 42 33
       gif-frames: 21
