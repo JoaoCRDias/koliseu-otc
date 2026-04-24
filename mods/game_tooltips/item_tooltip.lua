@@ -216,30 +216,14 @@ function onHoverChange(widget, hovered)
         }
 
         local parent = currentHoveredWidget:getParent()
-        if parent then
-          local parentId = parent:getId()
-          if parentId == "inventory" then
-            local slotIndex = tonumber(currentHoveredWidget:getId():match("(%d+)"))
-            if slotIndex then
-              request.source = "inventory"
-              request.slotIndex = slotIndex
-            end
-          elseif parentId:find("container") or parentId:find("Container") then
-            request.source = "container"
-            local containerPanel = parent
-            while containerPanel do
-              local cid = containerPanel:getChildById("containerId")
-              if cid then
-                request.containerId = tonumber(cid:getText()) or 0
-                break
-              end
-              containerPanel = containerPanel:getParent()
-            end
-            local slotIdx = tonumber(currentHoveredWidget:getId():match("(%d+)"))
-            if slotIdx then
-              request.slotIndex = slotIdx
-            end
-          end
+        if parent and parent.slotPosition then
+          request.source = "inventory"
+          request.slotIndex = parent.slotPosition.y
+        elseif currentHoveredWidget.position then
+          request.source = "container"
+          local pos = currentHoveredWidget.position
+          request.containerId = bit.band(pos.y, 0x3F)
+          request.slotIndex = pos.z
         end
 
         protocol:sendExtendedOpcode(CODE_TOOLTIPS, json.encode(request))
