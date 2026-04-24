@@ -252,6 +252,10 @@ function changeOptionsSize()
     refreshOptionsSizes()
 end
 
+function toggleBundles()
+    pcall(function() modules.game_bundles.onBundlesBarClick() end)
+end
+
 function addToggleButton(id, description, image, callback, front, index)
     return createButton(id, description, image, callback, false, front, index)
 end

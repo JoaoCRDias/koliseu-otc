@@ -110,4 +110,4 @@ PhantomMiniWindow
       gif-frames: 21
       gif-duration: 100
       gif-rect: 42 33
-      @onClick: modules.game_bundles.onBundlesBarClick()
+      @onClick: toggleBundles()
