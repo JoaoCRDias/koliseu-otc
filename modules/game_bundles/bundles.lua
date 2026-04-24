@@ -2,7 +2,6 @@ BundlesWindow = nil
 BundlesConfirmationWindow = nil
 
 local BUNDLES_OPCODE = 253
-local bundlesBarWidget = nil
 
 local enums = {
     types = {
@@ -83,8 +82,6 @@ local discount = {
 }
 
 function init()
-    g_ui.importStyle('styles/bundles_button')
-
     BundlesWindow = g_ui.displayUI('bundles')
     BundlesWindow:hide()
 
@@ -96,22 +93,15 @@ function init()
     ProtocolGame.registerExtendedJSONOpcode(BUNDLES_OPCODE, onBundlesOpcode)
 
     connect(g_game, {
-        onGameStart = onGameStart,
         onGameEnd = onGameEnd
-    }, true)
-
-    if g_game.isOnline() then
-        onGameStart()
+    })
     end
 end
 
 function terminate()
     disconnect(g_game, {
-        onGameStart = onGameStart,
         onGameEnd = onGameEnd
     })
-
-    destroyBundlesBarWidget()
 
     pcall(function()
         ProtocolGame.unregisterExtendedJSONOpcode(BUNDLES_OPCODE)
@@ -128,16 +118,7 @@ function terminate()
     end
 end
 
-function onGameStart()
-    scheduleEvent(function()
-        if g_game.isOnline() then
-            createBundlesBarWidget()
-        end
-    end, 500)
-end
-
 function onGameEnd()
-    destroyBundlesBarWidget()
     hide()
 end
 
@@ -146,54 +127,6 @@ function onBundlesBarClick()
         hide()
     else
         requestBundlesList()
-    end
-end
-
-function createBundlesBarWidget()
-    if bundlesBarWidget then
-        return
-    end
-
-    local mainRightPanel = modules.game_interface.getMainRightPanel()
-    if not mainRightPanel then
-        return
-    end
-
-    bundlesBarWidget = g_ui.createWidget('BundlesBarWidget')
-    if not bundlesBarWidget then
-        return
-    end
-
-    local children = mainRightPanel:getChildren()
-    local insertIndex = #children + 1
-    for i, child in ipairs(children) do
-        if child:getId() == 'minimapWindow' then
-            insertIndex = i + 1
-            for j = insertIndex, #children do
-                local cid = children[j]:getId()
-                if cid == 'BattlePassBarWidget' or cid == 'battlePassBarBtn' or cid == 'BundlesBarWidget' or cid == 'bundlesBarBtn' then
-                    insertIndex = j + 1
-                end
-            end
-            break
-        end
-    end
-
-    mainRightPanel:insertChild(insertIndex, bundlesBarWidget)
-
-    if mainRightPanel.fitAllChildren then
-        mainRightPanel:fitAllChildren()
-    end
-end
-
-function destroyBundlesBarWidget()
-    if bundlesBarWidget then
-        bundlesBarWidget:destroy()
-        bundlesBarWidget = nil
-        local mainRightPanel = modules.game_interface.getMainRightPanel()
-        if mainRightPanel and mainRightPanel.fitAllChildren then
-            mainRightPanel:fitAllChildren()
-        end
     end
 end
 
@@ -552,17 +485,17 @@ function onBundles(balance, goldBalance, list)
                 widget.buttonsBorder.buy:setEnabled(false)
                 widget.buttonsBorder.buy:setText(timeLeftToAvailable(bundle.originalPrice))
                 widget.buttonsBorder.balance.text:setColor("#c0c0c0")
-                widget.buttonsBorder.buy.onLeftClick = nil
+                widget.buttonsBorder.buy.onClick = nil
             elseif bundle.price > currentBalance then
                 widget.buttonsBorder.buy:setEnabled(false)
                 widget.buttonsBorder.buy:setText('Adquirir ja!')
                 widget.buttonsBorder.balance.text:setColor("#d33c3cff")
-                widget.buttonsBorder.buy.onLeftClick = nil
+                widget.buttonsBorder.buy.onClick = nil
             else
                 widget.buttonsBorder.buy:setEnabled(true)
                 widget.buttonsBorder.buy:setText('Adquirir ja!')
                 widget.buttonsBorder.balance.text:setColor("#6be277ff")
-                widget.buttonsBorder.buy.onLeftClick = function()
+                widget.buttonsBorder.buy.onClick = function()
                     if bundle.type ~= enums.types.gold then
                         if BundlesConfirmationWindow ~= nil then
                             BundlesConfirmationWindow:destroy()
@@ -579,7 +512,7 @@ function onBundles(balance, goldBalance, list)
                         BundlesConfirmationWindow.name:setText(bundle.name)
                         BundlesConfirmationWindow.price:setText(comma_value(bundle.price))
 
-                        BundlesConfirmationWindow.buy.onLeftClick = function()
+                        BundlesConfirmationWindow.buy.onClick = function()
                             closeConfirmation()
                             show()
                             bundlesBuy(bundle.id)

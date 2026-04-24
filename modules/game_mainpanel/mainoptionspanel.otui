@@ -98,3 +98,16 @@ PhantomMiniWindow
         cell-size: 20 20
         cell-spacing: 2
         flow: true
+
+    UIWidget
+      id: specialsHorizontal
+      anchors.left: specials.left
+      anchors.right: specials.right
+      anchors.top: specials.top
+      margin-top: 25
+      image-source: /resources/button_bundle
+      image-clip: 0 0 42 33
+      gif-frames: 21
+      gif-duration: 100
+      gif-rect: 42 33
+      @onClick: modules.game_bundles.onBundlesBarClick()
