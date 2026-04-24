@@ -38,7 +38,78 @@ local function getClipForValue(value)
     elseif value >= 50 then
         return "0 0 32 32"
     end
-    return nil
+    return ""
+end
+
+local RARITY_TO_CORNER_PNG = {
+    yellow = '/images/ui/rarity_corner_gold.png',
+    purple = '/images/ui/rarity_corner_purple.png',
+    blue = '/images/ui/rarity_corner_blue.png',
+    green = '/images/ui/rarity_corner_green.png',
+    grey = '/images/ui/rarity_corner_white.png',
+    white = '/images/ui/rarity_corner_white.png',
+}
+
+function ItemsDatabase.getClipAndImagePath(item)
+    if not item then
+        return nil, nil, nil
+    end
+
+    local frameOption = modules.client_options.getOption('framesRarity')
+    if frameOption == "none" then
+        return nil, nil, nil
+    end
+
+    local useCornerPng = false
+    if modules.client_options and modules.client_options.getOption then
+        useCornerPng = modules.client_options.getOption('lootRarityCornerSprites') == true
+    end
+
+    local imagePath = '/images/ui/item'
+    local clip = nil
+
+    local price = 0
+    if type(item) == "number" then
+        price = item
+    else
+        local ok, p = pcall(function()
+            return item:getMeanPrice()
+        end)
+        if not ok then
+            return nil, nil, nil
+        end
+        price = tonumber(p) or 0
+    end
+
+    do
+        local itemRarity = getColorForValue(price)
+        if itemRarity then
+            if useCornerPng then
+                local cornerPath = RARITY_TO_CORNER_PNG[itemRarity]
+                if cornerPath then
+                    return nil, cornerPath, { cornerPng = true }
+                end
+            end
+            clip = getClipForValue(price)
+            if clip ~= "" then
+                if frameOption == "frames" then
+                    imagePath = "/images/ui/rarity_frames"
+                elseif frameOption == "corners" then
+                    imagePath = "/images/ui/containerslot-coloredges"
+                end
+            else
+                clip = nil
+            end
+        end
+    end
+
+    local clipObject = nil
+    if clip then
+        local x, y, w, h = clip:match("(%d+) (%d+) (%d+) (%d+)")
+        clipObject = { x = tonumber(x), y = tonumber(y), width = tonumber(w), height = tonumber(h) }
+    end
+
+    return clip, imagePath, clipObject
 end
 
 function ItemsDatabase.setRarityItem(widget, item, style)
@@ -46,38 +117,15 @@ function ItemsDatabase.setRarityItem(widget, item, style)
         return
     end
 
-    -- Check if widget supports rarity overlay (UIItem)
     if not widget.setRaritySource then
         return
     end
 
-    local frameOption = modules.client_options.getOption('framesRarity')
-    if frameOption == "none" then
-        widget:clearRarity()
-        return
-    end
+    local clip, imagePath, clipObject = ItemsDatabase.getClipAndImagePath(item)
 
-    if item then
-        local price = type(item) == "number" and item or (item and item:getMeanPrice()) or 0
-        local clip = getClipForValue(price)
-
-        if clip then
-            local imagePath
-            if frameOption == "frames" then
-                imagePath = "/images/ui/rarity_frames"
-            elseif frameOption == "corners" then
-                imagePath = "/images/ui/containerslot-coloredges"
-            end
-
-            if imagePath then
-                widget:setRaritySource(imagePath)
-                widget:setRarityClip(clip)
-            else
-                widget:clearRarity()
-            end
-        else
-            widget:clearRarity()
-        end
+    if clip and imagePath then
+        widget:setRaritySource(imagePath)
+        widget:setRarityClip(clipObject)
     else
         widget:clearRarity()
     end
@@ -177,6 +225,42 @@ function ItemsDatabase.setColorLootMessage(text, baseColor)
     end
 
     return coloredText
+end
+
+local TIER_MAX = 15
+local TIER_SMALL = { width = 9, height = 8 }
+local TIER_BIG = { width = 18, height = 16 }
+
+local function normalizeTier(tier)
+    local t = math.floor(tonumber(tier) or 1)
+    if t < 1 then
+        t = 1
+    elseif t > TIER_MAX then
+        t = TIER_MAX
+    end
+    return t
+end
+
+function ItemsDatabase.getTierClip(tier)
+    local t = normalizeTier(tier)
+    local xOffset = (t - 1) * TIER_SMALL.width
+    return {
+        x = xOffset,
+        y = 0,
+        width = TIER_SMALL.width,
+        height = TIER_SMALL.height
+    }
+end
+
+function ItemsDatabase.getTierClipBig(tier)
+    local t = normalizeTier(tier)
+    local xOffset = (t - 1) * TIER_BIG.width
+    return {
+        x = xOffset,
+        y = 0,
+        width = TIER_BIG.width,
+        height = TIER_BIG.height
+    }
 end
 
 function ItemsDatabase.setTier(widget, item, isSmall)
