@@ -1,0 +1,413 @@
+MiniPanel < Panel
+  text-offset: 0 2
+  text-align: top
+  image-source: /images/ui/miniwindow
+  image-border: 4
+  image-border-top: 20
+  image-border-bottom: 4
+  padding-left: 4
+  padding-bottom: 3
+  padding-top: 18
+  padding-right: 2
+
+CategoryButton < UIButton
+  font: verdana-11px-antialised
+  color: #dfdfdfff
+  size: 106 23
+  image-source: /images/ui/button
+  image-color: #ababab
+  image-clip: 0 0 22 23
+  image-border: 3
+  opacity: 1.0
+  padding-left: 0
+
+  $hover !disabled:
+    image-color: #dfdfdf
+
+  $pressed:
+    image-clip: 0 46 22 23
+    padding-left: 1
+
+  $on:
+    image-color: #ffffff
+
+  $disabled:
+    color: #dfdfdf88
+    opacity: 0.8
+
+CategoryItem < UIItem
+  anchors.top: parent.top
+  anchors.left: parent.left
+  size: 34 34
+  padding: 1
+  virtual: true
+  phantom: true
+
+CategoryLabel < Label
+  anchors.top: parent.top
+  anchors.left: prev.right
+  anchors.right: parent.right
+  anchors.bottom: parent.bottom
+  text-align: left
+
+ItemListItem < Panel
+  phantom: false
+  height: 42
+  image-source: /images/ui/button
+  image-color: #ababab
+  image-clip: 0 0 22 23
+  image-border: 3
+  padding-left: 3
+  @onClick: modules.game_blacksmith_crafting.selectItem(self:getId())
+
+  $hover !disabled:
+    image-color: #dfdfdf
+
+  $focus:
+    image-color: #ffffff
+
+  UIItem
+    id: item
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.left: parent.left
+    size: 34 34
+    padding: 1
+    virtual: true
+
+  Label
+    id: name
+    anchors.top: item.top
+    anchors.left: item.right
+    anchors.right: parent.right
+    margin-top: 3
+    margin-left: 5
+    text-align: left
+    text-auto-resize: true
+
+  Label
+    id: level
+    anchors.left: item.right
+    anchors.right: parent.right
+    anchors.bottom: item.bottom
+    margin-bottom: 2
+    margin-left: 5
+    text-align: left
+    color: #afafaf
+    text-auto-resize: true
+
+CountLabel < Label
+  anchors.top: prev.top
+  anchors.bottom: prev.bottom
+  font: verdana-11px-rounded
+  text-auto-resize: true
+  margin-top: 5
+
+MainWindow
+  id: blacksmithCraftingWindow
+  text: Blacksmith Upgrade
+  size: 760 500
+
+  Panel
+    id: categories
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    width: 320
+    height: 34
+    layout: horizontalBox
+
+    CategoryButton
+      id: blacksmithCat
+      width: 154
+      @onClick: modules.game_blacksmith_crafting.selectCategory("blacksmith")
+
+      CategoryItem
+        item-id: 41112
+
+      CategoryLabel
+        text: Blacksmith
+
+    CategoryButton
+      id: leadbarCat
+      width: 164
+      @onClick: modules.game_blacksmith_crafting.selectCategory("leadbar")
+
+      CategoryItem
+        item-id: 63401
+
+      CategoryLabel
+        text: Lead Metal Bar
+
+  HorizontalSeparator
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 10
+
+  Panel
+    id: searchBar
+    anchors.top: prev.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 10
+    height: 23
+
+    Label
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: parent.left
+      text: Search
+
+    TextEdit
+      id: searchInput
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.left: prev.right
+      margin-left: 5
+      width: 130
+      @onKeyPress: modules.game_blacksmith_crafting.onSearch()
+
+    Label
+      id: vipBadge
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.right: parent.right
+      text: ""
+      text-align: right
+      color: #ffd27f
+
+  HorizontalSeparator
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 10
+
+  ScrollablePanel
+    id: itemsList
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.bottom: separator.top
+    margin-top: 10
+    margin-bottom: 10
+    width: 300
+    text-offset: 0 2
+    text-align: top
+    image-source: /images/ui/miniwindow
+    image-border: 4
+    image-border-top: 23
+    image-border-bottom: 4
+    padding-bottom: 3
+    padding-top: 18
+    padding-right: 16
+    padding-left: 3
+    text: Upgradable Items
+    vertical-scrollbar: itemsListScrollbar
+    layout: verticalBox
+    auto-focus: none
+
+  VerticalScrollBar
+    id: itemsListScrollbar
+    anchors.top: itemsList.top
+    anchors.bottom: itemsList.bottom
+    anchors.right: itemsList.right
+    margin-top: 18
+    margin-bottom: 4
+    margin-right: 3
+    step: 24
+    pixels-scroll: true
+
+  VerticalSeparator
+    anchors.top: itemsList.top
+    anchors.bottom: itemsList.bottom
+    anchors.left: itemsList.right
+    margin-left: 10
+
+  MiniPanel
+    id: craftPanel
+    anchors.top: prev.top
+    anchors.bottom: prev.bottom
+    anchors.left: prev.right
+    anchors.right: parent.right
+    margin-left: 12
+    text: Upgrade Process
+
+    Item
+      id: craftOutcome
+      anchors.centerIn: parent
+      margin-bottom: 10
+      virtual: true
+
+    Label
+      id: requirementsLabel
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 4
+      text: ""
+      text-align: center
+      color: #c8c8c8
+      text-auto-resize: true
+
+    Panel
+      id: craftLine1
+      anchors.top: craftOutcome.top
+      anchors.right: craftOutcome.left
+      margin-top: -31
+      margin-right: 5
+      image-source: /images/blacksmith_crafting/craft_line1
+
+    Item
+      id: material1
+      anchors.bottom: prev.bottom
+      anchors.left: parent.left
+      margin-left: 5
+      margin-bottom: 16
+      virtual: true
+
+    CountLabel
+      id: count1
+      anchors.left: prev.right
+      text-align: left
+      margin-left: 5
+
+    Panel
+      id: craftLine2
+      anchors.top: craftOutcome.top
+      anchors.right: craftOutcome.left
+      margin-top: 16
+      margin-right: 5
+      image-source: /images/blacksmith_crafting/craft_line5
+
+    Item
+      id: material2
+      anchors.bottom: prev.bottom
+      anchors.left: parent.left
+      margin-left: 5
+      margin-bottom: -15
+      virtual: true
+
+    CountLabel
+      id: count2
+      anchors.left: prev.right
+      text-align: left
+      margin-left: 5
+
+    Panel
+      id: craftLine3
+      anchors.top: craftOutcome.top
+      anchors.right: craftOutcome.left
+      margin-top: 32
+      margin-right: 5
+      image-source: /images/blacksmith_crafting/craft_line3
+
+    Item
+      id: material3
+      anchors.bottom: prev.bottom
+      anchors.left: parent.left
+      margin-left: 5
+      margin-bottom: -15
+      virtual: true
+
+    CountLabel
+      id: count3
+      anchors.left: prev.right
+      text-align: left
+      margin-left: 5
+
+    Label
+      id: costLabel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      margin-right: 5
+      margin-bottom: 49
+      text: Total Cost
+      text-align: right
+      color: #afafaf
+
+    FlatPanel
+      id: costPanel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      margin-right: 5
+      margin-bottom: 35
+      size: 140 16
+
+      UIItem
+        id: costIcon
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: -8
+        margin-left: -2
+        size: 34 34
+        padding: 1
+        item-id: 3031
+        virtual: true
+
+      Label
+        id: totalCost
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-right: 4
+        text-align: right
+
+    Label
+      id: balanceLabel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      margin-right: 5
+      margin-bottom: 19
+      text: Balance
+      text-align: right
+      color: #afafaf
+
+    FlatPanel
+      id: balancePanel
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      margin-right: 5
+      margin-bottom: 5
+      size: 140 16
+
+      UIItem
+        id: balanceIcon
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: -8
+        margin-left: -2
+        size: 34 34
+        padding: 1
+        item-id: 3031
+        virtual: true
+
+      Label
+        id: playerBalance
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-right: 4
+        text-align: right
+
+    CategoryButton
+      id: craftButton
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      margin-left: 16
+      size: 112 34
+      margin-bottom: 5
+      @onClick: modules.game_blacksmith_crafting.craftItem()
+
+      CategoryItem
+        item-id: 41112
+
+      CategoryLabel
+        text: Upgrade
+
+  HorizontalSeparator
+    id: separator
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-bottom: 60
+
+  Button
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    text: Close
+    width: 60
+    @onClick: modules.game_blacksmith_crafting.hide()

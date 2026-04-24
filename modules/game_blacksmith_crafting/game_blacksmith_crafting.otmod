@@ -1,0 +1,10 @@
+Module
+  name: game_blacksmith_crafting
+  description: Blacksmith + Lead Metal Bar upgrade window
+  author: Oen (base), adapted for Glabelabaiak
+  website: None
+  sandboxed: true
+  autoload: true
+  scripts: [ game_blacksmith_crafting ]
+  @onLoad: init()
+  @onUnload: terminate()

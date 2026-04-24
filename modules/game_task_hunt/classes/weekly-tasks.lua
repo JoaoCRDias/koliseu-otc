@@ -160,6 +160,29 @@ function TaskWeekly.onServerData(header, monsters, items, difficulties)
     -- even if difficulty == 0 (level 8 Beginner always gets unlockedDifficulty=0 from server).
     data.selectedTaskDifficulty = (data.difficulty == 0) and (#data.monsters == 0)
 
+    local hasPendingAction = false
+    if data.selectedTaskDifficulty then
+        hasPendingAction = true
+    else
+        for _, m in ipairs(data.monsters) do
+            if m.finished then
+                hasPendingAction = true
+                break
+            end
+        end
+        if not hasPendingAction then
+            for _, it in ipairs(data.items) do
+                if it.finished and not it.delivered then
+                    hasPendingAction = true
+                    break
+                end
+            end
+        end
+    end
+    if hasPendingAction then
+        modules.game_mainpanel.showButtonHighlight("taskHuntButton")
+    end
+
     TaskWeekly.loadData(data)
 end
 
@@ -765,12 +788,14 @@ function TaskWeekly.updateProgress(completedTasks)
 end
 
 function TaskWeekly.onKillUpdate(raceId, currentKills, totalKills, isCompleted)
-    -- Update tracker
     if Tracker and Tracker.Weekly then
         Tracker.Weekly.onKillUpdate(raceId, currentKills, totalKills, isCompleted)
     end
 
-    -- Update weekly tasks panel kill card (if open)
+    if isCompleted == 1 then
+        modules.game_mainpanel.showButtonHighlight("taskHuntButton")
+    end
+
     if not taskHuntWindow then return end
 
     local killGrid = taskHuntWindow:recursiveGetChildById('killTasksGrid')

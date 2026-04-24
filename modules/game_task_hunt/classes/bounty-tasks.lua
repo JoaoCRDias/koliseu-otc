@@ -70,10 +70,27 @@ function TaskBounty.updateTracker(monsters)
 end
 
 function TaskBounty.onServerData(header, monsters, talisman)
-    -- Always update the kill tracker
     TaskBounty.updateTracker(monsters)
 
     if not taskHuntWindow then return end
+
+    local hasPendingAction = false
+    for _, m in ipairs(monsters) do
+        local isCompleted = tonumber(m.isCompleted) == 1
+        local isActive = tonumber(m.isActive) == 1
+        local currentKills = tonumber(m.currentKills) or 0
+        local totalKills = tonumber(m.totalKills) or 0
+        if isCompleted or (isActive and currentKills >= totalKills) then
+            hasPendingAction = true
+            break
+        elseif not isActive then
+            hasPendingAction = true
+            break
+        end
+    end
+    if hasPendingAction then
+        modules.game_mainpanel.showButtonHighlight("taskHuntButton")
+    end
 
     -- Header data
     local rerollPoints = tonumber(header.rerollPoints) or 0
@@ -365,12 +382,14 @@ function TaskBounty.populateTalismanEntry(entry, data)
 end
 
 function TaskBounty.onKillUpdate(raceId, currentKills, totalKills, isCompleted)
-    -- Update kill tracker
     if Tracker and Tracker.Bounty then
         Tracker.Bounty.onKillUpdate(raceId, currentKills, totalKills, isCompleted)
     end
 
-    -- Update bounty task panel kills label (if open)
+    if isCompleted == 1 then
+        modules.game_mainpanel.showButtonHighlight("taskHuntButton")
+    end
+
     if taskHuntWindow then
         local container = taskHuntWindow:recursiveGetChildById('bountyTaskContainer')
         if container then

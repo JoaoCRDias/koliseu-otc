@@ -133,7 +133,7 @@ local function createButton_large(id, description, image, callback, special, fro
     return button
 end
 
-local function createButton(id, description, image, callback, special, front, index)
+local function createButton(id, description, image, callback, special, front, index, vertical)
     local panel
     if special then
         panel = optionsController.ui.onPanel.specials
@@ -145,7 +145,8 @@ local function createButton(id, description, image, callback, special, front, in
 
     local button = panel:getChildById(id)
     if not button then
-        button = g_ui.createWidget('MainToggleButton')
+        local widgetStyle = vertical and 'MainToggleButtonVertical' or 'MainToggleButton'
+        button = g_ui.createWidget(widgetStyle)
         if front then
             panel:insertChild(1, button)
         else
@@ -170,6 +171,62 @@ local function createButton(id, description, image, callback, special, front, in
 
     refreshOptionsSizes()
     return button
+end
+
+local function createButtonWithHighlight(id, description, image, callback, special, front, index, vertical)
+    local panel
+    if special then
+        panel = optionsController.ui.onPanel.specials
+        specialsAmount = specialsAmount + 1
+    else
+        panel = optionsController.ui.onPanel.options
+        optionsAmount = optionsAmount + 1
+    end
+
+    local styleName = vertical and 'MainToggleButtonWithHighlightVertical' or 'MainToggleButtonWithHighlight'
+
+    local widget = panel:getChildById(id)
+    if widget and widget.styleName ~= styleName then
+        widget:destroy()
+        widget = nil
+    end
+
+    if not widget then
+        widget = g_ui.createWidget(styleName)
+        widget.styleName = styleName
+        if front then
+            panel:insertChild(1, widget)
+        else
+            panel:addChild(widget)
+        end
+    end
+
+    widget:setId(id)
+
+    local button = widget:getChildById('button')
+    if button then
+        button:setTooltip(description)
+        button:setImageSource(image)
+        button:setImageClip('0 0 20 20')
+
+        button.onMouseRelease = function(btn, mousePos, mouseButton)
+            if btn:containsPoint(mousePos) and mouseButton ~= MouseMidButton then
+                local highlightWidget = widget:getChildById('highlight')
+                local brightWidget = widget:getChildById('brightButton')
+                if highlightWidget then highlightWidget:setVisible(false) end
+                if brightWidget then brightWidget:setVisible(false) end
+                callback()
+                return true
+            end
+        end
+    end
+
+    if not widget.index and type(index) == 'number' then
+        widget.index = index or 1000
+    end
+
+    refreshOptionsSizes()
+    return widget
 end
 
 optionsController = Controller:new()
@@ -257,11 +314,52 @@ function toggleBundles()
 end
 
 function addToggleButton(id, description, image, callback, front, index)
-    return createButton(id, description, image, callback, false, front, index)
+    return createButton(id, description, image, callback, false, front, index, false)
+end
+
+function addVerticalToggleButton(id, description, image, callback, front, index)
+    return createButton(id, description, image, callback, false, front, index, true)
+end
+
+function addSingleIconToggleButton(id, description, image, callback, front, index)
+    local panel = optionsController.ui.onPanel.options
+    optionsAmount = optionsAmount + 1
+
+    local button = panel:getChildById(id)
+    if not button then
+        button = g_ui.createWidget('MainToggleButtonSingleIcon')
+        if front then
+            panel:insertChild(1, button)
+        else
+            panel:addChild(button)
+        end
+    end
+
+    button:setId(id)
+    button:setTooltip(description)
+    button:setSize('20 20')
+    button:setImageSource(image)
+    button:setImageClip('0 0 20 20')
+    button.onMouseRelease = function(widget, mousePos, mouseButton)
+        if widget:containsPoint(mousePos) and mouseButton ~= MouseMidButton then
+            callback()
+            return true
+        end
+    end
+    if not button.index and type(index) == 'number' then
+        button.index = index or 1000
+    end
+
+    refreshOptionsSizes()
+    return button
+end
+
+function addToggleButtonWithHighlight(id, description, image, callback, front, index, vertical)
+    return createButtonWithHighlight(id, description, image, callback, false, front, index, vertical)
 end
 
 function addSpecialToggleButton(id, description, image, callback, front, index)
-    return createButton(id, description, image, callback, true, front, index)
+    return createButton(id, description, image, callback, true, front, index, false)
 end
 
 function addStoreButton(id, description, image, callback, front)
@@ -270,6 +368,86 @@ end
 
 function getButton(id)
     return optionsController.ui.onPanel.options:recursiveGetChildById(id)
+end
+
+function showButtonHighlight(id)
+    local widget = getButton(id)
+    if widget then
+        local highlight = widget:getChildById('highlight')
+        local bright = widget:getChildById('brightButton')
+        if highlight then highlight:setVisible(true) end
+        if bright then bright:setVisible(true) end
+    end
+end
+
+function hideButtonHighlight(id)
+    local widget = getButton(id)
+    if widget then
+        local highlight = widget:getChildById('highlight')
+        local bright = widget:getChildById('brightButton')
+        if highlight then highlight:setVisible(false) end
+        if bright then bright:setVisible(false) end
+    end
+end
+
+function isButtonHighlighted(id)
+    local widget = getButton(id)
+    if widget then
+        local highlight = widget:getChildById('highlight')
+        if highlight then
+            return highlight:isVisible()
+        end
+    end
+    return false
+end
+
+function getMainOptionsPanelPlaceholderHeight()
+    local main_panel = modules.game_interface.getMainRightPanel()
+    if not main_panel then
+        return 28
+    end
+    local panel = main_panel:getChildById('mainoptionspanel')
+    if not panel or panel:isDestroyed() or not panel:isVisible() then
+        return 28
+    end
+    local base = 28
+    pcall(function()
+        if panel.panelHeight and type(panel.panelHeight) == 'number' and panel.panelHeight > 0 then
+            base = panel.panelHeight
+        end
+    end)
+    if not panel.isOn or not panel:isOn() then
+        return base
+    end
+    if not optionsController or not optionsController.ui then
+        return base
+    end
+    local ok, h = pcall(function()
+        local options_panel = optionsController.ui.onPanel.options
+        local specials_panel = optionsController.ui.onPanel.specials
+        local store_panel = panel.onPanel.store
+        local options_height = select(1, calculatePanelHeight(options_panel, PANEL_CONSTANTS.MAX_ICONS_PER_ROW.OPTIONS))
+        local specials_height = select(1, calculatePanelHeight(specials_panel, PANEL_CONSTANTS.MAX_ICONS_PER_ROW.SPECIALS))
+        local store_height, store_count = calculatePanelHeight(store_panel, PANEL_CONSTANTS.MAX_ICONS_PER_ROW.STORE)
+        if store_count > 0 then
+            store_height = store_count * PANEL_CONSTANTS.MULTI_STORE_HEIGHT + (store_count - 1) * 2
+        end
+        local icons_row_h = math.max(options_height, specials_height)
+        if icons_row_h < 22 then
+            icons_row_h = 22
+        end
+        local combined_height = store_height + icons_row_h
+        local extra_height = PANEL_CONSTANTS.HEIGHT_EXTRA_ONPANEL
+        if store_count >= 2 then
+            extra_height = extra_height - (store_count - 1) * 5
+        end
+        combined_height = combined_height + extra_height
+        return combined_height + base
+    end)
+    if ok and type(h) == 'number' and h > 0 then
+        return h
+    end
+    return base
 end
 
 function toggleExtendedViewButtons(extended)

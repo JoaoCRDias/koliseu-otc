@@ -87,13 +87,14 @@ function init()
     end
 
     if not taskHuntButton then
-        taskHuntButton = modules.game_mainpanel.addToggleButton(
+        taskHuntButton = modules.game_mainpanel.addToggleButtonWithHighlight(
             "taskHuntButton",
             tr("Task Hunt"),
             "/images/options/button_taskboard",
             toggle,
             false,
-            1006
+            1006,
+            false
         )
     end
 
@@ -172,6 +173,7 @@ function show()
     if taskHuntButton then
         taskHuntButton:setOn(true)
     end
+    modules.game_mainpanel.hideButtonHighlight("taskHuntButton")
 end
 
 function hide()

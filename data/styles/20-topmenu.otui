@@ -59,6 +59,108 @@ MainToggleButton < UIButton
   $on:
     image-clip: 20 0 20 20
 
+MainToggleButtonSingleIcon < UIButton
+  size: 20 20
+  image-source: /images/options/button_empty
+  image-clip: 0 0 20 20
+  image-border: 3
+
+  $pressed:
+    image-clip: 0 0 20 20
+
+  $on:
+    image-clip: 0 0 20 20
+
+MainToggleButtonVertical < UIButton
+  size: 20 20
+  image-source: /images/options/button_empty
+  image-clip: 0 0 20 20
+  image-border: 3
+
+  $pressed:
+    image-clip: 0 20 20 20
+
+  $on:
+    image-clip: 0 20 20 20
+
+MainToggleButtonWithHighlight < UIWidget
+  size: 22 22
+
+  UIButton
+    id: button
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left: 1
+    margin-top: 1
+    size: 20 20
+    image-clip: 0 0 20 20
+    image-offset: 0 0
+
+    $pressed:
+      image-clip: 20 0 20 20
+      image-offset: 1 1
+
+    $on:
+      image-clip: 20 0 20 20
+      image-offset: 1 1
+
+  UIWidget
+    id: brightButton
+    size: 20 20
+    anchors.top: button.top
+    anchors.left: button.left
+    phantom: true
+    visible: false
+    image-source: /images/ui/bright-x20
+
+  UIWidget
+    id: highlight
+    size: 22 22
+    visible: false
+    phantom: true
+    image-source: /images/options/highlight
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+
+MainToggleButtonWithHighlightVertical < UIWidget
+  size: 22 22
+
+  UIButton
+    id: button
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-left: 1
+    margin-top: 1
+    size: 20 20
+    image-clip: 0 0 20 20
+    image-offset: 0 0
+
+    $pressed:
+      image-clip: 0 20 20 20
+      image-offset: 1 1
+
+    $on:
+      image-clip: 0 20 20 20
+      image-offset: 1 1
+
+  UIWidget
+    id: brightButton
+    size: 20 20
+    anchors.top: button.top
+    anchors.left: button.left
+    phantom: true
+    visible: false
+    image-source: /images/ui/bright-x20
+
+  UIWidget
+    id: highlight
+    size: 22 22
+    visible: false
+    phantom: true
+    image-source: /images/options/highlight
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+
 TopMenuButtonsPanel < Panel
   layout:
     type: horizontalBox
