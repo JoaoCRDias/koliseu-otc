@@ -1862,14 +1862,24 @@ function Cyclopedia.loadOutfitMountBonuses()
         valueLabel:setColor(entry.owned and "#44AD25" or "#666666")
         local tooltip = entry.name .. "\n"
         if entry.passive then
-            tooltip = tooltip .. "Type: Passive (applied when owned)\n"
+            tooltip = tooltip .. "Type: Passive (bonus applies when owned)\n"
         else
             tooltip = tooltip .. "Type: Equipped (requires full addon)\n"
         end
         if entry.owned then
-            tooltip = tooltip .. "Status: Owned"
+            tooltip = tooltip .. "Status: Owned \226\156\147\n"
         else
-            tooltip = tooltip .. "Status: Not owned"
+            tooltip = tooltip .. "Status: Not owned\n"
+        end
+        if entry.bonusText and entry.bonusText ~= "" then
+            tooltip = tooltip .. "\nBonus:\n"
+            for part in string.gmatch(entry.bonusText, "[^,]+") do
+                local trimmed = part:match("^%s*(.-)%s*$")
+                tooltip = tooltip .. "  " .. trimmed .. "\n"
+            end
+        end
+        if entry.costText and entry.costText ~= "" then
+            tooltip = tooltip .. "\nPara desbloquear: " .. entry.costText
         end
         widget:setTooltip(tooltip)
         return widget
