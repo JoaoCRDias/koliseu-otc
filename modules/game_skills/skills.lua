@@ -339,14 +339,19 @@ function openCyclopediaMiscStats()
     if not modules.game_cyclopedia then return end
     modules.game_cyclopedia.show("character")
     scheduleEvent(function()
-        local win = modules.game_cyclopedia.getUI and modules.game_cyclopedia.getUI()
-        if not win then return end
-        local panel = win:recursiveGetChildById("subContentPanel")
+        local cyclopediaMod = modules.game_cyclopedia
+        if not cyclopediaMod then return end
+        local ui = cyclopediaMod.controllerGetUI and cyclopediaMod.controllerGetUI()
+        if not ui then
+            ui = cyclopediaMod.getUI and cyclopediaMod.getUI()
+        end
+        if not ui then return end
+        local panel = ui:recursiveGetChildById("subContentPanel")
         if not panel then return end
         for _, child in ipairs(panel:getChildren()) do
-            local label = child:getId() and child:getText and child:getText()
+            local label = child:getText()
             if label and label:find("Misc") then
-                child:onClick()
+                if child.onClick then child:onClick() end
                 return
             end
         end
