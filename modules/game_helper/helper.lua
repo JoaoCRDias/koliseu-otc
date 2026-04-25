@@ -337,7 +337,12 @@ local timers = {
   checkExetaRes = 0,
   checkAmpRes = 0,
   checkKeepWay = 0,
-  checkAvoidWaves = 0
+  checkAvoidWaves = 0,
+  checkAutoParty = 0,
+  checkAutoBoostStore = 0,
+  checkStaminaRefill = 0,
+  checkVendorLoot = 0,
+  checkImbuementScroll = 0,
 }
 
 -- PZ (Protection Zone) state tracking for auto_target and magic_shooter
@@ -365,7 +370,12 @@ local eventTable = {
   checkExetaRes = { interval = 500, action = nil },      -- Exeta Res by time + creature
   checkAmpRes = { interval = 500, action = nil },        -- Amp Res: 8 sqm, 10s cooldown
   checkKeepWay = { interval = 150, action = nil },       -- Keep Way: mantém distância do alvo
-  checkAvoidWaves = { interval = 150, action = nil }     -- Avoid Waves: evita ficar de frente para criatura
+  checkAvoidWaves = { interval = 150, action = nil },
+  checkAutoParty = { interval = 8000, action = nil },
+  checkAutoBoostStore = { interval = 5000, action = nil },
+  checkStaminaRefill = { interval = 1000, action = nil },
+  checkVendorLoot = { interval = 1000, action = nil },
+  checkImbuementScroll = { interval = 5000, action = nil },
 }
 
 local function getSpellCooldown(spellId)
@@ -565,8 +575,27 @@ helperConfig = {
   },
   exetaRes               = { { id = 0, minCreatures = 1, creatureName = "", enabled = false } },
   ampRes                 = { { id = 0, minCreatures = 1, enabled = false } },
-  hotkeyCode             = nil, -- Armazena o código da hotkey
-  hotkeyFunc = nil, -- Armazena a função da hotkey
+  pouchSeller = false,
+  staminaRefillEnabled = false,
+  staminaRefillItemId = 0,
+  staminaRefillIntervalMinutes = 10,
+  autoPartyEnabled = false,
+  autoPartyAcceptEnabled = false,
+  autoPartySendList = { "", "", "", "" },
+  autoPartyAcceptLeader = "",
+  autoBoostStoreEnabled = false,
+  imbuementScrollEnabled = false,
+  imbuementScrollIds = { 0, 0, 0, 0, 0, 0 },
+  imbuementScrollSlots = {
+    { helmet = false, armor = false, weapon = false, shield = false, ammo = false, backpack = false, boots = false },
+    { helmet = false, armor = false, weapon = false, shield = false, ammo = false, backpack = false, boots = false },
+    { helmet = false, armor = false, weapon = false, shield = false, ammo = false, backpack = false, boots = false },
+    { helmet = false, armor = false, weapon = false, shield = false, ammo = false, backpack = false, boots = false },
+    { helmet = false, armor = false, weapon = false, shield = false, ammo = false, backpack = false, boots = false },
+    { helmet = false, armor = false, weapon = false, shield = false, ammo = false, backpack = false, boots = false },
+  },
+  hotkeyCode             = nil,
+  hotkeyFunc = nil,
   presetHotkeyEnabled = true,
   recordingHotkeyCode = nil, -- Armazena o código da hotkey de recording
   recordingHotkeyFunc = nil, -- Armazena a função da hotkey de recording
@@ -740,6 +769,7 @@ function init()
         onResourcesBalanceChange = onResourcesBalanceChange,
         onPartyMemberHealthChange = onPartyMemberHealthChangeHelper,
         onFollowingCreatureChange = helperSmartFollowOnFollowingChange,
+        onTextMessage = onHelperTextMessage,
       })
     end
     --safeLog("debug", "Helper: init() - Game events connected")
@@ -767,6 +797,7 @@ function init()
     g_ui.importStyle('styles/low_supply_alarm_settings')
     g_ui.importStyle('styles/timer_panel')
     g_ui.importStyle('styles/spell')
+    g_ui.importStyle('styles/imbuement_scroll_settings')
     helper = g_ui.loadUI('helper_window', g_ui.getRootWidget())
     if helper then
       safeLog("debug", "Helper: init() - Helper window created")
@@ -1016,6 +1047,7 @@ function terminate()
       onResourcesBalanceChange = onResourcesBalanceChange,
       onPartyMemberHealthChange = onPartyMemberHealthChangeHelper,
       onFollowingCreatureChange = helperSmartFollowOnFollowingChange,
+      onTextMessage = onHelperTextMessage,
     })
   end
 
@@ -1790,6 +1822,32 @@ end
 
 function onMultiUseCooldown(time)
   g_helperCore.setMultiUseCooldown(time)
+end
+
+function onHelperTextMessage(messageMode, message)
+  if not message or type(message) ~= "string" then return end
+  local msgLower = message:lower()
+  local isInvite = msgLower:find("invited you to") or msgLower:find("convidou você para") or msgLower:find("convidou voce para")
+  if isInvite and modules.game_helper and modules.game_helper.tools and modules.game_helper.tools.tryAcceptPendingPartyInvite then
+    local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+    if helperConfig and helperConfig.autoPartyAcceptEnabled then
+      local leader = (helperConfig.autoPartyAcceptLeader or ""):gsub("^%s+", ""):gsub("%s+$", "")
+      if leader ~= "" then
+        local inviterName = message:match("^%s*(.-)%s+has%s+invited") or message:match("^%s*(.-)%s+convidou")
+        if not inviterName or inviterName == "" then inviterName = message:match("^%s*([^%s]+)") end
+        if inviterName and inviterName ~= "" and inviterName:lower() == leader:lower() then
+          scheduleEvent(function()
+            if modules.game_helper and modules.game_helper.tools then
+              modules.game_helper.tools.tryAcceptPendingPartyInvite()
+            end
+          end, 100)
+        end
+      end
+    end
+  end
+  if modules.game_helper and modules.game_helper.tools and modules.game_helper.tools.onImbuementScrollTextMessage then
+    modules.game_helper.tools.onImbuementScrollTextMessage(messageMode, message)
+  end
 end
 
 function onUpdateSpellArea(energyWaveEnlarged)
@@ -3865,7 +3923,7 @@ function toggleAutoUtitoPz(checked)
 end
 
 -- Wrapper function for Gold Change (OTUI compatibility)
-function toogleChangeGold(checked)
+function toggleChangeGold(checked)
   if modules.game_helper and modules.game_helper.tools then
     modules.game_helper.tools.toggleChangeGold(checked)
   else
@@ -5899,6 +5957,51 @@ function checkAmpRes()
   end
 end
 eventTable.checkAmpRes.action = checkAmpRes
+
+-- Vender Loot
+local function checkVendorLoot()
+  if not g_game.isOnline() or not helperAutomaticFunctionsEnabled then return end
+  if modules.game_helper and modules.game_helper.tools and modules.game_helper.tools.checkVendorLoot then
+    modules.game_helper.tools.checkVendorLoot()
+  end
+end
+eventTable.checkVendorLoot.action = checkVendorLoot
+
+-- Stamina Refill
+local function checkStaminaRefill()
+  if not g_game.isOnline() or not helperAutomaticFunctionsEnabled then return end
+  if modules.game_helper and modules.game_helper.tools and modules.game_helper.tools.checkStaminaRefill then
+    modules.game_helper.tools.checkStaminaRefill()
+  end
+end
+eventTable.checkStaminaRefill.action = checkStaminaRefill
+
+-- Auto Party
+local function checkAutoParty()
+  if not g_game.isOnline() or not helperAutomaticFunctionsEnabled then return end
+  if modules.game_helper and modules.game_helper.tools and modules.game_helper.tools.checkAutoParty then
+    modules.game_helper.tools.checkAutoParty()
+  end
+end
+eventTable.checkAutoParty.action = checkAutoParty
+
+-- AutoBoost Store
+local function checkAutoBoostStore()
+  if not g_game.isOnline() then return end
+  if modules.game_helper and modules.game_helper.tools and modules.game_helper.tools.checkAutoBoostStore then
+    modules.game_helper.tools.checkAutoBoostStore()
+  end
+end
+eventTable.checkAutoBoostStore.action = checkAutoBoostStore
+
+-- Imbuement Scroll
+local function checkImbuementScroll()
+  if not g_game.isOnline() or not helperAutomaticFunctionsEnabled then return end
+  if modules.game_helper and modules.game_helper.tools and modules.game_helper.tools.checkImbuementScroll then
+    modules.game_helper.tools.checkImbuementScroll()
+  end
+end
+eventTable.checkImbuementScroll.action = checkImbuementScroll
 
 -- Wrapper function for assigning exercise event (OTUI compatibility)
 function assignExerciseEvent(button)

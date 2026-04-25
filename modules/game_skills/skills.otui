@@ -592,6 +592,213 @@ MiniWindow
       margin-bottom: 15
       visible: false
 
+    HorizontalSeparator
+      id: separadorOutfitAddonBonus
+      margin-top: 5
+      margin-bottom: 3
+      visible: false
+
+    Label
+      id: labelSectionOutfits
+      font: verdana-11px-monochrome
+      color: #a0a0a0ff
+      text-align: left
+      margin-bottom: 2
+      visible: false
+      !text: tr('Outfits')
+
+    SmallSkillButton
+      id: outfitRowUnlocked
+      visible: false
+      SkillNameLabel
+        !text: tr('Desbloqueadas')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowHp
+      visible: false
+      SkillNameLabel
+        !text: tr('Vida max')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowMp
+      visible: false
+      SkillNameLabel
+        !text: tr('Mana max')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowExp
+      visible: false
+      SkillNameLabel
+        !text: tr('EXP bonus')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowCap
+      visible: false
+      SkillNameLabel
+        !text: tr('Cap')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowMl
+      visible: false
+      SkillNameLabel
+        !text: tr('Magic Level')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowMelee
+      visible: false
+      SkillNameLabel
+        !text: tr('Melee')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowDistance
+      visible: false
+      SkillNameLabel
+        !text: tr('Distance')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowShielding
+      visible: false
+      SkillNameLabel
+        !text: tr('Shielding')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowCritChance
+      visible: false
+      SkillNameLabel
+        !text: tr('Crit Chance')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowCritDamage
+      visible: false
+      SkillNameLabel
+        !text: tr('Crit Damage')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowLifeLeech
+      visible: false
+      SkillNameLabel
+        !text: tr('Life Leech')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitRowManaLeech
+      visible: false
+      SkillNameLabel
+        !text: tr('Mana Leech')
+      SkillValueLabel
+
+    Label
+      id: labelSectionMounts
+      font: verdana-11px-monochrome
+      color: #a0a0a0ff
+      text-align: left
+      margin-top: 3
+      margin-bottom: 2
+      visible: false
+      !text: tr('Montarias')
+
+    SmallSkillButton
+      id: mountRowCount
+      visible: false
+      SkillNameLabel
+        !text: tr('Desbloqueadas')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowHp
+      visible: false
+      SkillNameLabel
+        !text: tr('Vida max')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowMp
+      visible: false
+      SkillNameLabel
+        !text: tr('Mana max')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowExp
+      visible: false
+      SkillNameLabel
+        !text: tr('EXP bonus')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowCap
+      visible: false
+      SkillNameLabel
+        !text: tr('Cap')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowMl
+      visible: false
+      SkillNameLabel
+        !text: tr('Magic Level')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowMelee
+      visible: false
+      SkillNameLabel
+        !text: tr('Melee')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowDistance
+      visible: false
+      SkillNameLabel
+        !text: tr('Distance')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowShielding
+      visible: false
+      SkillNameLabel
+        !text: tr('Shielding')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowCritChance
+      visible: false
+      SkillNameLabel
+        !text: tr('Crit Chance')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowCritDamage
+      visible: false
+      SkillNameLabel
+        !text: tr('Crit Damage')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowLifeLeech
+      visible: false
+      SkillNameLabel
+        !text: tr('Life Leech')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountRowManaLeech
+      visible: false
+      SkillNameLabel
+        !text: tr('Mana Leech')
+      SkillValueLabel
+
   UIWidget
     id: miniborder
     anchors.bottom: parent.bottom

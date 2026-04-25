@@ -1,0 +1,10 @@
+Module
+  name: game_gem_system
+  description: Gem System window (insert/swap/destroy/create slot)
+  author: Glabelabaiak
+  website: None
+  sandboxed: true
+  autoload: true
+  scripts: [ game_gem_system ]
+  @onLoad: init()
+  @onUnload: terminate()

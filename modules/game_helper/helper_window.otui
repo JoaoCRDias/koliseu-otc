@@ -1,7 +1,7 @@
 NewHeadlessWindow
   id: helperWindow
   anchors.horizontalCenter: parent.horizontalCenter
-  size: 520 650
+  size: 520 820
   @onEscape: hide()
   UIWidget
     size: 145 56

@@ -41,6 +41,208 @@ local statsCache = {
     amplification = 0
 }
 
+local OPCODE_OUTFIT_BONUS = 64
+
+local function formatBonusFlat(n)
+    local v = math.floor(tonumber(n) or 0)
+    if v == 0 then return "0" end
+    if v > 0 then return "+ " .. tostring(v) end
+    return tostring(v)
+end
+
+local function formatBonusPercent(n)
+    local v = tonumber(n) or 0
+    if math.abs(v) < 0.0001 then return "0.0%" end
+    local s = string.format("%.1f", v)
+    if v > 0 then return "+ " .. s .. "%" end
+    return s .. "%"
+end
+
+local function formatBonusSkill(n)
+    local v = math.floor(tonumber(n) or 0)
+    if v == 0 then return "0" end
+    if v > 0 then return "+ " .. tostring(v) end
+    return tostring(v)
+end
+
+local function setBonusRow(widgetId, visible, valueText, tooltip)
+    local w = skillsWindow:recursiveGetChildById(widgetId)
+    if not w then return end
+    w:setVisible(visible)
+    if not visible then return end
+    local vw = w:getChildById("value")
+    if not vw then return end
+    vw:setText(valueText)
+    vw:setColor("#44AD25")
+    if tooltip then w:setTooltip(tooltip) end
+end
+
+local function applyOutfitBonusDisplay(data)
+    if not skillsWindow or type(data) ~= "table" then return end
+    if g_game.getClientVersion() < 1410 then return end
+
+    local sep = skillsWindow:recursiveGetChildById("separadorOutfitAddonBonus")
+    if not sep then return end
+
+    local outfitsUnlocked = tonumber(data.outfitsUnlocked) or 0
+    local outfitHp = tonumber(data.outfitHp) or 0
+    local outfitMp = tonumber(data.outfitMp) or 0
+    local outfitMl = tonumber(data.outfitMl) or 0
+    local outfitCap = tonumber(data.outfitCap) or 0
+    local outfitExp = tonumber(data.outfitExp) or 0
+    local outfitMelee = tonumber(data.outfitMelee) or 0
+    local outfitFist = tonumber(data.outfitFist) or 0
+    local outfitClub = tonumber(data.outfitClub) or 0
+    local outfitSword = tonumber(data.outfitSword) or 0
+    local outfitAxe = tonumber(data.outfitAxe) or 0
+    local outfitDistance = tonumber(data.outfitDistance) or 0
+    local outfitShielding = tonumber(data.outfitShielding) or 0
+    local outfitFishing = tonumber(data.outfitFishing) or 0
+    local outfitCritChance = tonumber(data.outfitCritChance) or 0
+    local outfitCritDamage = tonumber(data.outfitCritDamage) or 0
+    local outfitLifeLeech = tonumber(data.outfitLifeLeech) or 0
+    local outfitManaLeech = tonumber(data.outfitManaLeech) or 0
+
+    local mountCount = tonumber(data.mountCount) or 0
+    local mountHp = tonumber(data.mountHp) or 0
+    local mountMp = tonumber(data.mountMp) or 0
+    local mountMl = tonumber(data.mountMl) or 0
+    local mountCap = tonumber(data.mountCap) or 0
+    local mountExp = tonumber(data.mountExp) or 0
+    local mountMelee = tonumber(data.mountMelee) or 0
+    local mountDistance = tonumber(data.mountDistance) or 0
+    local mountShielding = tonumber(data.mountShielding) or 0
+    local mountCritChance = tonumber(data.mountCritChance) or 0
+    local mountCritDamage = tonumber(data.mountCritDamage) or 0
+    local mountLifeLeech = tonumber(data.mountLifeLeech) or 0
+    local mountManaLeech = tonumber(data.mountManaLeech) or 0
+
+    local hasOutfits = outfitsUnlocked > 0
+        or outfitHp ~= 0 or outfitMp ~= 0 or outfitMl ~= 0
+        or outfitCap ~= 0 or outfitExp ~= 0
+        or outfitMelee ~= 0 or outfitFist ~= 0 or outfitClub ~= 0
+        or outfitSword ~= 0 or outfitAxe ~= 0 or outfitDistance ~= 0
+        or outfitShielding ~= 0 or outfitFishing ~= 0
+        or outfitCritChance ~= 0 or outfitCritDamage ~= 0
+        or outfitLifeLeech ~= 0 or outfitManaLeech ~= 0
+
+    local hasMounts = mountCount > 0
+        or mountHp ~= 0 or mountMp ~= 0 or mountMl ~= 0
+        or mountCap ~= 0 or mountExp ~= 0
+        or mountMelee ~= 0 or mountDistance ~= 0 or mountShielding ~= 0
+        or mountCritChance ~= 0 or mountCritDamage ~= 0
+        or mountLifeLeech ~= 0 or mountManaLeech ~= 0
+
+    local show = hasOutfits or hasMounts
+
+    local function hideAll()
+        local ids = {
+            "labelSectionOutfits", "outfitRowUnlocked", "outfitRowHp", "outfitRowMp",
+            "outfitRowExp", "outfitRowCap", "outfitRowMl", "outfitRowMelee",
+            "outfitRowDistance", "outfitRowShielding", "outfitRowCritChance",
+            "outfitRowCritDamage", "outfitRowLifeLeech", "outfitRowManaLeech",
+            "labelSectionMounts", "mountRowCount", "mountRowHp", "mountRowMp",
+            "mountRowExp", "mountRowCap", "mountRowMl", "mountRowMelee",
+            "mountRowDistance", "mountRowShielding", "mountRowCritChance",
+            "mountRowCritDamage", "mountRowLifeLeech", "mountRowManaLeech"
+        }
+        for _, id in ipairs(ids) do
+            local w = skillsWindow:recursiveGetChildById(id)
+            if w then w:setVisible(false) end
+        end
+    end
+
+    if not show then
+        sep:setVisible(false)
+        hideAll()
+        updateHeight()
+        return
+    end
+
+    sep:setVisible(true)
+    hideAll()
+
+    if hasOutfits then
+        local lbl = skillsWindow:recursiveGetChildById("labelSectionOutfits")
+        if lbl then lbl:setVisible(true) end
+
+        setBonusRow("outfitRowUnlocked", true, tostring(math.max(0, outfitsUnlocked)),
+            tr("Outfits com addon completo desbloqueadas."))
+        setBonusRow("outfitRowHp", outfitHp ~= 0, formatBonusFlat(outfitHp),
+            tr("Bonus de HP max de outfits."))
+        setBonusRow("outfitRowMp", outfitMp ~= 0, formatBonusFlat(outfitMp),
+            tr("Bonus de Mana max de outfits."))
+        setBonusRow("outfitRowExp", outfitExp ~= 0, formatBonusPercent(outfitExp),
+            tr("Bonus de EXP de outfits."))
+        setBonusRow("outfitRowCap", outfitCap ~= 0, formatBonusFlat(outfitCap),
+            tr("Bonus de Cap de outfits."))
+        setBonusRow("outfitRowMl", outfitMl ~= 0, formatBonusSkill(outfitMl),
+            tr("Bonus de Magic Level de outfits."))
+        setBonusRow("outfitRowMelee", outfitMelee ~= 0, formatBonusSkill(outfitMelee),
+            tr("Bonus de Melee de outfits."))
+        setBonusRow("outfitRowDistance", outfitDistance ~= 0, formatBonusSkill(outfitDistance),
+            tr("Bonus de Distance de outfits."))
+        setBonusRow("outfitRowShielding", outfitShielding ~= 0, formatBonusSkill(outfitShielding),
+            tr("Bonus de Shielding de outfits."))
+        setBonusRow("outfitRowCritChance", outfitCritChance ~= 0, formatBonusPercent(outfitCritChance / 100),
+            tr("Bonus de Critical Hit Chance de outfits."))
+        setBonusRow("outfitRowCritDamage", outfitCritDamage ~= 0, formatBonusPercent(outfitCritDamage / 100),
+            tr("Bonus de Critical Hit Damage de outfits."))
+        setBonusRow("outfitRowLifeLeech", outfitLifeLeech ~= 0, formatBonusPercent(outfitLifeLeech / 100),
+            tr("Bonus de Life Leech de outfits."))
+        setBonusRow("outfitRowManaLeech", outfitManaLeech ~= 0, formatBonusPercent(outfitManaLeech / 100),
+            tr("Bonus de Mana Leech de outfits."))
+    end
+
+    if hasMounts then
+        local lbl = skillsWindow:recursiveGetChildById("labelSectionMounts")
+        if lbl then lbl:setVisible(true) end
+
+        setBonusRow("mountRowCount", true, tostring(math.max(0, mountCount)),
+            tr("Montarias desbloqueadas."))
+        setBonusRow("mountRowHp", mountHp ~= 0, formatBonusFlat(mountHp),
+            tr("Bonus de HP max de montarias."))
+        setBonusRow("mountRowMp", mountMp ~= 0, formatBonusFlat(mountMp),
+            tr("Bonus de Mana max de montarias."))
+        setBonusRow("mountRowExp", mountExp ~= 0, formatBonusPercent(mountExp),
+            tr("Bonus de EXP de montarias."))
+        setBonusRow("mountRowCap", mountCap ~= 0, formatBonusFlat(mountCap),
+            tr("Bonus de Cap de montarias."))
+        setBonusRow("mountRowMl", mountMl ~= 0, formatBonusSkill(mountMl),
+            tr("Bonus de Magic Level de montarias."))
+        setBonusRow("mountRowMelee", mountMelee ~= 0, formatBonusSkill(mountMelee),
+            tr("Bonus de Melee de montarias."))
+        setBonusRow("mountRowDistance", mountDistance ~= 0, formatBonusSkill(mountDistance),
+            tr("Bonus de Distance de montarias."))
+        setBonusRow("mountRowShielding", mountShielding ~= 0, formatBonusSkill(mountShielding),
+            tr("Bonus de Shielding de montarias."))
+        setBonusRow("mountRowCritChance", mountCritChance ~= 0, formatBonusPercent(mountCritChance / 100),
+            tr("Bonus de Critical Hit Chance de montarias."))
+        setBonusRow("mountRowCritDamage", mountCritDamage ~= 0, formatBonusPercent(mountCritDamage / 100),
+            tr("Bonus de Critical Hit Damage de montarias."))
+        setBonusRow("mountRowLifeLeech", mountLifeLeech ~= 0, formatBonusPercent(mountLifeLeech / 100),
+            tr("Bonus de Life Leech de montarias."))
+        setBonusRow("mountRowManaLeech", mountManaLeech ~= 0, formatBonusPercent(mountManaLeech / 100),
+            tr("Bonus de Mana Leech de montarias."))
+    end
+
+    updateHeight()
+end
+
+local function sendOutfitBonusOpcode(payload)
+    local protocol = g_game.getProtocolGame()
+    if protocol then
+        protocol:sendExtendedOpcode(OPCODE_OUTFIT_BONUS, payload or "status")
+    end
+end
+
+local onOutfitBonusExtendedOpcode = function(protocol, opcode, buffer)
+    if not buffer or buffer == "" then return end
+    local ok, data = pcall(function() return json.decode(buffer) end)
+    if not ok or type(data) ~= "table" then return end
+    applyOutfitBonusDisplay(data)
+end
+
 local function setupUIButtons()
     local toggleFilterButton = skillsWindow:recursiveGetChildById('toggleFilterButton')
     if toggleFilterButton then
@@ -781,6 +983,9 @@ function skillController:onGameStart()
     scheduleEvent(function() 
         loadSkillsVisibilitySettings() 
     end, 100)
+    scheduleEvent(function()
+        sendOutfitBonusOpcode("status")
+    end, 500)
     hideOldClientStats()
     updateHeight()
 end
@@ -941,6 +1146,17 @@ function skillController:onGameEnd()
             end
         end
     end
+    applyOutfitBonusDisplay({
+        outfitsUnlocked = 0, outfitHp = 0, outfitMp = 0, outfitMl = 0,
+        outfitCap = 0, outfitExp = 0, outfitMelee = 0, outfitFist = 0,
+        outfitClub = 0, outfitSword = 0, outfitAxe = 0, outfitDistance = 0,
+        outfitShielding = 0, outfitFishing = 0, outfitCritChance = 0,
+        outfitCritDamage = 0, outfitLifeLeech = 0, outfitManaLeech = 0,
+        mountCount = 0, mountHp = 0, mountMp = 0, mountMl = 0,
+        mountCap = 0, mountExp = 0, mountMelee = 0, mountDistance = 0,
+        mountShielding = 0, mountCritChance = 0, mountCritDamage = 0,
+        mountLifeLeech = 0, mountManaLeech = 0,
+    })
     resetTable(statsCache)
     g_settings.setNode('skills-hide', skillSettings)
 end
@@ -1584,3 +1800,5 @@ end
 function getBaseExpRate()
     return ExpRating[ExperienceRate.BASE] or 100
 end
+
+ProtocolGame.registerExtendedOpcode(OPCODE_OUTFIT_BONUS, onOutfitBonusExtendedOpcode)

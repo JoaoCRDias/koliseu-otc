@@ -1,0 +1,603 @@
+MiniPanel < Panel
+  text-offset: 0 2
+  text-align: top
+  image-source: /images/ui/miniwindow
+  image-border: 4
+  image-border-top: 20
+  image-border-bottom: 4
+  padding-left: 4
+  padding-bottom: 3
+  padding-top: 18
+  padding-right: 2
+
+CategoryButton < UIButton
+  font: verdana-11px-antialised
+  color: #dfdfdfff
+  size: 130 40
+  image-source: /images/ui/button
+  image-color: #ababab
+  image-clip: 0 0 22 23
+  image-border: 3
+  opacity: 1.0
+  padding-left: 0
+
+  $hover !disabled:
+    image-color: #dfdfdf
+
+  $pressed:
+    image-clip: 0 46 22 23
+    padding-left: 1
+
+  $on:
+    image-color: #ffffff
+
+  $disabled:
+    color: #dfdfdf88
+    opacity: 0.8
+
+CategoryItem < UIItem
+  anchors.verticalCenter: parent.verticalCenter
+  anchors.left: parent.left
+  margin-left: 2
+  size: 34 34
+  padding: 1
+  virtual: true
+  phantom: true
+
+CategoryLabel < Label
+  anchors.top: parent.top
+  anchors.left: prev.right
+  anchors.right: parent.right
+  anchors.bottom: parent.bottom
+  margin-left: 2
+  text-align: left
+
+GemItemListEntry < Panel
+  phantom: false
+  height: 42
+  image-source: /images/ui/button
+  image-color: #ababab
+  image-clip: 0 0 22 23
+  image-border: 3
+  padding-left: 3
+  @onClick: modules.game_gem_system.selectItem(self:getId())
+
+  $hover !disabled:
+    image-color: #dfdfdf
+
+  $focus:
+    image-color: #ffffff
+
+  UIItem
+    id: item
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.left: parent.left
+    size: 34 34
+    padding: 1
+    virtual: true
+
+  Label
+    id: name
+    anchors.top: item.top
+    anchors.left: item.right
+    anchors.right: parent.right
+    margin-top: 3
+    margin-left: 5
+    text-align: left
+    text-auto-resize: true
+
+  Label
+    id: slots
+    anchors.left: item.right
+    anchors.right: parent.right
+    anchors.bottom: item.bottom
+    margin-bottom: 2
+    margin-left: 5
+    text-align: left
+    color: #afafaf
+    text-auto-resize: true
+
+GemListEntry < Panel
+  phantom: false
+  height: 42
+  image-source: /images/ui/button
+  image-color: #ababab
+  image-clip: 0 0 22 23
+  image-border: 3
+  padding-left: 3
+  @onClick: modules.game_gem_system.selectGem(self:getId())
+
+  $hover !disabled:
+    image-color: #dfdfdf
+
+  $focus:
+    image-color: #ffffff
+
+  UIItem
+    id: item
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.left: parent.left
+    size: 34 34
+    padding: 1
+    virtual: true
+
+  Label
+    id: name
+    anchors.top: item.top
+    anchors.left: item.right
+    anchors.right: parent.right
+    margin-top: 3
+    margin-left: 5
+    text-align: left
+    text-auto-resize: true
+
+  Label
+    id: info
+    anchors.left: item.right
+    anchors.right: parent.right
+    anchors.bottom: item.bottom
+    margin-bottom: 2
+    margin-left: 5
+    text-align: left
+    color: #afafaf
+    text-auto-resize: true
+
+GemSlotFrame < UIItem
+  size: 40 40
+  padding: 2
+  virtual: true
+  border-width: 1
+  border-color: #555555
+  background-color: #0a0a0a88
+
+  $on:
+    border-color: #ffd27f
+    border-width: 2
+
+SlotActionButton < UIButton
+  font: verdana-11px-antialised
+  color: #dfdfdfff
+  size: 60 18
+  image-source: /images/ui/button
+  image-color: #ababab
+  image-clip: 0 0 22 23
+  image-border: 3
+
+  $hover !disabled:
+    image-color: #dfdfdf
+
+  $pressed:
+    image-clip: 0 46 22 23
+
+  $disabled:
+    color: #dfdfdf88
+    opacity: 0.7
+
+MainWindow
+  id: gemSystemWindow
+  text: Gem System
+  size: 840 560
+
+  Panel
+    id: tabs
+    anchors.top: parent.top
+    anchors.horizontalCenter: parent.horizontalCenter
+    width: 552
+    height: 44
+    layout:
+      type: horizontalBox
+      spacing: 4
+
+    CategoryButton
+      id: tabInsert
+      width: 134
+      @onClick: modules.game_gem_system.selectTab("insert")
+
+      CategoryItem
+        item-id: 63241
+
+      CategoryLabel
+        text: Insert Gem
+
+    CategoryButton
+      id: tabSwap
+      width: 134
+      @onClick: modules.game_gem_system.selectTab("swap")
+
+      CategoryItem
+        item-id: 63245
+
+      CategoryLabel
+        text: Swap Gem
+
+    CategoryButton
+      id: tabDestroy
+      width: 134
+      @onClick: modules.game_gem_system.selectTab("destroy")
+
+      CategoryItem
+        item-id: 63249
+
+      CategoryLabel
+        text: Destroy
+
+    CategoryButton
+      id: tabCreateSlot
+      width: 134
+      @onClick: modules.game_gem_system.selectTab("createSlot")
+
+      CategoryItem
+        item-id: 40912
+
+      CategoryLabel
+        text: Create Slot
+
+  HorizontalSeparator
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+
+  ScrollablePanel
+    id: itemsList
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.bottom: footerSeparator.top
+    margin-top: 10
+    margin-bottom: 10
+    width: 270
+    text-offset: 0 2
+    text-align: top
+    image-source: /images/ui/miniwindow
+    image-border: 4
+    image-border-top: 23
+    image-border-bottom: 4
+    padding-bottom: 3
+    padding-top: 18
+    padding-right: 16
+    padding-left: 3
+    text: Your Items
+    vertical-scrollbar: itemsListScrollbar
+    layout: verticalBox
+    auto-focus: none
+
+  VerticalScrollBar
+    id: itemsListScrollbar
+    anchors.top: itemsList.top
+    anchors.bottom: itemsList.bottom
+    anchors.right: itemsList.right
+    margin-top: 18
+    margin-bottom: 4
+    margin-right: 3
+    step: 24
+    pixels-scroll: true
+
+  VerticalSeparator
+    id: leftSep
+    anchors.top: itemsList.top
+    anchors.bottom: itemsList.bottom
+    anchors.left: itemsList.right
+    margin-left: 10
+
+  MiniPanel
+    id: centerPanel
+    anchors.top: itemsList.top
+    anchors.bottom: itemsList.bottom
+    anchors.left: leftSep.right
+    margin-left: 12
+    width: 300
+    text: Selected Item
+
+    UIItem
+      id: itemIcon
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 6
+      size: 48 48
+      padding: 2
+      virtual: true
+      virtual: true
+
+    Label
+      id: itemName
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 4
+      text: No item selected
+      text-align: center
+      text-auto-resize: false
+      color: #ffffff
+
+    Label
+      id: itemSubtitle
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 2
+      text: ""
+      text-align: center
+      color: #afafaf
+
+    Panel
+      id: slotsRow
+      anchors.top: prev.bottom
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 12
+      size: 136 40
+      layout:
+        type: horizontalBox
+        spacing: 8
+
+      GemSlotFrame
+        id: slot1
+        @onClick: modules.game_gem_system.selectSlot(1)
+
+      GemSlotFrame
+        id: slot2
+        @onClick: modules.game_gem_system.selectSlot(2)
+
+      GemSlotFrame
+        id: slot3
+        @onClick: modules.game_gem_system.selectSlot(3)
+
+    Panel
+      id: slotLabelsRow
+      anchors.top: slotsRow.bottom
+      anchors.horizontalCenter: slotsRow.horizontalCenter
+      margin-top: 2
+      size: 136 14
+      layout:
+        type: horizontalBox
+        spacing: 8
+
+      Label
+        id: slot1Label
+        width: 40
+        height: 14
+        text: "1"
+        text-align: center
+        color: #afafaf
+
+      Label
+        id: slot2Label
+        width: 40
+        height: 14
+        text: "2"
+        text-align: center
+        color: #afafaf
+
+      Label
+        id: slot3Label
+        width: 40
+        height: 14
+        text: "3"
+        text-align: center
+        color: #afafaf
+
+    Label
+      id: tabDescription
+      anchors.top: slotLabelsRow.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 18
+      margin-left: 6
+      margin-right: 6
+      text: ""
+      text-align: center
+      text-wrap: true
+      text-auto-resize: true
+      color: #dfdfdf
+
+    Label
+      id: warningLabel
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 6
+      margin-left: 6
+      margin-right: 6
+      text: ""
+      text-align: center
+      text-wrap: true
+      text-auto-resize: true
+      color: #ff6060
+
+    CategoryButton
+      id: actionButton
+      anchors.bottom: parent.bottom
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-bottom: 8
+      size: 200 42
+      @onClick: modules.game_gem_system.executeAction()
+
+      CategoryItem
+        id: actionIcon
+        item-id: 63241
+
+      CategoryLabel
+        id: actionLabel
+        text: Insert
+
+    FlatPanel
+      id: balancePanel
+      anchors.bottom: prev.top
+      anchors.right: parent.right
+      margin-right: 8
+      margin-bottom: 8
+      size: 170 16
+
+      UIItem
+        id: balanceIcon
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: -8
+        margin-left: -2
+        size: 34 34
+        padding: 1
+        item-id: 3031
+        virtual: true
+
+      Label
+        id: playerBalance
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-right: 4
+        text-align: right
+        text: "0"
+
+    Label
+      id: balanceLabel
+      anchors.bottom: prev.top
+      anchors.right: parent.right
+      margin-right: 8
+      text: Balance
+      text-align: right
+      color: #afafaf
+
+    FlatPanel
+      id: costPanel
+      anchors.bottom: prev.top
+      anchors.right: parent.right
+      margin-right: 8
+      margin-bottom: 2
+      size: 170 16
+
+      UIItem
+        id: costIcon
+        anchors.top: parent.top
+        anchors.left: parent.left
+        margin-top: -8
+        margin-left: -2
+        size: 34 34
+        padding: 1
+        item-id: 3031
+        virtual: true
+
+      Label
+        id: totalCost
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-right: 4
+        text-align: right
+        text: "0"
+
+    Label
+      id: costLabel
+      anchors.bottom: prev.top
+      anchors.right: parent.right
+      margin-right: 8
+      text: Total Cost
+      text-align: right
+      color: #afafaf
+
+  VerticalSeparator
+    id: rightSep
+    anchors.top: centerPanel.top
+    anchors.bottom: centerPanel.bottom
+    anchors.left: centerPanel.right
+    margin-left: 10
+
+  ScrollablePanel
+    id: rightList
+    anchors.top: centerPanel.top
+    anchors.bottom: centerPanel.bottom
+    anchors.left: rightSep.right
+    anchors.right: parent.right
+    margin-left: 10
+    text-offset: 0 2
+    text-align: top
+    image-source: /images/ui/miniwindow
+    image-border: 4
+    image-border-top: 23
+    image-border-bottom: 4
+    padding-bottom: 3
+    padding-top: 18
+    padding-right: 16
+    padding-left: 3
+    text: Available Gems
+    vertical-scrollbar: rightListScrollbar
+    layout: verticalBox
+    auto-focus: none
+
+  VerticalScrollBar
+    id: rightListScrollbar
+    anchors.top: rightList.top
+    anchors.bottom: rightList.bottom
+    anchors.right: rightList.right
+    margin-top: 18
+    margin-bottom: 4
+    margin-right: 3
+    step: 24
+    pixels-scroll: true
+
+  Panel
+    id: rightInfoPanel
+    anchors.top: centerPanel.top
+    anchors.bottom: centerPanel.bottom
+    anchors.left: rightSep.right
+    anchors.right: parent.right
+    margin-left: 10
+    visible: false
+
+    UIItem
+      id: infoIcon
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 16
+      size: 48 48
+      padding: 2
+      item-id: 40912
+      virtual: true
+
+    Label
+      id: infoTitle
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 6
+      text: "Create Slot"
+      text-align: center
+      color: #ffffff
+
+    Label
+      id: infoText
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 10
+      margin-left: 8
+      margin-right: 8
+      text: ""
+      text-align: center
+      text-wrap: true
+      text-auto-resize: true
+      color: #dfdfdf
+
+    Label
+      id: infoRelicLabel
+      anchors.top: prev.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 12
+      text: "Lunar Relic: 0"
+      text-align: center
+      color: #ffd27f
+
+  HorizontalSeparator
+    id: footerSeparator
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-bottom: 34
+
+  Button
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    text: Close
+    width: 64
+    margin-right: 8
+    margin-bottom: 4
+    @onClick: modules.game_gem_system.hide()

@@ -46,6 +46,38 @@ local ANTI_AFK_INTERVAL_MS = 10 * 60 * 1000
 -- Item Timer state
 local lastItemTimerUse = {}
 
+-- Vender Loot state
+local VENDOR_LOOT_INTERVAL_MS = 5 * 60 * 1000
+local VENDOR_LOOT_ITEM_IDS = { 41088 }
+local lastVendorLootUse = 0
+
+-- Stamina Refill state
+local staminaRefillIds = { 62215, 63171, 63425, 36725 }
+local lastStaminaRefillUse = 0
+
+-- AutoBoost Store state
+local lastAutoBoostStoreAttemptMs = 0
+local lastBoostsCategoryRequestMs = 0
+local autoBoostStoreSuppressCheckChange = false
+local XP_BOOST_PREFETCH_CATEGORIES = { "Boosts", "Extras" }
+
+-- Imbuement Scroll state
+local imbuementScrollAllowedIds = {
+  51444, 51445, 51446, 51447, 51448, 51449, 51450, 51451, 51452, 51453, 51454, 51455, 51456, 51457, 51458, 51459,
+  51460, 51461, 51462, 51463, 51464, 51465, 51466, 51467, 51724, 51725, 51726, 51727, 51728, 51729, 51730, 51731,
+  51732, 51733, 51734, 51735, 51736, 51737, 51738, 51739, 51740, 51741, 51742, 51743, 51744, 51745, 51746, 51747,
+}
+local imbuementScrollBatchRunning = false
+local imbuementScrollQueue = nil
+local imbuementScrollLastAttempt = nil
+local imbuementScrollBackoff = {}
+
+-- Auto Party settings window
+local autoPartySettingsWindow = nil
+
+-- Imbuement Scroll settings window
+local imbuementScrollSettingsWindow = nil
+
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -1050,6 +1082,826 @@ function tools.updateVocationPanels()
 end
 
 -- ============================================================
+-- VENDER LOOT
+-- ============================================================
+
+function tools.togglePouchSeller(checked)
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if helperConfig then
+    helperConfig.pouchSeller = checked
+    if checked then lastVendorLootUse = 0 end
+    if _Helper.saveSettings then _Helper.saveSettings() end
+  end
+end
+
+function tools.checkVendorLoot()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig or not helperConfig.pouchSeller then return end
+  local player = getPlayer()
+  if not player or not g_game.isOnline() then return end
+  local nowMs = g_clock.millis()
+  if lastVendorLootUse ~= 0 and nowMs < lastVendorLootUse + VENDOR_LOOT_INTERVAL_MS then return end
+  for _, id in ipairs(VENDOR_LOOT_ITEM_IDS) do
+    local ok, count = pcall(function() return player:getInventoryCount(id, 0) end)
+    if ok and count and count > 0 then
+      pcall(function() g_game.useInventoryItem(id) end)
+      lastVendorLootUse = nowMs
+      return
+    end
+  end
+end
+
+function tools.loadVendorLootToUI()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  local panel = getToolsPanel()
+  if not helperConfig or not panel then return end
+  local check = panel:recursiveGetChildById("pouchSeller")
+  if check then check:setChecked(helperConfig.pouchSeller or false) end
+end
+
+-- ============================================================
+-- STAMINA REFILL
+-- ============================================================
+
+function tools.assignStaminaRefillItem(button)
+  local grabber = getMouseGrabber()
+  local helperWindow = getHelperWindow()
+  if g_mouse and g_mouse.updateGrabber then g_mouse.updateGrabber(grabber, 'target') end
+  grabber:grabMouse()
+  if helperWindow then helperWindow:hide() end
+  g_mouse.pushCursor('target')
+  grabber.onMouseRelease = function(self, mousePosition, mouseButton)
+    grabber:ungrabMouse()
+    g_mouse.popCursor('target')
+    grabber.onMouseRelease = nil
+    if helperWindow then helperWindow:show() end
+    local rootWidget = g_ui.getRootWidget()
+    if not rootWidget then return true end
+    local clickedWidget = rootWidget:recursiveGetChildByPos(mousePosition, false)
+    if not clickedWidget then return true end
+    local itemId = 0
+    if clickedWidget:getClassName() == 'UIItem' and not clickedWidget:isVirtual() then
+      local item = clickedWidget:getItem()
+      if item and item.getId then itemId = item:getId() end
+    end
+    if itemId > 0 then
+      button:setImageSource('/images/ui/item')
+      if not button:getChildById('staminaItem') then
+        local itemWidget = g_ui.createWidget('PotionItem', button)
+        if itemWidget then itemWidget:setId('staminaItem') end
+      end
+      local itemWidget = button:getChildById('staminaItem')
+      if itemWidget then itemWidget:setItemId(itemId) end
+      local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+      if helperConfig then
+        helperConfig.staminaRefillItemId = itemId
+        if _Helper.saveSettings then _Helper.saveSettings() end
+      end
+    end
+    return true
+  end
+end
+
+function tools.toggleStaminaRefill(checked)
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if helperConfig then
+    helperConfig.staminaRefillEnabled = checked
+    if _Helper.saveSettings then _Helper.saveSettings() end
+  end
+end
+
+function tools.updateStaminaRefillInterval(text)
+  if not text then return end
+  local minutes = tonumber(text:match("%d+")) or 10
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if helperConfig then
+    helperConfig.staminaRefillIntervalMinutes = minutes
+    if _Helper.saveSettings then _Helper.saveSettings() end
+  end
+end
+
+function tools.checkStaminaRefill()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig or not helperConfig.staminaRefillEnabled then return end
+  local player = getPlayer()
+  if not player or not g_game.isOnline() then return end
+  local itemId = helperConfig.staminaRefillItemId or 0
+  if itemId == 0 then return end
+  local ok, count = pcall(function() return player:getInventoryCount(itemId, 0) end)
+  if not ok or not count or count == 0 then return end
+  if player.getStamina then
+    local staminaMinutes = player:getStamina()
+    local thresholdMinutes = 41 * 60 + 58
+    if staminaMinutes >= thresholdMinutes then return end
+  end
+  local intervalMinutes = helperConfig.staminaRefillIntervalMinutes or 10
+  local intervalMs = math.max(1, intervalMinutes) * 60 * 1000
+  local nowMs = g_clock.millis()
+  if nowMs < lastStaminaRefillUse + intervalMs then return end
+  pcall(function() g_game.useInventoryItem(itemId) end)
+  lastStaminaRefillUse = nowMs
+end
+
+function tools.loadStaminaRefillToUI()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  local panel = getToolsPanel()
+  if not helperConfig or not panel then return end
+  local check = panel:recursiveGetChildById("staminaRefillEnable")
+  if check then check:setChecked(helperConfig.staminaRefillEnabled or false) end
+  local btn = panel:recursiveGetChildById("staminaRefillItem")
+  if btn and helperConfig.staminaRefillItemId and helperConfig.staminaRefillItemId > 0 then
+    btn:setImageSource('/images/ui/item')
+    if not btn:getChildById('staminaItem') then
+      local itemWidget = g_ui.createWidget('PotionItem', btn)
+      if itemWidget then itemWidget:setId('staminaItem') end
+    end
+    local itemWidget = btn:getChildById('staminaItem')
+    if itemWidget then itemWidget:setItemId(helperConfig.staminaRefillItemId) end
+  end
+  local intervalCb = panel:recursiveGetChildById("staminaRefillInterval")
+  if intervalCb then
+    local minutes = helperConfig.staminaRefillIntervalMinutes or 10
+    intervalCb:setCurrentOption(tostring(minutes) .. " min")
+  end
+end
+
+-- ============================================================
+-- AUTO PARTY
+-- ============================================================
+
+local function getCreatureByNameInRange(name, rangeX, rangeY)
+  local player = getPlayer()
+  if not player then return nil end
+  local pos = player:getPosition()
+  if not pos then return nil end
+  local specs = g_map.getSpectatorsInRange(pos, false, rangeX, rangeY)
+  if not specs then return nil end
+  local nameLower = name:lower()
+  for _, spec in ipairs(specs) do
+    if spec and spec:isPlayer() and not spec:isLocalPlayer() and spec:getName():lower() == nameLower then
+      return spec
+    end
+  end
+  return nil
+end
+
+function tools.toggleAutoParty(checked)
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if helperConfig then
+    helperConfig.autoPartyEnabled = checked
+    if _Helper.saveSettings then _Helper.saveSettings() end
+  end
+end
+
+function tools.toggleAutoPartyAccept(checked)
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if helperConfig then
+    helperConfig.autoPartyAcceptEnabled = checked
+    if _Helper.saveSettings then _Helper.saveSettings() end
+  end
+  if checked then
+    scheduleEvent(function()
+      tools.tryAcceptPendingPartyInvite()
+    end, 200)
+  end
+end
+
+function tools.tryAcceptPendingPartyInvite()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig or not helperConfig.autoPartyAcceptEnabled then return end
+  local leader = (helperConfig.autoPartyAcceptLeader or ""):gsub("^%s+", ""):gsub("%s+$", "")
+  if leader == "" then return end
+  local player = getPlayer()
+  if not player then return end
+  local specs = g_map.getSpectators(player:getPosition(), false)
+  if not specs then return end
+  local nameLower = leader:lower()
+  for _, spec in ipairs(specs) do
+    if spec and spec ~= player and spec.getShield and spec.getName and spec.isPlayer and spec:isPlayer() then
+      if spec:getName():lower() == nameLower and spec:getShield() == 1 then
+        if g_game.partyJoin then
+          scheduleEvent(function()
+            if spec and not spec:isRemoved() then
+              g_game.partyJoin(spec:getId())
+            end
+          end, 100)
+        end
+        break
+      end
+    end
+  end
+end
+
+function tools.checkAutoParty()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig or not helperConfig.autoPartyEnabled then return end
+  if not helperConfig.autoPartySendList or #helperConfig.autoPartySendList == 0 then return end
+  local player = getPlayer()
+  if not player then return end
+  local myName = player:getName():lower()
+  for i = 1, 4 do
+    local name = (helperConfig.autoPartySendList[i] or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    if name ~= "" and name:lower() ~= myName then
+      local creature = getCreatureByNameInRange(name, 12, 12)
+      if creature and creature:isPlayer() and not creature:isLocalPlayer() then
+        local shield = creature:getShield()
+        local alreadyInParty = (shield and shield > 0)
+        if not alreadyInParty then
+          pcall(function() g_game.partyInvite(creature:getId()) end)
+          return
+        end
+      end
+    end
+  end
+end
+
+function tools.openAutoPartySettings()
+  if autoPartySettingsWindow and not autoPartySettingsWindow:isDestroyed() then
+    autoPartySettingsWindow:show()
+    autoPartySettingsWindow:raise()
+    autoPartySettingsWindow:focus()
+    return
+  end
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  autoPartySettingsWindow = g_ui.createWidget("MainWindow", g_ui.getRootWidget())
+  autoPartySettingsWindow:setId("autoPartySettingsWindow")
+  autoPartySettingsWindow:setText(tr("Auto Party - Send & Accept"))
+  autoPartySettingsWindow:setSize({ width = 320, height = 300 })
+
+  local sendLabel = g_ui.createWidget("Label", autoPartySettingsWindow)
+  sendLabel:setText(tr("Send invite to (max 4 players):"))
+  sendLabel:setFont("verdana-11px-antialised")
+  sendLabel:setColor("#dfdfdf")
+  sendLabel:addAnchor(AnchorTop, "parent", AnchorTop)
+  sendLabel:addAnchor(AnchorLeft, "parent", AnchorLeft)
+  sendLabel:setMarginTop(8)
+  sendLabel:setMarginLeft(8)
+  sendLabel:setTextAutoResize(true)
+
+  for i = 1, 4 do
+    local ed = g_ui.createWidget("TextEdit", autoPartySettingsWindow)
+    ed:setId("autoPartySend" .. i)
+    ed:addAnchor(AnchorTop, i == 1 and "parent" or ("autoPartySend" .. (i - 1)), i == 1 and AnchorTop or AnchorBottom)
+    ed:addAnchor(AnchorLeft, "parent", AnchorLeft)
+    ed:addAnchor(AnchorRight, "parent", AnchorRight)
+    ed:setMarginTop(i == 1 and 28 or 4)
+    ed:setMarginLeft(8)
+    ed:setMarginRight(8)
+    ed:setHeight(22)
+    ed:setText(helperConfig and (helperConfig.autoPartySendList[i] or "") or "")
+  end
+
+  local acceptLabel = g_ui.createWidget("Label", autoPartySettingsWindow)
+  acceptLabel:setId("autoPartyAcceptLabel")
+  acceptLabel:setText(tr("Accept invite from leader:"))
+  acceptLabel:setFont("verdana-11px-antialised")
+  acceptLabel:setColor("#dfdfdf")
+  acceptLabel:addAnchor(AnchorTop, "autoPartySend4", AnchorBottom)
+  acceptLabel:addAnchor(AnchorLeft, "parent", AnchorLeft)
+  acceptLabel:setMarginTop(14)
+  acceptLabel:setMarginLeft(8)
+  acceptLabel:setTextAutoResize(true)
+
+  local acceptEdit = g_ui.createWidget("TextEdit", autoPartySettingsWindow)
+  acceptEdit:setId("autoPartyAcceptEdit")
+  acceptEdit:addAnchor(AnchorTop, "autoPartyAcceptLabel", AnchorBottom)
+  acceptEdit:addAnchor(AnchorLeft, "parent", AnchorLeft)
+  acceptEdit:addAnchor(AnchorRight, "parent", AnchorRight)
+  acceptEdit:setMarginTop(4)
+  acceptEdit:setMarginLeft(8)
+  acceptEdit:setMarginRight(8)
+  acceptEdit:setHeight(22)
+  acceptEdit:setMarginBottom(44)
+  acceptEdit:setText(helperConfig and (helperConfig.autoPartyAcceptLeader or "") or "")
+
+  local function saveAndClose()
+    for i = 1, 4 do
+      local w = autoPartySettingsWindow:getChildById("autoPartySend" .. i)
+      if w then helperConfig.autoPartySendList[i] = w:getText() and w:getText():gsub("^%s+", ""):gsub("%s+$", "") or "" end
+    end
+    local ae = autoPartySettingsWindow:getChildById("autoPartyAcceptEdit")
+    if ae then helperConfig.autoPartyAcceptLeader = (ae:getText() or ""):gsub("^%s+", ""):gsub("%s+$", "") end
+    if _Helper.saveSettings then _Helper.saveSettings() end
+    scheduleEvent(function() tools.tryAcceptPendingPartyInvite() end, 200)
+    autoPartySettingsWindow:hide()
+  end
+
+  local btnOk = g_ui.createWidget("Button", autoPartySettingsWindow)
+  btnOk:setText(tr("OK"))
+  btnOk:setSize({ width = 70, height = 24 })
+  btnOk:addAnchor(AnchorBottom, "parent", AnchorBottom)
+  btnOk:addAnchor(AnchorRight, "parent", AnchorHorizontalCenter)
+  btnOk:setMarginBottom(10)
+  btnOk:setMarginRight(6)
+  btnOk.onClick = saveAndClose
+
+  local btnCancel = g_ui.createWidget("Button", autoPartySettingsWindow)
+  btnCancel:setText(tr("Cancel"))
+  btnCancel:setSize({ width = 70, height = 24 })
+  btnCancel:addAnchor(AnchorBottom, "parent", AnchorBottom)
+  btnCancel:addAnchor(AnchorLeft, "parent", AnchorHorizontalCenter)
+  btnCancel:setMarginBottom(10)
+  btnCancel:setMarginLeft(6)
+  btnCancel.onClick = function() autoPartySettingsWindow:hide() end
+
+  autoPartySettingsWindow:show()
+end
+
+function tools.loadAutoPartyToUI()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  local panel = getToolsPanel()
+  if not helperConfig or not panel then return end
+  local enableCheck = panel:recursiveGetChildById("autoPartyEnable")
+  if enableCheck then enableCheck:setChecked(helperConfig.autoPartyEnabled or false) end
+  local acceptCheck = panel:recursiveGetChildById("autoPartyAcceptEnable")
+  if acceptCheck then acceptCheck:setChecked(helperConfig.autoPartyAcceptEnabled or false) end
+end
+
+-- ============================================================
+-- AUTOBOOST STORE
+-- ============================================================
+
+local function labelLooksLikeXpBoost(s)
+  if not s or s == "" then return false end
+  local n = s:lower()
+  if n:find("xp boost", 1, true) or n:find("exp boost", 1, true) or n:find("experience boost", 1, true) then return true end
+  if n:find("boost", 1, true) and (n:find("xp", 1, true) or n:find("exp", 1, true) or n:find("experience", 1, true)) then return true end
+  return false
+end
+
+local xpBoostCache = {
+  offerId = nil,
+  price = nil,
+  coinType = nil,
+  disabled = nil,
+  prefetchStep = nil,
+  silentStoreOffersUpdate = false,
+  skipNextPurchaseStatusUi = false,
+}
+
+local function resetXpBoostAutoCache()
+  xpBoostCache.offerId = nil
+  xpBoostCache.price = nil
+  xpBoostCache.coinType = nil
+  xpBoostCache.disabled = nil
+  xpBoostCache.prefetchStep = nil
+end
+
+local function mergeXpBoostCacheFromOffers(offers)
+  if not offers then return end
+  for _, product in ipairs(offers) do
+    local subs = product.subOffers or { product }
+    for si = 1, #subs do
+      local sub = subs[si]
+      if sub and sub.id then
+        local pname = product.name or ""
+        local subname = sub.name or sub.title or ""
+        if labelLooksLikeXpBoost(pname) or labelLooksLikeXpBoost(subname) then
+          local nprice = tonumber(sub.price)
+          if nprice == nil or nprice <= 0 then nprice = tonumber(product.price) or 0 end
+          xpBoostCache.offerId = sub.id
+          xpBoostCache.price = nprice
+          xpBoostCache.coinType = sub.coinType or product.coinType
+          xpBoostCache.disabled = sub.disabled == true
+          return
+        end
+      end
+    end
+  end
+end
+
+local function prefetchXpBoostOfferCache()
+  if not g_game.requestStoreOffers then return false end
+  if xpBoostCache.offerId then
+    xpBoostCache.silentStoreOffersUpdate = true
+    g_game.requestStoreOffers(XP_BOOST_PREFETCH_CATEGORIES[1], "", 0, 1)
+    return true
+  end
+  xpBoostCache.prefetchStep = 1
+  xpBoostCache.silentStoreOffersUpdate = true
+  g_game.requestStoreOffers(XP_BOOST_PREFETCH_CATEGORIES[1], "", 0, 1)
+  return true
+end
+
+local function hasEnoughBalanceForXpBoost()
+  if not xpBoostCache.offerId or not xpBoostCache.price then return false end
+  local player = getPlayer()
+  if not player then return false end
+  local price = tonumber(xpBoostCache.price) or 0
+  local normal = player:getResourceBalance(ResourceTypes.COIN_NORMAL) or 0
+  local transfer = player:getResourceBalance(ResourceTypes.COIN_TRANSFERRABLE) or 0
+  local total = normal + transfer
+  if total > 0 then return total >= price end
+  return true
+end
+
+local function tryBuyXpBoostAuto()
+  if not xpBoostCache.offerId then return false end
+  if xpBoostCache.disabled == true then return false end
+  if not hasEnoughBalanceForXpBoost() then return false end
+  xpBoostCache.skipNextPurchaseStatusUi = true
+  pcall(function() g_game.buyStoreOffer(xpBoostCache.offerId, 0) end)
+  return true
+end
+
+function tools.onStoreCreateProducts(storeProducts)
+  if xpBoostCache.silentStoreOffersUpdate then
+    xpBoostCache.silentStoreOffersUpdate = false
+    if storeProducts and storeProducts.offers then
+      mergeXpBoostCacheFromOffers(storeProducts.offers)
+    end
+    return true
+  end
+  return false
+end
+
+function tools.onStorePurchaseStatus()
+  if xpBoostCache.skipNextPurchaseStatusUi then
+    xpBoostCache.skipNextPurchaseStatusUi = false
+    return true
+  end
+  return false
+end
+
+function tools.toggleAutoBoostStore(checked)
+  if autoBoostStoreSuppressCheckChange then return end
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not checked then
+    if helperConfig then helperConfig.autoBoostStoreEnabled = false end
+    return
+  end
+  local panel = getToolsPanel()
+  autoBoostStoreSuppressCheckChange = true
+  if panel then
+    local w = panel:recursiveGetChildById('autoBoostStore')
+    if w then w:setChecked(false) end
+  end
+  autoBoostStoreSuppressCheckChange = false
+  local confirmWindow = nil
+  local cancel = function()
+    if confirmWindow then confirmWindow:destroy() end
+  end
+  local confirm = function()
+    if confirmWindow then confirmWindow:destroy() end
+    if helperConfig then helperConfig.autoBoostStoreEnabled = true end
+    lastAutoBoostStoreAttemptMs = 0
+    lastBoostsCategoryRequestMs = 0
+    resetXpBoostAutoCache()
+    prefetchXpBoostOfferCache()
+    autoBoostStoreSuppressCheckChange = true
+    if panel then
+      local w2 = panel:recursiveGetChildById('autoBoostStore')
+      if w2 then w2:setChecked(true) end
+    end
+    autoBoostStoreSuppressCheckChange = false
+    if _Helper.saveSettings then _Helper.saveSettings() end
+  end
+  confirmWindow = displayGeneralBox(
+    tr('AutoBoost Store'),
+    tr('This will automatically buy XP Boost from the Store using Tibia Coins when your boost expires. Activate?'),
+    { { text = tr('No'), callback = cancel }, { text = tr('Yes'), callback = confirm } },
+    confirm,
+    cancel
+  )
+end
+
+function tools.checkAutoBoostStore()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig or not helperConfig.autoBoostStoreEnabled then return end
+  local player = getPlayer()
+  if not player then return end
+  if player.getStoreExpBoostTime and player:getStoreExpBoostTime() > 0 then return end
+  local now = g_clock.millis()
+  local prefetchCooldown = (xpBoostCache.disabled == true) and 2000 or 8000
+  if now - lastBoostsCategoryRequestMs > prefetchCooldown then
+    lastBoostsCategoryRequestMs = now
+    prefetchXpBoostOfferCache()
+  end
+  if not xpBoostCache.offerId then return end
+  if xpBoostCache.disabled == true then return end
+  if not hasEnoughBalanceForXpBoost() then return end
+  if lastAutoBoostStoreAttemptMs > 0 and (now - lastAutoBoostStoreAttemptMs) < 45000 then return end
+  local bought = tryBuyXpBoostAuto()
+  if bought then lastAutoBoostStoreAttemptMs = now end
+end
+
+function tools.loadAutoBoostStoreToUI()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  local panel = getToolsPanel()
+  if not helperConfig or not panel then return end
+  local check = panel:recursiveGetChildById("autoBoostStore")
+  if check then check:setChecked(helperConfig.autoBoostStoreEnabled or false) end
+  if helperConfig.autoBoostStoreEnabled then
+    resetXpBoostAutoCache()
+    scheduleEvent(function()
+      if helperConfig.autoBoostStoreEnabled then prefetchXpBoostOfferCache() end
+    end, 400)
+  end
+end
+
+-- ============================================================
+-- IMBUEMENT SCROLL
+-- ============================================================
+
+local IMBUEMENT_SCROLL = {
+  SLOT_MAP = { helmet = 1, armor = 4, weapon = 6, shield = 5, ammo = 10, backpack = 3, boots = 8 },
+  ORDER = { 'helmet', 'armor', 'weapon', 'shield', 'ammo', 'backpack', 'boots' },
+  STEP_MS = 400,
+  PRESET_COUNT = 6,
+  TRACKER_INV = { [1] = true, [3] = true, [4] = true, [5] = true, [6] = true, [8] = true, [10] = true },
+}
+
+local function squashImbuementLabel(text)
+  local t = tostring(text or ''):lower()
+  t = t:gsub('%b()', '')
+  t = t:gsub('^[^:]+:%s*', '')
+  t = t:gsub('powerful%s*', ''):gsub('intricate%s*', ''):gsub('basic%s*', ''):gsub('wondrous%s*', '')
+  t = t:gsub('%s*scroll%s*$', ''):gsub('^%s+', ''):gsub('%s+$', '')
+  return t
+end
+
+local function imbuementScrollLabelKey(scrollId)
+  if not g_things or not scrollId then return nil end
+  local tt = g_things.getThingType(scrollId, ThingCategoryItem)
+  if not tt or not tt.getName then return nil end
+  local ok, name = pcall(function() return tt:getName() end)
+  if not ok or not name or name == '' then return nil end
+  return squashImbuementLabel(name)
+end
+
+local function getImbuementTrackerItems()
+  local m = modules.game_imbuementtracker
+  if m and m.getLastImbuementTrackerItems then
+    return m.getLastImbuementTrackerItems()
+  end
+  return nil
+end
+
+local function buildImbuementScrollQueue()
+  local queue = {}
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  local player = getPlayer()
+  if not player or not helperConfig or not helperConfig.imbuementScrollEnabled then return queue end
+  local items = getImbuementTrackerItems()
+  if not items or type(items) ~= 'table' then return queue end
+  local trackerByInvSlot = {}
+  for _, it in ipairs(items) do
+    local inv = it and it.slot
+    if type(inv) == 'number' and IMBUEMENT_SCROLL.TRACKER_INV[inv] then
+      trackerByInvSlot[inv] = it
+    end
+  end
+  local ids = helperConfig.imbuementScrollIds or {}
+  for i = 1, IMBUEMENT_SCROLL.PRESET_COUNT do
+    local scrollId = ids[i]
+    if type(scrollId) == 'number' and scrollId > 0 and table.contains(imbuementScrollAllowedIds, scrollId) then
+      local ok, count = pcall(function() return player:getInventoryCount(scrollId, 0) end)
+      if ok and count and count > 0 then
+        local slotCfg = (helperConfig.imbuementScrollSlots or {})[i]
+        if type(slotCfg) == 'table' then
+          for _, slotName in ipairs(IMBUEMENT_SCROLL.ORDER) do
+            if slotCfg[slotName] then
+              local invSlot = IMBUEMENT_SCROLL.SLOT_MAP[slotName]
+              local tr = invSlot and trackerByInvSlot[invSlot]
+              if tr then
+                local totalSlots = tonumber(tr.totalSlots) or 0
+                local hasEmpty = false
+                local hasMatch = false
+                local sk = imbuementScrollLabelKey(scrollId)
+                for idx = 1, totalSlots do
+                  local s = tr.slots and tr.slots[idx]
+                  if not s or type(s) ~= 'table' or (tonumber(s.duration) or 0) <= 0 then
+                    hasEmpty = true
+                  elseif sk and sk ~= '' then
+                    local nk = squashImbuementLabel(s.name)
+                    if nk ~= '' and (nk:find(sk, 1, true) or sk:find(nk, 1, true)) then
+                      hasMatch = true
+                    end
+                  end
+                end
+                if hasEmpty and not hasMatch then
+                  local bkey = scrollId .. ":" .. invSlot
+                  local untilMs = imbuementScrollBackoff[bkey]
+                  if type(untilMs) ~= "number" or g_clock.millis() >= untilMs then
+                    queue[#queue + 1] = { scrollId = scrollId, slotId = invSlot }
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+  return queue
+end
+
+local function imbuementScrollStep()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not g_game.isOnline() or not helperConfig or not helperConfig.imbuementScrollEnabled then
+    imbuementScrollBatchRunning = false
+    imbuementScrollQueue = nil
+    return
+  end
+  local player = getPlayer()
+  if not player then
+    imbuementScrollBatchRunning = false
+    imbuementScrollQueue = nil
+    return
+  end
+  local queue = buildImbuementScrollQueue()
+  if #queue == 0 then
+    imbuementScrollBatchRunning = false
+    imbuementScrollQueue = nil
+    return
+  end
+  imbuementScrollQueue = queue
+  local a = queue[1]
+  if type(a.scrollId) == 'number' and a.scrollId > 0 then
+    local ok, count = pcall(function() return player:getInventoryCount(a.scrollId, 0) end)
+    if ok and count and count > 0 then
+      local slotItem = player:getInventoryItem(a.slotId)
+      if slotItem and slotItem.getId and slotItem:getId() and slotItem:getId() > 0 then
+        imbuementScrollLastAttempt = { scrollId = a.scrollId, slotId = a.slotId, t = g_clock.millis() }
+        pcall(function() g_game.useInventoryItemWith(a.scrollId, slotItem) end)
+      end
+    end
+  end
+  scheduleEvent(imbuementScrollStep, IMBUEMENT_SCROLL.STEP_MS)
+end
+
+function tools.toggleImbuementScroll(checked)
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if helperConfig then
+    helperConfig.imbuementScrollEnabled = checked
+    if _Helper.saveSettings then _Helper.saveSettings() end
+  end
+end
+
+function tools.checkImbuementScroll()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig or not helperConfig.imbuementScrollEnabled then return end
+  if imbuementScrollBatchRunning then return end
+  if not getImbuementTrackerItems() then return end
+  local queue = buildImbuementScrollQueue()
+  if #queue == 0 then return end
+  imbuementScrollBatchRunning = true
+  imbuementScrollQueue = queue
+  scheduleEvent(imbuementScrollStep, 0)
+end
+
+function tools.onImbuementScrollTextMessage(messageMode, message)
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig or not helperConfig.imbuementScrollEnabled then return end
+  local text = tostring(message or ""):lower()
+  if text:find("successfully imbued the object", 1, true) then
+    imbuementScrollLastAttempt = nil
+    return
+  end
+  local last = imbuementScrollLastAttempt
+  if type(last) ~= "table" or not last.t or not last.scrollId or not last.slotId then return end
+  if g_clock.millis() - last.t > 6000 then return end
+  local snippets = {
+    "not imbuable", "pick up the item", "invalid slot", "don't have a valid imbuement",
+    "cannot apply the same imbuement", "don't have an imbuement scroll", "don't have a valid tier",
+    "failed to consume imbuement scroll", "item is not imbuable",
+  }
+  for i = 1, #snippets do
+    if text:find(snippets[i], 1, true) then
+      imbuementScrollBackoff[last.scrollId .. ":" .. last.slotId] = g_clock.millis() + 120000
+      imbuementScrollLastAttempt = nil
+      return
+    end
+  end
+end
+
+function tools.openImbuementScrollSettings()
+  if not imbuementScrollSettingsWindow or imbuementScrollSettingsWindow:isDestroyed() then
+    imbuementScrollSettingsWindow = g_ui.createWidget('ImbuementScrollSettingsWindow', g_ui.getRootWidget())
+  end
+  if not imbuementScrollSettingsWindow then return end
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig then return end
+  local ids = helperConfig.imbuementScrollIds or { 0, 0, 0, 0, 0, 0 }
+  for i = 0, IMBUEMENT_SCROLL.PRESET_COUNT - 1 do
+    local btn = imbuementScrollSettingsWindow:recursiveGetChildById('imbuementScrollGearButton' .. i)
+    if btn then
+      local itemId = ids[i + 1] and ids[i + 1] > 0 and ids[i + 1] or 0
+      if itemId > 0 then
+        btn:setImageSource('/images/ui/item')
+        local existing = btn:getChildById('scrollItem')
+        if existing then existing:destroy() end
+        local itemWidget = g_ui.createWidget('PotionItem', btn)
+        if itemWidget then
+          itemWidget:setId('scrollItem')
+          itemWidget:setItemId(itemId)
+        end
+      else
+        btn:setImageSource('/images/game/actionbar/actionbarslot')
+        local existing = btn:getChildById('scrollItem')
+        if existing then existing:destroy() end
+      end
+    end
+  end
+  local slotsArray = helperConfig.imbuementScrollSlots or {}
+  local slotNames = { 'Helmet', 'Armor', 'Weapon', 'Shield', 'Ammo', 'Backpack', 'Boots' }
+  for scrollIdx = 0, IMBUEMENT_SCROLL.PRESET_COUNT - 1 do
+    local slotCfg = (type(slotsArray[scrollIdx + 1]) == 'table') and slotsArray[scrollIdx + 1] or {}
+    for _, name in ipairs(slotNames) do
+      local key = name:lower()
+      local w = imbuementScrollSettingsWindow:recursiveGetChildById('imbuementScroll' .. scrollIdx .. key)
+      if w then w:setChecked(slotCfg[key] == true) end
+    end
+  end
+  imbuementScrollSettingsWindow:show(true)
+  imbuementScrollSettingsWindow:raise()
+  imbuementScrollSettingsWindow:focus()
+end
+
+function tools.assignImbuementScrollItem(slotIndex)
+  if not imbuementScrollSettingsWindow then return end
+  local button = imbuementScrollSettingsWindow:recursiveGetChildById('imbuementScrollGearButton' .. slotIndex)
+  if not button then return end
+  local grabber = getMouseGrabber()
+  local helperWindow = getHelperWindow()
+  if g_mouse and g_mouse.updateGrabber then g_mouse.updateGrabber(grabber, 'target') end
+  grabber:grabMouse()
+  if helperWindow then helperWindow:hide() end
+  g_mouse.pushCursor('target')
+  grabber.onMouseRelease = function(self, mousePosition, mouseButton)
+    grabber:ungrabMouse()
+    g_mouse.popCursor('target')
+    grabber.onMouseRelease = nil
+    if helperWindow then helperWindow:show() end
+    local rootWidget = g_ui.getRootWidget()
+    if not rootWidget then return true end
+    local clickedWidget = rootWidget:recursiveGetChildByPos(mousePosition, false)
+    if not clickedWidget then return true end
+    local itemId = 0
+    if clickedWidget:getClassName() == 'UIItem' and not clickedWidget:isVirtual() then
+      local item = clickedWidget:getItem()
+      if item and item.getId then itemId = item:getId() end
+    end
+    if itemId > 0 then
+      local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+      if helperConfig then
+        helperConfig.imbuementScrollIds = helperConfig.imbuementScrollIds or { 0, 0, 0, 0, 0, 0 }
+        helperConfig.imbuementScrollIds[slotIndex + 1] = itemId
+        if _Helper.saveSettings then _Helper.saveSettings() end
+      end
+      button:setImageSource('/images/ui/item')
+      local existing = button:getChildById('scrollItem')
+      if existing then existing:destroy() end
+      local itemWidget = g_ui.createWidget('PotionItem', button)
+      if itemWidget then itemWidget:setId('scrollItem'); itemWidget:setItemId(itemId) end
+    end
+    return true
+  end
+end
+
+function tools.imbuementScrollSettingsOnSave()
+  if not imbuementScrollSettingsWindow then return end
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig then return end
+  local slotNames = { 'Helmet', 'Armor', 'Weapon', 'Shield', 'Ammo', 'Backpack', 'Boots' }
+  helperConfig.imbuementScrollSlots = {}
+  for scrollIdx = 0, IMBUEMENT_SCROLL.PRESET_COUNT - 1 do
+    helperConfig.imbuementScrollSlots[scrollIdx + 1] = { helmet = false, armor = false, weapon = false, shield = false, ammo = false, backpack = false, boots = false }
+    for _, name in ipairs(slotNames) do
+      local key = name:lower()
+      local w = imbuementScrollSettingsWindow:recursiveGetChildById('imbuementScroll' .. scrollIdx .. key)
+      if w then helperConfig.imbuementScrollSlots[scrollIdx + 1][key] = w:isChecked() end
+    end
+  end
+  if _Helper.saveSettings then _Helper.saveSettings() end
+  imbuementScrollSettingsWindow:hide()
+end
+
+function tools.removeImbuementScrollItem(slotIndex)
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  if not helperConfig then return end
+  helperConfig.imbuementScrollIds = helperConfig.imbuementScrollIds or { 0, 0, 0, 0, 0, 0 }
+  helperConfig.imbuementScrollIds[slotIndex + 1] = 0
+  if _Helper.saveSettings then _Helper.saveSettings() end
+  if imbuementScrollSettingsWindow then
+    local button = imbuementScrollSettingsWindow:recursiveGetChildById('imbuementScrollGearButton' .. slotIndex)
+    if button then
+      button:setImageSource('/images/game/actionbar/actionbarslot')
+      local existing = button:getChildById('scrollItem')
+      if existing then existing:destroy() end
+    end
+  end
+end
+
+function tools.loadImbuementScrollToUI()
+  local helperConfig = _Helper.getHelperConfig and _Helper.getHelperConfig()
+  local panel = getToolsPanel()
+  if not helperConfig or not panel then return end
+  local check = panel:recursiveGetChildById("imbuementScrollCheck")
+  if check then check:setChecked(helperConfig.imbuementScrollEnabled or false) end
+end
+
+-- ============================================================
 -- UI LOADING & RESET
 -- ============================================================
 
@@ -1907,6 +2759,43 @@ function tools.resetUI()
   -- Reset refilling state
   isRefillingQuiver = false
   lastQuiverRefillTime = 0
+
+  -- Reset Vender Loot
+  lastVendorLootUse = 0
+  local pouchSellerCheck = panel:recursiveGetChildById("pouchSeller")
+  if pouchSellerCheck then pouchSellerCheck:setChecked(false) end
+
+  -- Reset Stamina Refill
+  lastStaminaRefillUse = 0
+  local staminaRefillCheck = panel:recursiveGetChildById("staminaRefillEnable")
+  if staminaRefillCheck then staminaRefillCheck:setChecked(false) end
+  local staminaRefillBtn = panel:recursiveGetChildById("staminaRefillItem")
+  if staminaRefillBtn then
+    staminaRefillBtn:setImageSource("/images/game/actionbar/actionbarslot")
+    local staminaItem = staminaRefillBtn:getChildById("staminaItem")
+    if staminaItem then staminaItem:destroy() end
+  end
+
+  -- Reset Auto Party
+  local autoPartyEnable = panel:recursiveGetChildById("autoPartyEnable")
+  if autoPartyEnable then autoPartyEnable:setChecked(false) end
+  local autoPartyAccept = panel:recursiveGetChildById("autoPartyAcceptEnable")
+  if autoPartyAccept then autoPartyAccept:setChecked(false) end
+
+  -- Reset AutoBoost Store
+  lastAutoBoostStoreAttemptMs = 0
+  lastBoostsCategoryRequestMs = 0
+  resetXpBoostAutoCache()
+  local autoBoostStoreCheck = panel:recursiveGetChildById("autoBoostStore")
+  if autoBoostStoreCheck then autoBoostStoreCheck:setChecked(false) end
+
+  -- Reset Imbuement Scroll
+  imbuementScrollBatchRunning = false
+  imbuementScrollQueue = nil
+  imbuementScrollLastAttempt = nil
+  imbuementScrollBackoff = {}
+  local imbuementScrollCheck = panel:recursiveGetChildById("imbuementScrollCheck")
+  if imbuementScrollCheck then imbuementScrollCheck:setChecked(false) end
 end
 
 -- Load all tools states to UI
@@ -1931,6 +2820,11 @@ function tools.loadToUI()
   tools.loadItemTimerToUI()
   tools.loadExetaResToUI()
   tools.loadAmpResToUI()
+  tools.loadVendorLootToUI()
+  tools.loadStaminaRefillToUI()
+  tools.loadAutoPartyToUI()
+  tools.loadAutoBoostStoreToUI()
+  tools.loadImbuementScrollToUI()
   tools.updateVocationPanels()
 
   -- AutoFood and AutoHaste are handled by their own modules
@@ -2013,6 +2907,23 @@ function tools.terminate()
     autoFollowLoopEvent = nil
   end
   stopAntiAfkTimer()
+  stopAdvertisingChannelTimer()
+  if autoPartySettingsWindow and not autoPartySettingsWindow:isDestroyed() then
+    autoPartySettingsWindow:destroy()
+    autoPartySettingsWindow = nil
+  end
+  if imbuementScrollSettingsWindow and not imbuementScrollSettingsWindow:isDestroyed() then
+    imbuementScrollSettingsWindow:destroy()
+    imbuementScrollSettingsWindow = nil
+  end
+  imbuementScrollBatchRunning = false
+  imbuementScrollQueue = nil
+  imbuementScrollLastAttempt = nil
+  lastVendorLootUse = 0
+  lastStaminaRefillUse = 0
+  lastAutoBoostStoreAttemptMs = 0
+  lastBoostsCategoryRequestMs = 0
+  resetXpBoostAutoCache()
   if mouseGrabberWidget then
     mouseGrabberWidget:destroy()
     mouseGrabberWidget = nil

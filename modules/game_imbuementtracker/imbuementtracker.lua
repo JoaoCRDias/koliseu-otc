@@ -17,6 +17,8 @@ local IMBUEMENTTRACKER_FILTERS = {
 imbuementTrackerButton = nil
 imbuementTrackerMenuButton = nil
 
+local lastImbuementTrackerItems = nil
+
 function loadFilters()
     local settings = g_settings.getNode("ImbuementTracker")
     if not settings or not settings['filters'] then
@@ -237,6 +239,7 @@ local function addTrackedItem(item)
 end
 
 function onUpdateImbuementTracker(items)
+    lastImbuementTrackerItems = items
     imbuementTracker.contentsPanel:destroyChildren()
     for _, item in ipairs(getTrackedItems(items)) do
         local trackedItem, duration = addTrackedItem(item)
@@ -272,7 +275,14 @@ function onGameStart()
 end
 
 function onGameEnd()
+    lastImbuementTrackerItems = nil
     imbuementTracker.contentsPanel:destroyChildren()
     saveFilters()
 end
+
+function getLastImbuementTrackerItems()
+    return lastImbuementTrackerItems
+end
+
+modules.game_imbuementtracker.getLastImbuementTrackerItems = getLastImbuementTrackerItems
 

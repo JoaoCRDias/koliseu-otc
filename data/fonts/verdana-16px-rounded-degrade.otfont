@@ -1,0 +1,8 @@
+Font
+  name: verdana-16px-rounded-degrade
+  texture: verdana-16px-rounded-degrade
+  height: 18
+  glyph-size: 18 18
+  y-offset: -2
+  spacing: 0 -3
+  space-width: 6
