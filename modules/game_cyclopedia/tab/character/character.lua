@@ -1885,7 +1885,10 @@ function Cyclopedia.loadOutfitMountBonuses()
             creature:setOutfit({
                 type = mountLookType,
                 auxType = 0,
-                mount = true,
+                head = color.head,
+                body = color.body,
+                legs = color.legs,
+                feet = color.feet,
             })
         else
             creature:setOutfit({
@@ -1897,6 +1900,11 @@ function Cyclopedia.loadOutfitMountBonuses()
                 feet = color.feet,
                 addon = entry.owned and 3 or 0,
             })
+        end
+
+        local c = creature:getCreature()
+        if c then
+            c:setStaticWalking(1000)
         end
 
         if not entry.owned then
