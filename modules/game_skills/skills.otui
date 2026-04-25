@@ -806,6 +806,88 @@ MiniWindow
         !text: tr('Mana Leech')
       SkillValueLabel
 
+    HorizontalSeparator
+      id: separatorOutfitList
+      margin-top: 5
+      margin-bottom: 3
+      visible: false
+
+    Label
+      id: labelOutfitListHeader
+      font: verdana-11px-monochrome
+      color: #FFD700
+      text-align: left
+      visible: false
+
+    Label
+      id: labelEquippedInfo
+      font: verdana-11px-rounded
+      color: #44AD25
+      text-align: left
+      visible: false
+
+    UIScrollArea
+      id: outfitBonusList
+      height: 150
+      visible: false
+      vertical-scrollbar: outfitBonusScrollbar
+      layout:
+        type: verticalBox
+        spacing: 1
+      margin-left: 2
+      margin-right: 2
+
+    VerticalScrollBar
+      id: outfitBonusScrollbar
+      anchors.right: parent.right
+      anchors.top: outfitBonusList.top
+      anchors.bottom: outfitBonusList.bottom
+      margin-right: -5
+      step: 20
+      pixel-scroll: true
+      visible: false
+
+    HorizontalSeparator
+      id: separatorMountList
+      margin-top: 5
+      margin-bottom: 3
+      visible: false
+
+    Label
+      id: labelMountListHeader
+      font: verdana-11px-monochrome
+      color: #FFD700
+      text-align: left
+      visible: false
+
+    Label
+      id: labelMountedInfo
+      font: verdana-11px-rounded
+      color: #44AD25
+      text-align: left
+      visible: false
+
+    UIScrollArea
+      id: mountBonusList
+      height: 150
+      visible: false
+      vertical-scrollbar: mountBonusScrollbar
+      layout:
+        type: verticalBox
+        spacing: 1
+      margin-left: 2
+      margin-right: 2
+
+    VerticalScrollBar
+      id: mountBonusScrollbar
+      anchors.right: parent.right
+      anchors.top: mountBonusList.top
+      anchors.bottom: mountBonusList.bottom
+      margin-right: -5
+      step: 20
+      pixel-scroll: true
+      visible: false
+
   UIWidget
     id: miniborder
     anchors.bottom: parent.bottom

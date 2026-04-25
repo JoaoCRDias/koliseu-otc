@@ -579,34 +579,96 @@ UIWidget
     anchors.right: parent.right
     margin-left: 10
     visible: false
-    VerticalSeparator
-      id: separator
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: parent.top
-      anchors.bottom: parent.bottom
-      margin-top: 5
-      margin-bottom: 5
-    Panel
-      id: leftPanel
+    UIWidget
+      id: bonusListFilter
+      height: 34
       anchors.top: parent.top
       anchors.left: parent.left
-      anchors.right: separator.right
-      margin-top: 5
-      margin-left: 5
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
-    Panel
-      id: rightPanel
-      anchors.top: prev.top
-      anchors.left: separator.left
       anchors.right: parent.right
-      margin-top: 1
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
+      image-source: /images/ui/2pixel_up_frame_borderimage
+      image-border: 5
+      CheckBoxCircle
+        id: outfits
+        width: 85
+        text: Outfits
+        color: #C0C0C0
+        text-offset: 15 0
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: parent.left
+        margin-left: 10
+        @onClick: |
+          local p = self:getParent():getParent()
+          p.outfitGrid:setVisible(true)
+          p.mountGrid:setVisible(false)
+          p.outfitScrollbar:setVisible(true)
+          p.mountScrollbar:setVisible(false)
+          self:setChecked(true)
+          self:getParent().mounts:setChecked(false)
+      CheckBoxCircle
+        id: mounts
+        width: 85
+        text: Montarias
+        color: #C0C0C0
+        text-offset: 15 0
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: outfits.right
+        @onClick: |
+          local p = self:getParent():getParent()
+          p.outfitGrid:setVisible(false)
+          p.mountGrid:setVisible(true)
+          p.outfitScrollbar:setVisible(false)
+          p.mountScrollbar:setVisible(true)
+          self:setChecked(true)
+          self:getParent().outfits:setChecked(false)
+    BorderBox
+      id: ListBase
+      anchors.top: bonusListFilter.bottom
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      margin-top: 2
+      UIScrollArea
+        id: outfitGrid
+        vertical-scrollbar: outfitScrollbar
+        anchors.fill: parent
+        margin: 5
+        margin-right: 10
+        layout:
+          type: grid
+          cell-size: 100 110
+          cell-spacing: 5
+          flow: true
+      VerticalScrollBar
+        id: outfitScrollbar
+        anchors.top: outfitGrid.top
+        anchors.right: ListBase.right
+        anchors.bottom: outfitGrid.bottom
+        margin: 1
+        margin-right: -4
+        step: 80
+        pixel-scroll: true
+      UIScrollArea
+        id: mountGrid
+        vertical-scrollbar: mountScrollbar
+        anchors.fill: parent
+        margin: 5
+        margin-right: 10
+        visible: false
+        layout:
+          type: grid
+          cell-size: 100 110
+          cell-spacing: 5
+          flow: true
+      VerticalScrollBar
+        id: mountScrollbar
+        anchors.top: mountGrid.top
+        anchors.right: ListBase.right
+        anchors.bottom: mountGrid.bottom
+        margin: 1
+        margin-right: -4
+        step: 80
+        pixel-scroll: true
+        visible: false
 
   BorderBox
     id: CombatStats

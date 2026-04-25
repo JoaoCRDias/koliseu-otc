@@ -129,6 +129,25 @@ CharacterAppearance < UIWidget
     anchors.top: creature.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     phantom: true
+BonusAppearance < UIWidget
+  size: 100 110
+  UICreature
+    id: creature
+    size: 64 64
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    margin-top: 2
+    phantom: true
+  Label
+    id: name
+    color: #C0C0C0
+    font: verdana-11px-rounded
+    text-auto-resize: true
+    text-wrap: true
+    text-horizontal-auto-resize: true
+    anchors.top: creature.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    phantom: true
 CharacterGridItem < UIWidget
   UIWidget
     size: 32 32

@@ -1824,42 +1824,22 @@ local function getElementName(id)
 function Cyclopedia.loadOutfitMountBonuses()
     local data = modules.game_skills and modules.game_skills.getOutfitMountBonusData()
     if not data then return end
-    
-    local leftPanel = UI.OutfitMountBonuses.leftPanel
-    local rightPanel = UI.OutfitMountBonuses.rightPanel
-    leftPanel:destroyChildren()
-    rightPanel:destroyChildren()
-    
-    local function renderSectionHeader(parent, text)
-        local widget = g_ui.createWidget("CharacterSkillBase", parent)
-        local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
-        nameLabel:setText(text)
-        nameLabel:setColor("#FFD700")
-        nameLabel:setFont("verdana-11px-monochrome")
-        return widget
-    end
-    
-    local function renderStat(parent, name, value, color, tooltip)
-        local widget = g_ui.createWidget("CharacterSkillBase", parent)
-        local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
-        nameLabel:setText(name .. ":")
-        nameLabel:setColor(color or "#C0C0C0")
-        local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
-        valueLabel:setText(tostring(value))
-        valueLabel:setColor(color or "#C0C0C0")
-        if tooltip then widget:setTooltip(tooltip) end
-        return widget
-    end
-    
-    local function renderEntry(parent, entry)
-        local widget = g_ui.createWidget("CharacterSkillBase", parent)
-        local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
-        local typeTag = entry.passive and " [Passive]" or ""
-        nameLabel:setText(entry.name .. typeTag)
-        nameLabel:setColor(entry.owned and "#44AD25" or "#666666")
-        local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
-        valueLabel:setText(entry.bonusText or "")
-        valueLabel:setColor(entry.owned and "#44AD25" or "#666666")
+
+    local outfitGrid = UI.OutfitMountBonuses.outfitGrid
+    local mountGrid = UI.OutfitMountBonuses.mountGrid
+    outfitGrid:destroyChildren()
+    mountGrid:destroyChildren()
+
+    local player = g_game.getLocalPlayer()
+    local playerOutfit = player and player:getOutfit() or {}
+    local color = {
+        head = playerOutfit.head or 0,
+        body = playerOutfit.body or 0,
+        legs = playerOutfit.legs or 0,
+        feet = playerOutfit.feet or 0,
+    }
+
+    local function buildTooltip(entry)
         local tooltip = entry.name .. "\n"
         if entry.passive then
             tooltip = tooltip .. "Type: Passive (bonus applies when owned)\n"
@@ -1881,63 +1861,72 @@ function Cyclopedia.loadOutfitMountBonuses()
         if entry.costText and entry.costText ~= "" then
             tooltip = tooltip .. "\nPara desbloquear: " .. entry.costText
         end
-        widget:setTooltip(tooltip)
+        return tooltip
+    end
+
+    local function renderSpriteEntry(parent, entry, isMount)
+        local widget = g_ui.createWidget("BonusAppearance", parent)
+        local creature = widget:getChildById("creature")
+        local nameLabel = widget:getChildById("name")
+
+        local displayName = entry.name
+        if entry.passive then
+            displayName = displayName .. " [P]"
+        elseif entry.equipped or entry.mounted then
+            displayName = displayName .. " \226\156\148"
+        end
+        nameLabel:setText(displayName)
+
+        if isMount then
+            local mountLookType = entry.clientId or entry.lookType or 0
+            creature:setOutfit({
+                type = mountLookType,
+                auxType = 0,
+                mount = true,
+            })
+        else
+            creature:setOutfit({
+                type = entry.lookType or 0,
+                auxType = 0,
+                head = color.head,
+                body = color.body,
+                legs = color.legs,
+                feet = color.feet,
+                addon = entry.owned and 3 or 0,
+            })
+        end
+
+        if not entry.owned then
+            widget:setOpacity(0.4)
+            nameLabel:setColor("#666666")
+        else
+            nameLabel:setColor("#44AD25")
+        end
+
+        if entry.equipped or entry.mounted then
+            nameLabel:setColor("#00FF00")
+        end
+
+        widget:setTooltip(buildTooltip(entry))
         return widget
     end
-    
-    local function renderTotalSection(parent, title, totals)
-        local hasAny = false
-        for k, v in pairs(totals) do
-            if tonumber(v) and tonumber(v) ~= 0 then hasAny = true break end
-        end
-        if not hasAny then return end
-        
-        renderSectionHeader(parent, title)
-        
-        local statMap = {
-            { key = "hp", name = "Max HP", fmt = function(v) return "+" .. tostring(v) end },
-            { key = "mp", name = "Max MP", fmt = function(v) return "+" .. tostring(v) end },
-            { key = "exp", name = "EXP Bonus", fmt = function(v) return "+" .. string.format("%.1f", v) .. "%" end },
-            { key = "cap", name = "Capacity", fmt = function(v) return "+" .. tostring(v) end },
-            { key = "ml", name = "Magic Level", fmt = function(v) return "+" .. tostring(v) end },
-            { key = "melee", name = "Melee", fmt = function(v) return "+" .. tostring(v) end },
-            { key = "distance", name = "Distance", fmt = function(v) return "+" .. tostring(v) end },
-            { key = "shielding", name = "Shielding", fmt = function(v) return "+" .. tostring(v) end },
-            { key = "critChance", name = "Crit Chance", fmt = function(v) return "+" .. string.format("%.1f", v / 100) .. "%" end },
-            { key = "critDamage", name = "Crit Damage", fmt = function(v) return "+" .. string.format("%.1f", v / 100) .. "%" end },
-            { key = "lifeLeech", name = "Life Leech", fmt = function(v) return "+" .. string.format("%.1f", v / 100) .. "%" end },
-            { key = "manaLeech", name = "Mana Leech", fmt = function(v) return "+" .. string.format("%.1f", v / 100) .. "%" end },
-        }
-        
-        for _, stat in ipairs(statMap) do
-            local v = tonumber(totals[stat.key]) or 0
-            if v ~= 0 then
-                renderStat(parent, stat.name, stat.fmt(v), "#44AD25")
-            end
-        end
-    end
-    
-    -- OUTFITS section (left panel)
-    renderSectionHeader(leftPanel, "OUTFITS (" .. (data.outfitsOwned or 0) .. "/" .. (data.outfitsTotal or 0) .. " owned)")
-    
+
     if data.outfitDetails then
         for _, entry in ipairs(data.outfitDetails) do
-            renderEntry(leftPanel, entry)
+            renderSpriteEntry(outfitGrid, entry, false)
         end
     end
-    
-    renderTotalSection(leftPanel, "Passive Bonus Total", data.outfitPassive or {})
-    renderTotalSection(leftPanel, "Equipped Bonus", data.outfitEquipped or {})
-    
-    -- MOUNTS section (right panel)
-    renderSectionHeader(rightPanel, "MOUNTS (" .. (data.mountsOwned or 0) .. "/" .. (data.mountsTotal or 0) .. " owned)")
-    
+
     if data.mountDetails then
         for _, entry in ipairs(data.mountDetails) do
-            renderEntry(rightPanel, entry)
+            renderSpriteEntry(mountGrid, entry, true)
         end
     end
-    
-    renderTotalSection(rightPanel, "Passive Mount Total", data.mountPassive or {})
-    renderTotalSection(rightPanel, "Mounted Bonus", data.mountEquipped or {})
+
+    UI.OutfitMountBonuses.bonusListFilter.outfits:setChecked(true)
+    UI.OutfitMountBonuses.bonusListFilter.mounts:setChecked(false)
+    outfitGrid:setVisible(true)
+    mountGrid:setVisible(false)
+    UI.OutfitMountBonuses.outfitScrollbar:setVisible(true)
+    UI.OutfitMountBonuses.mountScrollbar:setVisible(false)
 end
