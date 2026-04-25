@@ -1,6 +1,24 @@
 ForgeController = Controller:new()
 ForgeButton = nil
 
+function show(...)
+    if ForgeController and ForgeController.show then
+        return ForgeController:show(...)
+    end
+end
+
+function hide(...)
+    if ForgeController and ForgeController.hide then
+        return ForgeController:hide(...)
+    end
+end
+
+function toggle(...)
+    if ForgeController and ForgeController.toggle then
+        return ForgeController:toggle(...)
+    end
+end
+
 local cloneValue = Helpers.cloneValue
 local normalizeClassPriceEntries = Helpers.normalizeClassPriceEntries
 local normalizeTierPriceEntries = Helpers.normalizeTierPriceEntries
