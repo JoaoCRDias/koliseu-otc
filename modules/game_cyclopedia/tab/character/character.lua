@@ -1875,20 +1875,21 @@ local function getElementName(id)
                 return lbl
             end
 
-            local function renderSection(parent, title, entries, equippedKey)
-                local owned = 0
-                local total = #entries
-                local equipped = {}
-                local passive = {}
-                local other = {}
-                for _, e in ipairs(entries) do
-                    if e.owned then owned = owned + 1 end
-                    if e[equippedKey] then
-                        table.insert(equipped, e)
-                    elseif e.passive then
-                        table.insert(passive, e)
-                    else
-                        table.insert(other, e)
+                local function renderSection(parent, title, entries, equippedKey)
+                    local owned = 0
+                    local total = 0
+                    local equipped = {}
+                    local passive = {}
+                    for _, e in ipairs(entries) do
+                        total = total + 1
+                        if not e.owned then goto continue end
+                        owned = owned + 1
+                        if e[equippedKey] then
+                            table.insert(equipped, e)
+                        elseif e.passive then
+                            table.insert(passive, e)
+                        end
+                        ::continue::
                     end
                 end
 
@@ -1909,12 +1910,6 @@ local function getElementName(id)
                     renderSubLabel(parent, "  Passive:")
                     for _, e in ipairs(passive) do
                         renderBonusEntry(parent, e, 10)
-                    end
-                end
-
-                if #other > 0 then
-                    for _, e in ipairs(other) do
-                        renderBonusEntry(parent, e, 0)
                     end
                 end
             end
