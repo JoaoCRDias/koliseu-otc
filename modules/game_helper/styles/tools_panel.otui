@@ -2,10 +2,10 @@ ToolsPanel < Panel
   anchors.fill: parent
   Panel
     id: toolsPanel
-    height: 310
     anchors.top: parent.top
     anchors.left: parent.left
     anchors.right: parent.right
+    anchors.bottom: parent.bottom
     image-source: /images/ui/t2pixel-up-frame-borderimage
     image-border: 18
     Label
@@ -291,6 +291,61 @@ ToolsPanel < Panel
         $hover !disabled:
           color: #c0c0c0
 
+      HorizontalSeparator
+        anchors.top: castOnPzUtito.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 10
+
+      Label
+        id: staminaRefillLabel
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Stamina Refill')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 3
+      UIButton
+        id: staminaRefillItem
+        size: 34 34
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        margin-top: 4
+        margin-left: 2
+        image-source: /images/game/actionbar/actionbarslot
+        @onClick: modules.game_helper.tools.assignStaminaRefillItem(self)
+      CheckBox
+        id: staminaRefillEnable
+        width: 60
+        anchors.top: prev.top
+        anchors.left: staminaRefillItem.right
+        !text: tr('Enable')
+        margin-left: 5
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+        @onCheckChange: modules.game_helper.tools.toggleStaminaRefill(self:isChecked())
+        $hover !disabled:
+          color: #c0c0c0
+      ComboBox
+        id: staminaRefillInterval
+        size: 80 20
+        anchors.top: staminaRefillEnable.bottom
+        anchors.left: staminaRefillItem.right
+        margin-top: 3
+        margin-left: 5
+        color: #dfdfdf
+        @onOptionChange: modules.game_helper.tools.updateStaminaRefillInterval(self:getCurrentOption().text)
+        @onSetup: |
+          self:addOption("10 min")
+          self:addOption("30 min")
+          self:addOption("60 min")
+          self:addOption("120 min")
+          self:addOption("180 min")
+          self:setCurrentOption("10 min")
+
     VerticalSeparator
       id: separator1
       anchors.top: toolsTitle.bottom
@@ -358,7 +413,7 @@ ToolsPanel < Panel
         color: #dfdfdf
         text-offset: 13 0
         change-cursor-image: false
-        @onCheckChange: toogleChangeGold(self:isChecked())
+        @onCheckChange: toggleChangeGold(self:isChecked())
         $hover !disabled:
           color: #c0c0c0
         !tooltip: tr('The gold exchange will only work if the gold container is open.')
@@ -380,7 +435,7 @@ ToolsPanel < Panel
           color: #c0c0c0
 
       CheckBox
-        id: smartFollow
+        id: autoFollow
         width: 55
         anchors.top: prev.bottom
         anchors.left: parent.left
@@ -398,8 +453,8 @@ ToolsPanel < Panel
       Button
         id: setKeyFollowButton
         size: 41 15
-        anchors.verticalCenter: smartFollow.verticalCenter
-        anchors.left: smartFollow.right
+        anchors.verticalCenter: autoFollow.verticalCenter
+        anchors.left: autoFollow.right
         margin-left: 2
         !text: tr('Set Key')
         @onClick: manageHotkeys("Enable/Disable Follow")
@@ -443,6 +498,40 @@ ToolsPanel < Panel
         $hover !disabled:
           color: #c0c0c0
         !tooltip: tr('Automatically sends !bless command on login.')
+
+      CheckBox
+        id: pouchSeller
+        width: 110
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Vender Loot')
+        margin-top: 5
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+        @onCheckChange: modules.game_helper.tools.togglePouchSeller(self:isChecked())
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('Automatically sells loot every 5 minutes using the sell pouch item.')
+
+      CheckBox
+        id: autoBoostStore
+        width: 130
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('AutoBoost Store')
+        margin-top: 5
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+        @onCheckChange: modules.game_helper.tools.toggleAutoBoostStore(self:isChecked())
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('When the XP store boost expires, buys again from the Game Store using Tibia Coins.')
 
       CheckBox
         id: antiAfk
@@ -588,6 +677,104 @@ ToolsPanel < Panel
         change-cursor-image: false
         $hover !disabled:
           color: #c0c0c0
+
+      HorizontalSeparator
+        id: autoPartySeparator
+        anchors.top: enableItemTimer1.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 22
+
+      Label
+        id: autoPartyLabel
+        anchors.top: autoPartySeparator.bottom
+        anchors.left: parent.left
+        !text: tr('Auto Party')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 3
+      CheckBox
+        id: autoPartyEnable
+        width: 55
+        anchors.top: autoPartyLabel.bottom
+        anchors.left: parent.left
+        !text: tr('Enable')
+        margin-top: 4
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+        @onCheckChange: modules.game_helper.tools.toggleAutoParty(self:isChecked())
+        $hover !disabled:
+          color: #c0c0c0
+      UIButton
+        id: autoPartyGearButton
+        size: 18 18
+        anchors.verticalCenter: autoPartyEnable.verticalCenter
+        anchors.left: autoPartyEnable.right
+        margin-left: 2
+        image-source: /images/options/button_empty
+        image-clip: 0 0 20 20
+        image-border: 3
+        icon: /images/topbuttons/button_options
+        @onClick: modules.game_helper.tools.openAutoPartySettings()
+        $pressed:
+          image-clip: 20 0 20 20
+      CheckBox
+        id: autoPartyAcceptEnable
+        width: 90
+        anchors.top: autoPartyEnable.bottom
+        anchors.left: parent.left
+        !text: tr('Auto accept')
+        margin-top: 3
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+        @onCheckChange: modules.game_helper.tools.toggleAutoPartyAccept(self:isChecked())
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('Accept party invite from the leader configured in the gear settings.')
+
+      HorizontalSeparator
+        id: imbuementSeparator
+        anchors.top: autoPartyAcceptEnable.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 5
+
+      CheckBox
+        id: imbuementScrollCheck
+        width: 110
+        anchors.top: imbuementSeparator.bottom
+        anchors.left: parent.left
+        !text: tr('Imbuement Scroll')
+        margin-top: 3
+        margin-left: 2
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+        @onCheckChange: modules.game_helper.tools.toggleImbuementScroll(self:isChecked())
+        $hover !disabled:
+          color: #c0c0c0
+        !tooltip: tr('Automatically apply imbuement scrolls to equipped items when they expire.')
+      UIButton
+        id: imbuementScrollGearButton
+        size: 18 18
+        anchors.verticalCenter: imbuementScrollCheck.verticalCenter
+        anchors.left: imbuementScrollCheck.right
+        margin-left: 2
+        image-source: /images/options/button_empty
+        image-clip: 0 0 20 20
+        image-border: 3
+        icon: /images/topbuttons/button_options
+        @onClick: modules.game_helper.tools.openImbuementScrollSettings()
+        $pressed:
+          image-clip: 20 0 20 20
 
   // Third Panel - Paladin Only (Quiver Refill)
   Panel

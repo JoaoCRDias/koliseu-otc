@@ -1,0 +1,733 @@
+ImbuementScrollSettingsWindow < MainWindow
+  !text: tr('Imbuement Scroll Settings')
+  size: 330 560
+  @onEscape: self:hide()
+
+  ScrollablePanel
+    id: scrollContent
+    anchors.fill: parent
+    anchors.bottom: next.top
+    margin-bottom: 5
+    margin-top: 30
+    vertical-scrollbar: scrollBar
+
+    VerticalScrollBar
+      id: scrollBar
+      width: 12
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      step: 14
+      pixels-scroll: true
+
+    Panel
+      id: scrollPresets
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      height: 1600
+
+      // Preset 0
+      Label
+        id: scroll0Label
+        anchors.top: parent.top
+        anchors.left: parent.left
+        !text: tr('Scroll 1')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 5
+        margin-left: 5
+      UIButton
+        id: imbuementScrollGearButton0
+        size: 34 34
+        anchors.top: scroll0Label.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        margin-left: 5
+        image-source: /images/game/actionbar/actionbarslot
+        @onClick: modules.game_helper.tools.assignImbuementScrollItem(0)
+        @onMousePress: |
+          if mouseButton == MouseRightButton then
+            local menu = g_ui.createWidget('PopupMenu')
+            menu:setGameMenu(true)
+            menu:addOption(tr('Select item'), function() modules.game_helper.tools.assignImbuementScrollItem(0) end)
+            menu:addOption(tr('Remove'), function() modules.game_helper.tools.removeImbuementScrollItem(0) end)
+            menu:display(mousePos)
+            return true
+          end
+      CheckBox
+        id: imbuementScroll0helmet
+        width: 88
+        anchors.top: imbuementScrollGearButton0.top
+        anchors.left: imbuementScrollGearButton0.right
+        margin-left: 6
+        !text: tr('Helmet')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll0armor
+        width: 88
+        anchors.top: imbuementScroll0helmet.bottom
+        anchors.left: imbuementScrollGearButton0.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Armor')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll0weapon
+        width: 88
+        anchors.top: imbuementScroll0armor.bottom
+        anchors.left: imbuementScrollGearButton0.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Weapon')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll0shield
+        width: 88
+        anchors.top: imbuementScroll0weapon.bottom
+        anchors.left: imbuementScrollGearButton0.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Shield')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll0ammo
+        width: 88
+        anchors.top: imbuementScroll0helmet.top
+        anchors.left: imbuementScroll0helmet.right
+        margin-left: 10
+        !text: tr('Ammo')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll0backpack
+        width: 88
+        anchors.top: imbuementScroll0ammo.bottom
+        anchors.left: imbuementScroll0ammo.left
+        margin-top: 2
+        !text: tr('Backpack')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll0boots
+        width: 88
+        anchors.top: imbuementScroll0backpack.bottom
+        anchors.left: imbuementScroll0ammo.left
+        margin-top: 2
+        !text: tr('Boots')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      HorizontalSeparator
+        anchors.top: imbuementScroll0shield.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 3
+
+      // Preset 1
+      Label
+        id: scroll1Label
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Scroll 2')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 5
+        margin-left: 5
+      UIButton
+        id: imbuementScrollGearButton1
+        size: 34 34
+        anchors.top: scroll1Label.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        margin-left: 5
+        image-source: /images/game/actionbar/actionbarslot
+        @onClick: modules.game_helper.tools.assignImbuementScrollItem(1)
+        @onMousePress: |
+          if mouseButton == MouseRightButton then
+            local menu = g_ui.createWidget('PopupMenu')
+            menu:setGameMenu(true)
+            menu:addOption(tr('Select item'), function() modules.game_helper.tools.assignImbuementScrollItem(1) end)
+            menu:addOption(tr('Remove'), function() modules.game_helper.tools.removeImbuementScrollItem(1) end)
+            menu:display(mousePos)
+            return true
+          end
+      CheckBox
+        id: imbuementScroll1helmet
+        width: 88
+        anchors.top: imbuementScrollGearButton1.top
+        anchors.left: imbuementScrollGearButton1.right
+        margin-left: 6
+        !text: tr('Helmet')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll1armor
+        width: 88
+        anchors.top: imbuementScroll1helmet.bottom
+        anchors.left: imbuementScrollGearButton1.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Armor')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll1weapon
+        width: 88
+        anchors.top: imbuementScroll1armor.bottom
+        anchors.left: imbuementScrollGearButton1.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Weapon')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll1shield
+        width: 88
+        anchors.top: imbuementScroll1weapon.bottom
+        anchors.left: imbuementScrollGearButton1.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Shield')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll1ammo
+        width: 88
+        anchors.top: imbuementScroll1helmet.top
+        anchors.left: imbuementScroll1helmet.right
+        margin-left: 10
+        !text: tr('Ammo')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll1backpack
+        width: 88
+        anchors.top: imbuementScroll1ammo.bottom
+        anchors.left: imbuementScroll1ammo.left
+        margin-top: 2
+        !text: tr('Backpack')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll1boots
+        width: 88
+        anchors.top: imbuementScroll1backpack.bottom
+        anchors.left: imbuementScroll1ammo.left
+        margin-top: 2
+        !text: tr('Boots')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      HorizontalSeparator
+        anchors.top: imbuementScroll1shield.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 3
+
+      // Preset 2
+      Label
+        id: scroll2Label
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Scroll 3')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 5
+        margin-left: 5
+      UIButton
+        id: imbuementScrollGearButton2
+        size: 34 34
+        anchors.top: scroll2Label.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        margin-left: 5
+        image-source: /images/game/actionbar/actionbarslot
+        @onClick: modules.game_helper.tools.assignImbuementScrollItem(2)
+        @onMousePress: |
+          if mouseButton == MouseRightButton then
+            local menu = g_ui.createWidget('PopupMenu')
+            menu:setGameMenu(true)
+            menu:addOption(tr('Select item'), function() modules.game_helper.tools.assignImbuementScrollItem(2) end)
+            menu:addOption(tr('Remove'), function() modules.game_helper.tools.removeImbuementScrollItem(2) end)
+            menu:display(mousePos)
+            return true
+          end
+      CheckBox
+        id: imbuementScroll2helmet
+        width: 88
+        anchors.top: imbuementScrollGearButton2.top
+        anchors.left: imbuementScrollGearButton2.right
+        margin-left: 6
+        !text: tr('Helmet')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll2armor
+        width: 88
+        anchors.top: imbuementScroll2helmet.bottom
+        anchors.left: imbuementScrollGearButton2.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Armor')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll2weapon
+        width: 88
+        anchors.top: imbuementScroll2armor.bottom
+        anchors.left: imbuementScrollGearButton2.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Weapon')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll2shield
+        width: 88
+        anchors.top: imbuementScroll2weapon.bottom
+        anchors.left: imbuementScrollGearButton2.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Shield')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll2ammo
+        width: 88
+        anchors.top: imbuementScroll2helmet.top
+        anchors.left: imbuementScroll2helmet.right
+        margin-left: 10
+        !text: tr('Ammo')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll2backpack
+        width: 88
+        anchors.top: imbuementScroll2ammo.bottom
+        anchors.left: imbuementScroll2ammo.left
+        margin-top: 2
+        !text: tr('Backpack')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll2boots
+        width: 88
+        anchors.top: imbuementScroll2backpack.bottom
+        anchors.left: imbuementScroll2ammo.left
+        margin-top: 2
+        !text: tr('Boots')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      HorizontalSeparator
+        anchors.top: imbuementScroll2shield.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 3
+
+      // Preset 3
+      Label
+        id: scroll3Label
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Scroll 4')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 5
+        margin-left: 5
+      UIButton
+        id: imbuementScrollGearButton3
+        size: 34 34
+        anchors.top: scroll3Label.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        margin-left: 5
+        image-source: /images/game/actionbar/actionbarslot
+        @onClick: modules.game_helper.tools.assignImbuementScrollItem(3)
+        @onMousePress: |
+          if mouseButton == MouseRightButton then
+            local menu = g_ui.createWidget('PopupMenu')
+            menu:setGameMenu(true)
+            menu:addOption(tr('Select item'), function() modules.game_helper.tools.assignImbuementScrollItem(3) end)
+            menu:addOption(tr('Remove'), function() modules.game_helper.tools.removeImbuementScrollItem(3) end)
+            menu:display(mousePos)
+            return true
+          end
+      CheckBox
+        id: imbuementScroll3helmet
+        width: 88
+        anchors.top: imbuementScrollGearButton3.top
+        anchors.left: imbuementScrollGearButton3.right
+        margin-left: 6
+        !text: tr('Helmet')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll3armor
+        width: 88
+        anchors.top: imbuementScroll3helmet.bottom
+        anchors.left: imbuementScrollGearButton3.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Armor')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll3weapon
+        width: 88
+        anchors.top: imbuementScroll3armor.bottom
+        anchors.left: imbuementScrollGearButton3.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Weapon')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll3shield
+        width: 88
+        anchors.top: imbuementScroll3weapon.bottom
+        anchors.left: imbuementScrollGearButton3.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Shield')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll3ammo
+        width: 88
+        anchors.top: imbuementScroll3helmet.top
+        anchors.left: imbuementScroll3helmet.right
+        margin-left: 10
+        !text: tr('Ammo')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll3backpack
+        width: 88
+        anchors.top: imbuementScroll3ammo.bottom
+        anchors.left: imbuementScroll3ammo.left
+        margin-top: 2
+        !text: tr('Backpack')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll3boots
+        width: 88
+        anchors.top: imbuementScroll3backpack.bottom
+        anchors.left: imbuementScroll3ammo.left
+        margin-top: 2
+        !text: tr('Boots')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      HorizontalSeparator
+        anchors.top: imbuementScroll3shield.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 3
+
+      // Preset 4
+      Label
+        id: scroll4Label
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Scroll 5')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 5
+        margin-left: 5
+      UIButton
+        id: imbuementScrollGearButton4
+        size: 34 34
+        anchors.top: scroll4Label.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        margin-left: 5
+        image-source: /images/game/actionbar/actionbarslot
+        @onClick: modules.game_helper.tools.assignImbuementScrollItem(4)
+        @onMousePress: |
+          if mouseButton == MouseRightButton then
+            local menu = g_ui.createWidget('PopupMenu')
+            menu:setGameMenu(true)
+            menu:addOption(tr('Select item'), function() modules.game_helper.tools.assignImbuementScrollItem(4) end)
+            menu:addOption(tr('Remove'), function() modules.game_helper.tools.removeImbuementScrollItem(4) end)
+            menu:display(mousePos)
+            return true
+          end
+      CheckBox
+        id: imbuementScroll4helmet
+        width: 88
+        anchors.top: imbuementScrollGearButton4.top
+        anchors.left: imbuementScrollGearButton4.right
+        margin-left: 6
+        !text: tr('Helmet')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll4armor
+        width: 88
+        anchors.top: imbuementScroll4helmet.bottom
+        anchors.left: imbuementScrollGearButton4.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Armor')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll4weapon
+        width: 88
+        anchors.top: imbuementScroll4armor.bottom
+        anchors.left: imbuementScrollGearButton4.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Weapon')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll4shield
+        width: 88
+        anchors.top: imbuementScroll4weapon.bottom
+        anchors.left: imbuementScrollGearButton4.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Shield')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll4ammo
+        width: 88
+        anchors.top: imbuementScroll4helmet.top
+        anchors.left: imbuementScroll4helmet.right
+        margin-left: 10
+        !text: tr('Ammo')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll4backpack
+        width: 88
+        anchors.top: imbuementScroll4ammo.bottom
+        anchors.left: imbuementScroll4ammo.left
+        margin-top: 2
+        !text: tr('Backpack')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll4boots
+        width: 88
+        anchors.top: imbuementScroll4backpack.bottom
+        anchors.left: imbuementScroll4ammo.left
+        margin-top: 2
+        !text: tr('Boots')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      HorizontalSeparator
+        anchors.top: imbuementScroll4shield.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        margin-top: 3
+
+      // Preset 5
+      Label
+        id: scroll5Label
+        anchors.top: prev.bottom
+        anchors.left: parent.left
+        !text: tr('Scroll 6')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-auto-resize: true
+        margin-top: 5
+        margin-left: 5
+      UIButton
+        id: imbuementScrollGearButton5
+        size: 34 34
+        anchors.top: scroll5Label.bottom
+        anchors.left: parent.left
+        margin-top: 3
+        margin-left: 5
+        image-source: /images/game/actionbar/actionbarslot
+        @onClick: modules.game_helper.tools.assignImbuementScrollItem(5)
+        @onMousePress: |
+          if mouseButton == MouseRightButton then
+            local menu = g_ui.createWidget('PopupMenu')
+            menu:setGameMenu(true)
+            menu:addOption(tr('Select item'), function() modules.game_helper.tools.assignImbuementScrollItem(5) end)
+            menu:addOption(tr('Remove'), function() modules.game_helper.tools.removeImbuementScrollItem(5) end)
+            menu:display(mousePos)
+            return true
+          end
+      CheckBox
+        id: imbuementScroll5helmet
+        width: 88
+        anchors.top: imbuementScrollGearButton5.top
+        anchors.left: imbuementScrollGearButton5.right
+        margin-left: 6
+        !text: tr('Helmet')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll5armor
+        width: 88
+        anchors.top: imbuementScroll5helmet.bottom
+        anchors.left: imbuementScrollGearButton5.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Armor')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll5weapon
+        width: 88
+        anchors.top: imbuementScroll5armor.bottom
+        anchors.left: imbuementScrollGearButton5.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Weapon')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll5shield
+        width: 88
+        anchors.top: imbuementScroll5weapon.bottom
+        anchors.left: imbuementScrollGearButton5.right
+        margin-left: 6
+        margin-top: 2
+        !text: tr('Shield')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll5ammo
+        width: 88
+        anchors.top: imbuementScroll5helmet.top
+        anchors.left: imbuementScroll5helmet.right
+        margin-left: 10
+        !text: tr('Ammo')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll5backpack
+        width: 88
+        anchors.top: imbuementScroll5ammo.bottom
+        anchors.left: imbuementScroll5ammo.left
+        margin-top: 2
+        !text: tr('Backpack')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+      CheckBox
+        id: imbuementScroll5boots
+        width: 88
+        anchors.top: imbuementScroll5backpack.bottom
+        anchors.left: imbuementScroll5ammo.left
+        margin-top: 2
+        !text: tr('Boots')
+        font: verdana-11px-antialised
+        color: #dfdfdf
+        text-offset: 13 0
+        change-cursor-image: false
+
+  // Bottom buttons
+  Button
+    id: btnSave
+    !text: tr('Save')
+    width: 80
+    anchors.right: next.left
+    anchors.bottom: parent.bottom
+    margin-bottom: 5
+    margin-right: 5
+    @onClick: modules.game_helper.tools.imbuementScrollSettingsOnSave()
+  Button
+    id: btnClose
+    !text: tr('Close')
+    width: 80
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-bottom: 5
+    margin-right: 5
+    @onClick: self:getParent():hide()
