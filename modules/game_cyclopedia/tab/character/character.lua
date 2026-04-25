@@ -1891,7 +1891,6 @@ local function getElementName(id)
                         end
                         ::continue::
                     end
-                end
 
                 local header = g_ui.createWidget("Label", parent)
                 header:setText(title .. " (" .. owned .. "/" .. total .. ")")
