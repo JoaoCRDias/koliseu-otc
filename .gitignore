@@ -13,6 +13,8 @@
 .vscode/
 .claude/settings.local.json
 vcpkg_installed/
+data/things/
+RTC-Mods
 
 # Build results
 

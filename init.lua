@@ -95,8 +95,8 @@ if ENABLE_SERVERS then
         -- @field useAuthenticator Enables additional authentication layer
         --asdasd
         ["http://localhost/api/login"] = {
-            port = 5173,
-            protocol = 1523,
+            port = 3000,
+            protocol = 1524,
             httpLogin = true,
             useAuthenticator = false
         },
