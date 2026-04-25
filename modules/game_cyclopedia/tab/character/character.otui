@@ -2062,3 +2062,16 @@ UIWidget
       layout:
         type: verticalBox
         spacing: 2
+
+    Panel
+      id: bonusListPanel
+      anchors.top: leftPanel.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-top: 5
+      margin-left: 5
+      margin-right: 5
+      layout:
+        type: verticalBox
+        spacing: 2

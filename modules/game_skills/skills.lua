@@ -203,6 +203,43 @@ end
 
 local cachedOutfitMountData = nil
 
+local function applyBonusRows(prefix, totals, showUnlocked, countOwned, countTotal)
+    if showUnlocked then
+        setBonusRow(prefix .. "Unlocked", true, countOwned .. "/" .. countTotal,
+            tr("Desbloqueadas com bonus."))
+    end
+
+    local statDefs = {
+        { key = "hp",          suffix = "Hp",          fmt = formatBonusFlat,   tip = "HP max" },
+        { key = "mp",          suffix = "Mp",          fmt = formatBonusFlat,   tip = "Mana max" },
+        { key = "exp",         suffix = "Exp",         fmt = formatBonusPercent,tip = "EXP bonus" },
+        { key = "cap",         suffix = "Cap",         fmt = formatBonusFlat,   tip = "Cap" },
+        { key = "ml",          suffix = "Ml",          fmt = formatBonusSkill,  tip = "Magic Level" },
+        { key = "melee",       suffix = "Melee",       fmt = formatBonusSkill,  tip = "Melee" },
+        { key = "distance",    suffix = "Distance",    fmt = formatBonusSkill,  tip = "Distance" },
+        { key = "shielding",   suffix = "Shielding",   fmt = formatBonusSkill,  tip = "Shielding" },
+        { key = "critChance",  suffix = "CritChance",  fmt = function(v) return formatBonusPercent(v / 100) end, tip = "Crit Chance" },
+        { key = "critDamage",  suffix = "CritDamage",  fmt = function(v) return formatBonusPercent(v / 100) end, tip = "Crit Damage" },
+        { key = "lifeLeech",   suffix = "LifeLeech",   fmt = function(v) return formatBonusPercent(v / 100) end, tip = "Life Leech" },
+        { key = "manaLeech",   suffix = "ManaLeech",   fmt = function(v) return formatBonusPercent(v / 100) end, tip = "Mana Leech" },
+    }
+
+    for _, def in ipairs(statDefs) do
+        local val = tonumber(totals[def.key]) or 0
+        local visible = val ~= 0
+        setBonusRow(prefix .. def.suffix, visible, def.fmt(val), tr("Bonus " .. def.tip .. "."))
+    end
+end
+
+local function findEquippedEntry(details)
+    for _, entry in ipairs(details or {}) do
+        if entry.equipped or entry.mounted then
+            return entry
+        end
+    end
+    return nil
+end
+
 local function applyOutfitBonusDisplay(data)
     if not skillsWindow or type(data) ~= "table" then return end
     if g_game.getClientVersion() < 1410 then return end
@@ -211,78 +248,75 @@ local function applyOutfitBonusDisplay(data)
 
     local sep = skillsWindow:recursiveGetChildById("separadorOutfitAddonBonus")
     if not sep then return end
-
     sep:setVisible(true)
 
     local outfitsOwned = tonumber(data.outfitsOwned) or 0
     local outfitsTotal = tonumber(data.outfitsTotal) or 0
-    local passive = data.outfitPassive or {}
-    local equipped = data.outfitEquipped or {}
+    local outfitPassive = data.outfitPassive or {}
+    local outfitEquipped = data.outfitEquipped or {}
 
     local lblOutfits = skillsWindow:recursiveGetChildById("labelSectionOutfits")
     if lblOutfits then lblOutfits:setVisible(true) end
 
-    setBonusRow("outfitRowUnlocked", true, outfitsOwned .. "/" .. outfitsTotal,
-        tr("Outfits com bonus desbloqueadas."))
-    setBonusRow("outfitRowHp", (tonumber(passive.hp) or 0) ~= 0, formatBonusFlat(passive.hp or 0),
-        tr("Bonus passivo de HP max."))
-    setBonusRow("outfitRowMp", (tonumber(passive.mp) or 0) ~= 0, formatBonusFlat(passive.mp or 0),
-        tr("Bonus passivo de Mana max."))
-    setBonusRow("outfitRowExp", (tonumber(passive.exp) or 0) ~= 0, formatBonusPercent(passive.exp or 0),
-        tr("Bonus passivo de EXP."))
-    setBonusRow("outfitRowCap", (tonumber(passive.cap) or 0) ~= 0, formatBonusFlat(passive.cap or 0),
-        tr("Bonus passivo de Cap."))
-    setBonusRow("outfitRowMl", (tonumber(passive.ml) or 0) ~= 0, formatBonusSkill(passive.ml or 0),
-        tr("Bonus passivo de Magic Level."))
-    setBonusRow("outfitRowMelee", (tonumber(passive.melee) or 0) ~= 0, formatBonusSkill(passive.melee or 0),
-        tr("Bonus passivo de Melee."))
-    setBonusRow("outfitRowDistance", (tonumber(passive.distance) or 0) ~= 0, formatBonusSkill(passive.distance or 0),
-        tr("Bonus passivo de Distance."))
-    setBonusRow("outfitRowShielding", (tonumber(passive.shielding) or 0) ~= 0, formatBonusSkill(passive.shielding or 0),
-        tr("Bonus passivo de Shielding."))
-    setBonusRow("outfitRowCritChance", (tonumber(passive.critChance) or 0) ~= 0, formatBonusPercent((passive.critChance or 0) / 100),
-        tr("Bonus passivo de Critical Hit Chance."))
-    setBonusRow("outfitRowCritDamage", (tonumber(passive.critDamage) or 0) ~= 0, formatBonusPercent((passive.critDamage or 0) / 100),
-        tr("Bonus passivo de Critical Hit Damage."))
-    setBonusRow("outfitRowLifeLeech", (tonumber(passive.lifeLeech) or 0) ~= 0, formatBonusPercent((passive.lifeLeech or 0) / 100),
-        tr("Bonus passivo de Life Leech."))
-    setBonusRow("outfitRowManaLeech", (tonumber(passive.manaLeech) or 0) ~= 0, formatBonusPercent((passive.manaLeech or 0) / 100),
-        tr("Bonus passivo de Mana Leech."))
+    local hasAnyPassive = false
+    for _, v in pairs(outfitPassive) do
+        if tonumber(v) and tonumber(v) ~= 0 then hasAnyPassive = true break end
+    end
+
+    if hasAnyPassive then
+        setBonusRow("outfitPassiveUnlocked", true, outfitsOwned .. "/" .. outfitsTotal,
+            tr("Outfits com bonus passivo desbloqueadas."))
+    else
+        setBonusRow("outfitPassiveUnlocked", false, "", "")
+    end
+    applyBonusRows("outfitPassive", outfitPassive, false, outfitsOwned, outfitsTotal)
+
+    local equippedOutfit = findEquippedEntry(data.outfitDetails)
+    local hasEquipped = equippedOutfit ~= nil
+
+    if hasEquipped then
+        setBonusRow("outfitEquippedName", true, equippedOutfit.name,
+            tr("Outfit equipada: ") .. (equippedOutfit.bonusText or ""))
+        applyBonusRows("outfitEquipped", outfitEquipped, false, 0, 0)
+    else
+        setBonusRow("outfitEquippedName", false, "", "")
+        applyBonusRows("outfitEquipped", { hp=0, mp=0, exp=0, cap=0, ml=0, melee=0,
+            distance=0, shielding=0, critChance=0, critDamage=0, lifeLeech=0, manaLeech=0 }, false, 0, 0)
+    end
 
     local mountsOwned = tonumber(data.mountsOwned) or 0
     local mountsTotal = tonumber(data.mountsTotal) or 0
-    local mPassive = data.mountPassive or {}
-    local mEquipped = data.mountEquipped or {}
+    local mountPassive = data.mountPassive or {}
+    local mountEquipped = data.mountEquipped or {}
 
     local lblMounts = skillsWindow:recursiveGetChildById("labelSectionMounts")
     if lblMounts then lblMounts:setVisible(true) end
 
-    setBonusRow("mountRowCount", true, mountsOwned .. "/" .. mountsTotal,
-        tr("Montarias com bonus desbloqueadas."))
-    setBonusRow("mountRowHp", (tonumber(mPassive.hp) or 0) ~= 0, formatBonusFlat(mPassive.hp or 0),
-        tr("Bonus passivo de HP max de montarias."))
-    setBonusRow("mountRowMp", (tonumber(mPassive.mp) or 0) ~= 0, formatBonusFlat(mPassive.mp or 0),
-        tr("Bonus passivo de Mana max de montarias."))
-    setBonusRow("mountRowExp", (tonumber(mPassive.exp) or 0) ~= 0, formatBonusPercent(mPassive.exp or 0),
-        tr("Bonus passivo de EXP de montarias."))
-    setBonusRow("mountRowCap", (tonumber(mPassive.cap) or 0) ~= 0, formatBonusFlat(mPassive.cap or 0),
-        tr("Bonus passivo de Cap de montarias."))
-    setBonusRow("mountRowMl", (tonumber(mPassive.ml) or 0) ~= 0, formatBonusSkill(mPassive.ml or 0),
-        tr("Bonus passivo de Magic Level de montarias."))
-    setBonusRow("mountRowMelee", (tonumber(mPassive.melee) or 0) ~= 0, formatBonusSkill(mPassive.melee or 0),
-        tr("Bonus passivo de Melee de montarias."))
-    setBonusRow("mountRowDistance", (tonumber(mPassive.distance) or 0) ~= 0, formatBonusSkill(mPassive.distance or 0),
-        tr("Bonus passivo de Distance de montarias."))
-    setBonusRow("mountRowShielding", (tonumber(mPassive.shielding) or 0) ~= 0, formatBonusSkill(mPassive.shielding or 0),
-        tr("Bonus passivo de Shielding de montarias."))
-    setBonusRow("mountRowCritChance", (tonumber(mPassive.critChance) or 0) ~= 0, formatBonusPercent((mPassive.critChance or 0) / 100),
-        tr("Bonus passivo de Critical Hit Chance de montarias."))
-    setBonusRow("mountRowCritDamage", (tonumber(mPassive.critDamage) or 0) ~= 0, formatBonusPercent((mPassive.critDamage or 0) / 100),
-        tr("Bonus passivo de Critical Hit Damage de montarias."))
-    setBonusRow("mountRowLifeLeech", (tonumber(mPassive.lifeLeech) or 0) ~= 0, formatBonusPercent((mPassive.lifeLeech or 0) / 100),
-        tr("Bonus passivo de Life Leech de montarias."))
-    setBonusRow("mountRowManaLeech", (tonumber(mPassive.manaLeech) or 0) ~= 0, formatBonusPercent((mPassive.manaLeech or 0) / 100),
-        tr("Bonus passivo de Mana Leech de montarias."))
+    local hasAnyMountPassive = false
+    for _, v in pairs(mountPassive) do
+        if tonumber(v) and tonumber(v) ~= 0 then hasAnyMountPassive = true break end
+    end
+
+    if hasAnyMountPassive then
+        setBonusRow("mountPassiveUnlocked", true, mountsOwned .. "/" .. mountsTotal,
+            tr("Montarias com bonus passivo desbloqueadas."))
+    else
+        setBonusRow("mountPassiveUnlocked", false, "", "")
+    end
+    applyBonusRows("mountPassive", mountPassive, false, mountsOwned, mountsTotal)
+
+    local mountedEntry = findEquippedEntry(data.mountDetails)
+    local hasMounted = mountedEntry ~= nil
+
+    if hasMounted then
+        setBonusRow("mountEquippedName", true, mountedEntry.name,
+            tr("Montaria montada: ") .. (mountedEntry.bonusText or ""))
+        applyBonusRows("mountEquipped", mountEquipped, false, 0, 0)
+    else
+        setBonusRow("mountEquippedName", false, "", "")
+        applyBonusRows("mountEquipped", { hp=0, mp=0, exp=0, cap=0, ml=0, melee=0,
+            distance=0, shielding=0, critChance=0, critDamage=0, lifeLeech=0, manaLeech=0 }, false, 0, 0)
+    end
 
     updateHeight()
 end
@@ -1210,21 +1244,16 @@ function skillController:onGameEnd()
         end
     end
     cachedOutfitMountData = nil
+    local resetTotals = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
+        distance = 0, shielding = 0, critChance = 0, critDamage = 0,
+        lifeLeech = 0, manaLeech = 0 }
     applyOutfitBonusDisplay({
         outfitsOwned = 0, outfitsTotal = 0,
         mountsOwned = 0, mountsTotal = 0,
-        outfitPassive = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
-            distance = 0, shielding = 0, critChance = 0, critDamage = 0,
-            lifeLeech = 0, manaLeech = 0 },
-        outfitEquipped = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
-            distance = 0, shielding = 0, critChance = 0, critDamage = 0,
-            lifeLeech = 0, manaLeech = 0 },
-        mountPassive = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
-            distance = 0, shielding = 0, critChance = 0, critDamage = 0,
-            lifeLeech = 0, manaLeech = 0 },
-        mountEquipped = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
-            distance = 0, shielding = 0, critChance = 0, critDamage = 0,
-            lifeLeech = 0, manaLeech = 0 },
+        outfitPassive = resetTotals,
+        outfitEquipped = resetTotals,
+        mountPassive = resetTotals,
+        mountEquipped = resetTotals,
         outfitDetails = {},
         mountDetails = {},
     })

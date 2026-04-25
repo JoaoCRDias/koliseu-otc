@@ -1814,9 +1814,139 @@ local function getElementName(id)
     
         for _, stat in ipairs(stats) do
             if stat.align ~= "center" and stat.value == 0 and stat.value ~= "" then
-                -- Skip
             else
                 renderStat(stat)
+            end
+        end
+
+        local bonusPanel = UI.MiscStats:recursiveGetChildById('bonusListPanel')
+        if bonusPanel then
+            bonusPanel:destroyChildren()
+            local bonusData = modules.game_skills and modules.game_skills.getOutfitMountBonusData()
+            if bonusData then
+                local player = g_game.getLocalPlayer()
+                local playerOutfit = player and player:getOutfit() or {}
+                local color = {
+                    head = playerOutfit.head or 0,
+                    body = playerOutfit.body or 0,
+                    legs = playerOutfit.legs or 0,
+                    feet = playerOutfit.feet or 0,
+                }
+
+                local function renderBonusEntry(entry, isMount)
+                    local row = g_ui.createWidget("UIWidget", bonusPanel)
+                    row:setHeight(16)
+                    row:setWidth(bonusPanel:getWidth())
+
+                    local spriteWidget = g_ui.createWidget("UICreature", row)
+                    spriteWidget:setId("creature")
+                    spriteWidget:setSize({width = 14, height = 14})
+                    spriteWidget:setAnchors({left = {widget = row, edge = "left"}, top = {widget = row, edge = "top"}})
+                    spriteWidget:setMarginTop(1)
+                    spriteWidget:setPhantom(true)
+
+                    if isMount then
+                        local mountLookType = entry.clientId or entry.lookType or 0
+                        spriteWidget:setOutfit({
+                            type = mountLookType,
+                            auxType = 0,
+                            head = color.head,
+                            body = color.body,
+                            legs = color.legs,
+                            feet = color.feet,
+                        })
+                    else
+                        spriteWidget:setOutfit({
+                            type = entry.lookType or 0,
+                            auxType = 0,
+                            head = color.head,
+                            body = color.body,
+                            legs = color.legs,
+                            feet = color.feet,
+                            addon = entry.owned and 3 or 0,
+                        })
+                    end
+                    local c = spriteWidget:getCreature()
+                    if c then c:setStaticWalking(1000) end
+
+                    local label = g_ui.createWidget("Label", row)
+                    label:setAnchors({left = {widget = spriteWidget, edge = "right"}, right = {widget = row, edge = "right"}, top = {widget = row, edge = "top"}})
+                    label:setMarginLeft(4)
+                    label:setFont("verdana-11px-monochrome")
+                    label:setHeight(14)
+
+                    local text = entry.name
+                    if entry.passive then
+                        text = text .. "  [P]"
+                    elseif entry.equipped or entry.mounted then
+                        text = text .. "  \226\156\148"
+                    end
+                    if entry.bonusText and entry.bonusText ~= "" then
+                        text = text .. "  " .. entry.bonusText
+                    end
+                    label:setText(text)
+
+                    if not entry.owned then
+                        label:setColor("#666666")
+                        row:setOpacity(0.5)
+                    elseif entry.equipped or entry.mounted then
+                        label:setColor("#00FF00")
+                    elseif entry.passive then
+                        label:setColor("#44AD25")
+                    else
+                        label:setColor("#C0C0C0")
+                    end
+
+                    if entry.owned then
+                        local tooltip = entry.name
+                        if entry.passive then tooltip = tooltip .. " [Passive]" end
+                        if entry.equipped then tooltip = tooltip .. " [Equipped]" end
+                        if entry.mounted then tooltip = tooltip .. " [Mounted]" end
+                        if entry.bonusText and entry.bonusText ~= "" then
+                            tooltip = tooltip .. "\n" .. entry.bonusText
+                        end
+                        row:setTooltip(tooltip)
+                    end
+                end
+
+                local outfitsOwned = tonumber(bonusData.outfitsOwned) or 0
+                local outfitsTotal = tonumber(bonusData.outfitsTotal) or 0
+                local mountsOwned = tonumber(bonusData.mountsOwned) or 0
+                local mountsTotal = tonumber(bonusData.mountsTotal) or 0
+
+                local outfitHeader = g_ui.createWidget("Label", bonusPanel)
+                outfitHeader:setText("Outfits (" .. outfitsOwned .. "/" .. outfitsTotal .. ")")
+                outfitHeader:setFont("verdana-11px-monochrome")
+                outfitHeader:setColor("#a0a0a0")
+                outfitHeader:setMarginTop(5)
+
+                local details = bonusData.outfitDetails or {}
+                table.sort(details, function(a, b)
+                    if a.equipped ~= b.equipped then return a.equipped end
+                    if a.owned ~= b.owned then return a.owned end
+                    if a.passive ~= b.passive then return a.passive end
+                    return (a.name or "") < (b.name or "")
+                end)
+                for _, entry in ipairs(details) do
+                    renderBonusEntry(entry, false)
+                end
+
+                local mountHeader = g_ui.createWidget("Label", bonusPanel)
+                mountHeader:setText("Montarias (" .. mountsOwned .. "/" .. mountsTotal .. ")")
+                mountHeader:setFont("verdana-11px-monochrome")
+                mountHeader:setColor("#a0a0a0")
+                mountHeader:setMarginTop(5)
+
+                local mountDetails = bonusData.mountDetails or {}
+                table.sort(mountDetails, function(a, b)
+                    if a.mounted ~= b.mounted then return a.mounted end
+                    if a.owned ~= b.owned then return a.owned end
+                    if a.passive ~= b.passive then return a.passive end
+                    return (a.name or "") < (b.name or "")
+                end)
+                for _, entry in ipairs(mountDetails) do
+                    renderBonusEntry(entry, true)
+                end
             end
         end
     end

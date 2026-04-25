@@ -615,94 +615,185 @@ MiniWindow
       !text: tr('Outfits')
 
     SmallSkillButton
-      id: outfitRowUnlocked
+      id: outfitPassiveUnlocked
       visible: false
       SkillNameLabel
-        !text: tr('Desbloqueadas')
+        !text: tr('  Passive')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowHp
+      id: outfitPassiveHp
       visible: false
       SkillNameLabel
-        !text: tr('Vida max')
+        !text: tr('   HP max')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowMp
+      id: outfitPassiveMp
       visible: false
       SkillNameLabel
-        !text: tr('Mana max')
+        !text: tr('   Mana max')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowExp
+      id: outfitPassiveExp
       visible: false
       SkillNameLabel
-        !text: tr('EXP bonus')
+        !text: tr('   EXP bonus')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowCap
+      id: outfitPassiveCap
       visible: false
       SkillNameLabel
-        !text: tr('Cap')
+        !text: tr('   Cap')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowMl
+      id: outfitPassiveMl
       visible: false
       SkillNameLabel
-        !text: tr('Magic Level')
+        !text: tr('   Magic Level')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowMelee
+      id: outfitPassiveMelee
       visible: false
       SkillNameLabel
-        !text: tr('Melee')
+        !text: tr('   Melee')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowDistance
+      id: outfitPassiveDistance
       visible: false
       SkillNameLabel
-        !text: tr('Distance')
+        !text: tr('   Distance')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowShielding
+      id: outfitPassiveShielding
       visible: false
       SkillNameLabel
-        !text: tr('Shielding')
+        !text: tr('   Shielding')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowCritChance
+      id: outfitPassiveCritChance
       visible: false
       SkillNameLabel
-        !text: tr('Crit Chance')
+        !text: tr('   Crit Chance')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowCritDamage
+      id: outfitPassiveCritDamage
       visible: false
       SkillNameLabel
-        !text: tr('Crit Damage')
+        !text: tr('   Crit Damage')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowLifeLeech
+      id: outfitPassiveLifeLeech
       visible: false
       SkillNameLabel
-        !text: tr('Life Leech')
+        !text: tr('   Life Leech')
       SkillValueLabel
 
     SmallSkillButton
-      id: outfitRowManaLeech
+      id: outfitPassiveManaLeech
       visible: false
       SkillNameLabel
-        !text: tr('Mana Leech')
+        !text: tr('   Mana Leech')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedName
+      visible: false
+      SkillNameLabel
+        !text: tr('  Equipped')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedHp
+      visible: false
+      SkillNameLabel
+        !text: tr('   HP max')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedMp
+      visible: false
+      SkillNameLabel
+        !text: tr('   Mana max')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedExp
+      visible: false
+      SkillNameLabel
+        !text: tr('   EXP bonus')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedCap
+      visible: false
+      SkillNameLabel
+        !text: tr('   Cap')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedMl
+      visible: false
+      SkillNameLabel
+        !text: tr('   Magic Level')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedMelee
+      visible: false
+      SkillNameLabel
+        !text: tr('   Melee')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedDistance
+      visible: false
+      SkillNameLabel
+        !text: tr('   Distance')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedShielding
+      visible: false
+      SkillNameLabel
+        !text: tr('   Shielding')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedCritChance
+      visible: false
+      SkillNameLabel
+        !text: tr('   Crit Chance')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedCritDamage
+      visible: false
+      SkillNameLabel
+        !text: tr('   Crit Damage')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedLifeLeech
+      visible: false
+      SkillNameLabel
+        !text: tr('   Life Leech')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: outfitEquippedManaLeech
+      visible: false
+      SkillNameLabel
+        !text: tr('   Mana Leech')
       SkillValueLabel
 
     Label
@@ -716,94 +807,185 @@ MiniWindow
       !text: tr('Montarias')
 
     SmallSkillButton
-      id: mountRowCount
+      id: mountPassiveUnlocked
       visible: false
       SkillNameLabel
-        !text: tr('Desbloqueadas')
+        !text: tr('  Passive')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowHp
+      id: mountPassiveHp
       visible: false
       SkillNameLabel
-        !text: tr('Vida max')
+        !text: tr('   HP max')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowMp
+      id: mountPassiveMp
       visible: false
       SkillNameLabel
-        !text: tr('Mana max')
+        !text: tr('   Mana max')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowExp
+      id: mountPassiveExp
       visible: false
       SkillNameLabel
-        !text: tr('EXP bonus')
+        !text: tr('   EXP bonus')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowCap
+      id: mountPassiveCap
       visible: false
       SkillNameLabel
-        !text: tr('Cap')
+        !text: tr('   Cap')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowMl
+      id: mountPassiveMl
       visible: false
       SkillNameLabel
-        !text: tr('Magic Level')
+        !text: tr('   Magic Level')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowMelee
+      id: mountPassiveMelee
       visible: false
       SkillNameLabel
-        !text: tr('Melee')
+        !text: tr('   Melee')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowDistance
+      id: mountPassiveDistance
       visible: false
       SkillNameLabel
-        !text: tr('Distance')
+        !text: tr('   Distance')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowShielding
+      id: mountPassiveShielding
       visible: false
       SkillNameLabel
-        !text: tr('Shielding')
+        !text: tr('   Shielding')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowCritChance
+      id: mountPassiveCritChance
       visible: false
       SkillNameLabel
-        !text: tr('Crit Chance')
+        !text: tr('   Crit Chance')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowCritDamage
+      id: mountPassiveCritDamage
       visible: false
       SkillNameLabel
-        !text: tr('Crit Damage')
+        !text: tr('   Crit Damage')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowLifeLeech
+      id: mountPassiveLifeLeech
       visible: false
       SkillNameLabel
-        !text: tr('Life Leech')
+        !text: tr('   Life Leech')
       SkillValueLabel
 
     SmallSkillButton
-      id: mountRowManaLeech
+      id: mountPassiveManaLeech
       visible: false
       SkillNameLabel
-        !text: tr('Mana Leech')
+        !text: tr('   Mana Leech')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedName
+      visible: false
+      SkillNameLabel
+        !text: tr('  Montada')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedHp
+      visible: false
+      SkillNameLabel
+        !text: tr('   HP max')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedMp
+      visible: false
+      SkillNameLabel
+        !text: tr('   Mana max')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedExp
+      visible: false
+      SkillNameLabel
+        !text: tr('   EXP bonus')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedCap
+      visible: false
+      SkillNameLabel
+        !text: tr('   Cap')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedMl
+      visible: false
+      SkillNameLabel
+        !text: tr('   Magic Level')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedMelee
+      visible: false
+      SkillNameLabel
+        !text: tr('   Melee')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedDistance
+      visible: false
+      SkillNameLabel
+        !text: tr('   Distance')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedShielding
+      visible: false
+      SkillNameLabel
+        !text: tr('   Shielding')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedCritChance
+      visible: false
+      SkillNameLabel
+        !text: tr('   Crit Chance')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedCritDamage
+      visible: false
+      SkillNameLabel
+        !text: tr('   Crit Damage')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedLifeLeech
+      visible: false
+      SkillNameLabel
+        !text: tr('   Life Leech')
+      SkillValueLabel
+
+    SmallSkillButton
+      id: mountEquippedManaLeech
+      visible: false
+      SkillNameLabel
+        !text: tr('   Mana Leech')
       SkillValueLabel
 
   UIWidget
