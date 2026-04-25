@@ -2045,9 +2045,9 @@ UIWidget
       anchors.top: parent.top
       anchors.left: parent.left
       anchors.right: separator.right
+      anchors.bottom: parent.bottom
       margin-top: 5
       margin-left: 5
-      height: 350
       layout:
         type: verticalBox
         spacing: 2
@@ -2057,21 +2057,8 @@ UIWidget
       anchors.top: prev.top
       anchors.left: separator.left
       anchors.right: parent.right
-      margin-top: 1
-      height: 350
-      layout:
-        type: verticalBox
-        spacing: 2
-
-    Panel
-      id: bonusListPanel
-      anchors.top: leftPanel.bottom
-      anchors.left: parent.left
-      anchors.right: parent.right
       anchors.bottom: parent.bottom
-      margin-top: 5
-      margin-left: 5
-      margin-right: 5
+      margin-top: 1
       layout:
         type: verticalBox
         spacing: 2

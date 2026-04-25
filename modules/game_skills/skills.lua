@@ -271,6 +271,11 @@ local function applyOutfitBonusDisplay(data)
     end
     applyBonusRows("outfitPassive", outfitPassive, false, outfitsOwned, outfitsTotal)
 
+    local outfitPassiveRow = skillsWindow:recursiveGetChildById("outfitPassiveUnlocked")
+    if outfitPassiveRow then
+        outfitPassiveRow.onClick = function() openCyclopediaMiscStats() end
+    end
+
     local equippedOutfit = findEquippedEntry(data.outfitDetails)
     local hasEquipped = equippedOutfit ~= nil
 
@@ -305,6 +310,11 @@ local function applyOutfitBonusDisplay(data)
     end
     applyBonusRows("mountPassive", mountPassive, false, mountsOwned, mountsTotal)
 
+    local mountPassiveRow = skillsWindow:recursiveGetChildById("mountPassiveUnlocked")
+    if mountPassiveRow then
+        mountPassiveRow.onClick = function() openCyclopediaMiscStats() end
+    end
+
     local mountedEntry = findEquippedEntry(data.mountDetails)
     local hasMounted = mountedEntry ~= nil
 
@@ -323,6 +333,24 @@ end
 
 function getOutfitMountBonusData()
     return cachedOutfitMountData
+end
+
+function openCyclopediaMiscStats()
+    if not modules.game_cyclopedia then return end
+    modules.game_cyclopedia.show("character")
+    scheduleEvent(function()
+        local win = modules.game_cyclopedia.getUI and modules.game_cyclopedia.getUI()
+        if not win then return end
+        local panel = win:recursiveGetChildById("subContentPanel")
+        if not panel then return end
+        for _, child in ipairs(panel:getChildren()) do
+            local label = child:getId() and child:getText and child:getText()
+            if label and label:find("Misc") then
+                child:onClick()
+                return
+            end
+        end
+    end, 200)
 end
 
 local function sendOutfitBonusOpcode(payload)
@@ -397,7 +425,15 @@ function skillController:onInit()
         onStoreExpBoostTimeChange = onStoreExpBoostTimeChange,
         onStatesChange = onStoreBoostStatesChange,
         -- 15.24
-        onMultiOfflineTrainingDialog = onMultiOfflineTrainingDialog
+        onMultiOfflineTrainingDialog = onMultiOfflineTrainingDialog,
+        onOutfitChange = function(localPlayer, outfit, oldOutfit)
+            if not oldOutfit then sendOutfitBonusOpcode("status") return end
+            if outfit.lookType ~= oldOutfit.lookType
+                or outfit.lookAddons ~= oldOutfit.lookAddons
+                or outfit.lookMount ~= oldOutfit.lookMount then
+                sendOutfitBonusOpcode("status")
+            end
+        end,
     })
 
     skillsButton = modules.game_mainpanel.addToggleButton('skillsButton', tr('Skills') .. ' (Alt+S)',

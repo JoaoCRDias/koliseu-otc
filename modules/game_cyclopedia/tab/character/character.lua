@@ -1819,93 +1819,124 @@ local function getElementName(id)
             end
         end
 
-        local bonusPanel = UI.MiscStats:recursiveGetChildById('bonusListPanel')
-        if bonusPanel then
-            bonusPanel:destroyChildren()
-            local bonusData = modules.game_skills and modules.game_skills.getOutfitMountBonusData()
-            if bonusData then
-                local function renderBonusEntry(entry, isMount)
-                    local row = g_ui.createWidget("Label", bonusPanel)
-                    row:setFont("verdana-11px-monochrome")
-                    row:setHeight(14)
-                    row:setMarginTop(1)
+        local bonusData = modules.game_skills and modules.game_skills.getOutfitMountBonusData()
+        if bonusData then
+            local function renderBonusEntry(parent, entry, indent)
+                local row = g_ui.createWidget("Label", parent)
+                row:setFont("verdana-11px-monochrome")
+                row:setHeight(14)
+                row:setMarginTop(1)
+                row:setMarginLeft(indent or 0)
 
-                    local tag = ""
-                    if entry.passive then
-                        tag = " [P]"
-                    elseif entry.equipped or entry.mounted then
-                        tag = " \226\156\148"
-                    end
-                    local text = entry.name .. tag
-                    if entry.bonusText and entry.bonusText ~= "" then
-                        text = text .. "  " .. entry.bonusText
-                    end
-                    row:setText(text)
+                local tag = ""
+                if entry.passive then
+                    tag = " [P]"
+                elseif entry.equipped or entry.mounted then
+                    tag = " \226\156\148"
+                end
+                local text = entry.name .. tag
+                if entry.bonusText and entry.bonusText ~= "" then
+                    text = text .. "  " .. entry.bonusText
+                end
+                row:setText(text)
 
-                    if not entry.owned then
-                        row:setColor("#666666")
-                        row:setOpacity(0.5)
-                    elseif entry.equipped or entry.mounted then
-                        row:setColor("#00FF00")
-                    elseif entry.passive then
-                        row:setColor("#44AD25")
+                if not entry.owned then
+                    row:setColor("#666666")
+                    row:setOpacity(0.5)
+                elseif entry.equipped or entry.mounted then
+                    row:setColor("#00FF00")
+                elseif entry.passive then
+                    row:setColor("#44AD25")
+                else
+                    row:setColor("#C0C0C0")
+                end
+
+                local tooltip = entry.name
+                if entry.passive then tooltip = tooltip .. " [Passive]" end
+                if entry.equipped then tooltip = tooltip .. " [Equipped]" end
+                if entry.mounted then tooltip = tooltip .. " [Mounted]" end
+                if not entry.owned then tooltip = tooltip .. " [Not owned]" end
+                if entry.bonusText and entry.bonusText ~= "" then
+                    tooltip = tooltip .. "\n" .. entry.bonusText
+                end
+                if entry.costText and entry.costText ~= "" then
+                    tooltip = tooltip .. "\nUnlock: " .. entry.costText
+                end
+                row:setTooltip(tooltip)
+            end
+
+            local function renderSubLabel(parent, text)
+                local lbl = g_ui.createWidget("Label", parent)
+                lbl:setFont("verdana-11px-monochrome")
+                lbl:setColor("#808080")
+                lbl:setHeight(14)
+                lbl:setMarginTop(3)
+                lbl:setText(text)
+                return lbl
+            end
+
+            local function renderSection(parent, title, entries, equippedKey)
+                local owned = 0
+                local total = #entries
+                local equipped = {}
+                local passive = {}
+                local other = {}
+                for _, e in ipairs(entries) do
+                    if e.owned then owned = owned + 1 end
+                    if e[equippedKey] then
+                        table.insert(equipped, e)
+                    elseif e.passive then
+                        table.insert(passive, e)
                     else
-                        row:setColor("#C0C0C0")
+                        table.insert(other, e)
                     end
-
-                    local tooltip = entry.name
-                    if entry.passive then tooltip = tooltip .. " [Passive]" end
-                    if entry.equipped then tooltip = tooltip .. " [Equipped]" end
-                    if entry.mounted then tooltip = tooltip .. " [Mounted]" end
-                    if not entry.owned then tooltip = tooltip .. " [Not owned]" end
-                    if entry.bonusText and entry.bonusText ~= "" then
-                        tooltip = tooltip .. "\n" .. entry.bonusText
-                    end
-                    if entry.costText and entry.costText ~= "" then
-                        tooltip = tooltip .. "\nUnlock: " .. entry.costText
-                    end
-                    row:setTooltip(tooltip)
                 end
 
-                local outfitsOwned = tonumber(bonusData.outfitsOwned) or 0
-                local outfitsTotal = tonumber(bonusData.outfitsTotal) or 0
-                local mountsOwned = tonumber(bonusData.mountsOwned) or 0
-                local mountsTotal = tonumber(bonusData.mountsTotal) or 0
+                local header = g_ui.createWidget("Label", parent)
+                header:setText(title .. " (" .. owned .. "/" .. total .. ")")
+                header:setFont("verdana-11px-monochrome")
+                header:setColor("#a0a0a0")
+                header:setMarginTop(5)
 
-                local outfitHeader = g_ui.createWidget("Label", bonusPanel)
-                outfitHeader:setText("Outfits (" .. outfitsOwned .. "/" .. outfitsTotal .. ")")
-                outfitHeader:setFont("verdana-11px-monochrome")
-                outfitHeader:setColor("#a0a0a0")
-                outfitHeader:setMarginTop(5)
-
-                local details = bonusData.outfitDetails or {}
-                table.sort(details, function(a, b)
-                    if a.equipped ~= b.equipped then return a.equipped end
-                    if a.owned ~= b.owned then return a.owned end
-                    if a.passive ~= b.passive then return a.passive end
-                    return (a.name or "") < (b.name or "")
-                end)
-                for _, entry in ipairs(details) do
-                    renderBonusEntry(entry, false)
+                if #equipped > 0 then
+                    renderSubLabel(parent, "  Equipped:")
+                    for _, e in ipairs(equipped) do
+                        renderBonusEntry(parent, e, 10)
+                    end
                 end
 
-                local mountHeader = g_ui.createWidget("Label", bonusPanel)
-                mountHeader:setText("Montarias (" .. mountsOwned .. "/" .. mountsTotal .. ")")
-                mountHeader:setFont("verdana-11px-monochrome")
-                mountHeader:setColor("#a0a0a0")
-                mountHeader:setMarginTop(5)
+                if #passive > 0 then
+                    renderSubLabel(parent, "  Passive:")
+                    for _, e in ipairs(passive) do
+                        renderBonusEntry(parent, e, 10)
+                    end
+                end
 
-                local mountDetails = bonusData.mountDetails or {}
-                table.sort(mountDetails, function(a, b)
-                    if a.mounted ~= b.mounted then return a.mounted end
-                    if a.owned ~= b.owned then return a.owned end
-                    if a.passive ~= b.passive then return a.passive end
-                    return (a.name or "") < (b.name or "")
-                end)
-                for _, entry in ipairs(mountDetails) do
-                    renderBonusEntry(entry, true)
+                if #other > 0 then
+                    for _, e in ipairs(other) do
+                        renderBonusEntry(parent, e, 0)
+                    end
                 end
             end
+
+            local details = bonusData.outfitDetails or {}
+            table.sort(details, function(a, b)
+                if a.equipped ~= b.equipped then return a.equipped end
+                if a.owned ~= b.owned then return a.owned end
+                if a.passive ~= b.passive then return a.passive end
+                return (a.name or "") < (b.name or "")
+            end)
+
+            local mountDetails = bonusData.mountDetails or {}
+            table.sort(mountDetails, function(a, b)
+                if a.mounted ~= b.mounted then return a.mounted end
+                if a.owned ~= b.owned then return a.owned end
+                if a.passive ~= b.passive then return a.passive end
+                return (a.name or "") < (b.name or "")
+            end)
+
+            renderSection(UI.MiscStats.rightPanel, "Outfits", details, "equipped")
+            renderSection(UI.MiscStats.leftPanel, "Montarias", mountDetails, "mounted")
         end
     end
 
