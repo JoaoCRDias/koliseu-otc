@@ -991,10 +991,6 @@ function showFamiliars()
 
     local focused = nil
 
-    local button = g_ui.createWidget("SelectionButton", window.selectionList)
-    button:setId(0)
-    button.name:setText("None")
-    focused = 0
     for _, familiarData in ipairs(ServerData.familiars) do
         local button = g_ui.createWidget("SelectionButton", window.selectionList)
         button:setId(familiarData[1])
@@ -1513,6 +1509,10 @@ function updateAppearanceTexts(outfit)
         if key == "type" then
             newKey = "outfits"
             appKey = "outfit"
+        elseif key == "mount" then
+            newKey = "mounts"
+        elseif key == "familiar" then
+            newKey = "familiars"
         end
         local dataTable = ServerData[newKey]
         if dataTable then

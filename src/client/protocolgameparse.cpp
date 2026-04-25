@@ -3162,7 +3162,7 @@ void ProtocolGame::parseOpenOutfitWindow(const InputMessagePtr& msg) const
         for (auto i = 0; i < familiarCount; ++i) {
             const uint16_t familiarLookType = msg->getU16(); // familiar lookType
             const auto& familiarName = msg->getString(); // familiar name
-            const uint8_t familiarMode = msg->getU8(); // 0x00 // mode: 0x00 - available, 0x01 store (requires U32 store offerId)
+            const uint8_t familiarMode = msg->getU8(); // mode: 0x00 - available, 0x01 store (requires U32 store offerId)
             if (familiarMode == 1) {
                 msg->getU32();
             }
@@ -3171,7 +3171,7 @@ void ProtocolGame::parseOpenOutfitWindow(const InputMessagePtr& msg) const
     }
 
     if (g_game.getClientVersion() >= 1281) {
-        msg->getU8(); // Try outfit mode (?)
+        msg->getU8(); // Try outfit mode
         msg->getU8(); // (bool) mounted
         msg->getU8(); // (bool) randomize mount
     }
@@ -3914,10 +3914,10 @@ Outfit ProtocolGame::getOutfit(const InputMessagePtr& msg, const bool parseMount
     if (g_game.getFeature(Otc::GamePlayerMounts) && parseMount) {
         const uint16_t mount = msg->getU16();
         if (g_game.getClientVersion() >= 1281 && mount != 0) {
-            msg->getU8(); //head
-            msg->getU8(); //body
-            msg->getU8(); //legs
-            msg->getU8(); //feet
+            msg->getU8(); // mount head
+            msg->getU8(); // mount body
+            msg->getU8(); // mount legs
+            msg->getU8(); // mount feet
         }
         outfit.setMount(mount);
     }
@@ -3932,7 +3932,8 @@ Outfit ProtocolGame::getOutfit(const InputMessagePtr& msg, const bool parseMount
         const uint16_t effects = msg->getU16();
         outfit.setEffect(effects);
 
-        outfit.setShader(msg->getString());
+        const auto shader = msg->getString();
+        outfit.setShader(shader);
     }
 
     return outfit;
