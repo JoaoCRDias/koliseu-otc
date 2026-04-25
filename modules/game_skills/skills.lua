@@ -1923,4 +1923,5 @@ function getBaseExpRate()
     return ExpRating[ExperienceRate.BASE] or 100
 end
 
+ProtocolGame.unregisterExtendedOpcode(OPCODE_OUTFIT_BONUS)
 ProtocolGame.registerExtendedOpcode(OPCODE_OUTFIT_BONUS, onOutfitBonusExtendedOpcode)
