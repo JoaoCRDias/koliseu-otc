@@ -146,6 +146,8 @@ find_package(utf8cpp REQUIRED)
 find_package(unofficial-inih CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 
+find_package(Ultralight QUIET)
+
 find_path(CPPCODEC_INCLUDE_DIRS "cppcodec/base32_crockford.hpp")
 
 if(APPLE)
@@ -326,6 +328,20 @@ set(SOURCE_FILES
         client/uisprite.cpp
         tools/datdump.cpp
 )
+
+if(Ultralight_FOUND)
+    set(SOURCE_FILES ${SOURCE_FILES}
+            framework/ultralight/ultralightmanager.cpp
+    )
+    set_source_files_properties(framework/ultralight/ultralightmanager.cpp PROPERTIES UNITY_BUILD OFF)
+    message(STATUS "Ultralight: ENABLED")
+else()
+    set(SOURCE_FILES ${SOURCE_FILES}
+            framework/ultralight/ultralightmanager.cpp
+    )
+    set_source_files_properties(framework/ultralight/ultralightmanager.cpp PROPERTIES UNITY_BUILD OFF)
+    message(STATUS "Ultralight: DISABLED (SDK not found)")
+endif()
 
 if (TOGGLE_FRAMEWORK_GRAPHICS)
   set(SOURCE_FILES ${SOURCE_FILES}
@@ -542,6 +558,7 @@ if(MSVC)
           ${PARALLEL_HASHMAP_INCLUDE_DIRS}
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${CPPCODEC_INCLUDE_DIRS}
+          $<$<BOOL:${Ultralight_FOUND}>:${Ultralight_INCLUDE_DIR}>
   )
   target_link_libraries(otclient_core
           PUBLIC
@@ -571,6 +588,10 @@ if(MSVC)
           fmt::fmt-header-only
           utf8cpp::utf8cpp
           Freetype::Freetype
+          $<$<BOOL:${Ultralight_FOUND}>:${Ultralight_LIBRARY}>
+          $<$<BOOL:${Ultralight_FOUND}>:${UltralightCore_LIBRARY}>
+          $<$<BOOL:${Ultralight_FOUND}>:${WebCore_LIBRARY}>
+          $<$<BOOL:${Ultralight_FOUND}>:${AppCore_LIBRARY}>
   )
 
   if (TOGGLE_FRAMEWORK_PROTOBUF)
@@ -784,6 +805,7 @@ else() # Linux
           ${NLOHMANN_JSON_INCLUDE_DIR}
           ${OPENSSL_INCLUDE_DIR}
           ${CPPCODEC_INCLUDE_DIRS}
+          $<$<BOOL:${Ultralight_FOUND}>:${Ultralight_INCLUDE_DIR}>
   )
   target_link_libraries(otclient_core
           PUBLIC
@@ -823,6 +845,10 @@ else() # Linux
           Vorbis::vorbisfile
           Vorbis::vorbis
           Freetype::Freetype
+          $<$<BOOL:${Ultralight_FOUND}>:${Ultralight_LIBRARY}>
+          $<$<BOOL:${Ultralight_FOUND}>:${UltralightCore_LIBRARY}>
+          $<$<BOOL:${Ultralight_FOUND}>:${WebCore_LIBRARY}>
+          $<$<BOOL:${Ultralight_FOUND}>:${AppCore_LIBRARY}>
   )
 
   if (TOGGLE_FRAMEWORK_PROTOBUF)

@@ -29,6 +29,7 @@
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/graphics/graphics.h"
 #include "framework/graphics/image.h"
+#include "framework/graphics/painter.h"
 #include "framework/graphics/particlemanager.h"
 #include "framework/graphics/texturemanager.h"
 #include "framework/input/mouse.h"
@@ -44,6 +45,7 @@
 #endif
 #include <framework/html/htmlmanager.h>
 #include <framework/platform/platformwindow.h>
+#include <framework/ultralight/ultralightmanager.h>
 
 GraphicalApplication g_app;
 
@@ -111,6 +113,12 @@ void GraphicalApplication::terminate()
     g_html.terminate();
     g_ui.terminate();
 
+#if OTCLIENT_HAS_ULTRALIGHT
+    if (g_ultralightManager.isInitialized()) {
+        g_ultralightManager.shutdown();
+    }
+#endif
+
     Application::terminate();
     m_terminated = false;
 
@@ -152,6 +160,13 @@ void GraphicalApplication::mainLoop() {
         AutoStat s(STATS_RENDER, "DrawPool");
         g_drawPool.draw();
     }
+
+#if OTCLIENT_HAS_ULTRALIGHT
+    if (g_ultralightManager.isInitialized()) {
+        g_ultralightManager.update();
+        g_ultralightManager.render(*g_painter);
+    }
+#endif
 
     if (m_graphicFrameCounter.update()) {
         g_dispatcher.addEvent([this, fps = FPS()] {
@@ -268,6 +283,13 @@ void GraphicalApplication::run()
             g_drawPool.draw();
         }
 
+#if OTCLIENT_HAS_ULTRALIGHT
+        if (g_ultralightManager.isInitialized()) {
+            g_ultralightManager.update();
+            g_ultralightManager.render(*g_painter);
+        }
+#endif
+
         // update screen pixels
         {
             AutoStat s(STATS_RENDER, "SwapBuffers");
@@ -351,7 +373,13 @@ void GraphicalApplication::resize(const Size& size)
 void GraphicalApplication::inputEvent(const InputEvent& event)
 {
     m_onInputEvent = true;
+#if OTCLIENT_HAS_ULTRALIGHT
+    if (!g_ultralightManager.handleInputEvent(event)) {
+        g_ui.inputEvent(event);
+    }
+#else
     g_ui.inputEvent(event);
+#endif
     m_onInputEvent = false;
 }
 

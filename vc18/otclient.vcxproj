@@ -172,6 +172,7 @@
       <AdditionalIncludeDirectories>
         $(VcpkgInstalledDir)\include\luajit;
 		$(VcpkgInstalledDir)\include\;
+        C:\Users\matz\Music\ultralight-free-sdk-1.4.0-win-x64\include;
         generated;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
@@ -198,6 +199,7 @@
       <AdditionalIncludeDirectories>
         $(VcpkgInstalledDir)\include\luajit;
         $(VcpkgInstalledDir)\include\;
+        C:\Users\matz\Music\ultralight-free-sdk-1.4.0-win-x64\include;
         generated;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
@@ -224,6 +226,7 @@
       <AdditionalIncludeDirectories>
         $(VcpkgInstalledDir)\include\luajit;
         $(VcpkgInstalledDir)\include\;
+        C:\Users\matz\Music\ultralight-free-sdk-1.4.0-win-x64\include;
         generated;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
@@ -254,6 +257,7 @@
       <AdditionalIncludeDirectories>
         $(VcpkgInstalledDir)\include\luajit;
         $(VcpkgInstalledDir)\include\;
+        C:\Users\matz\Music\ultralight-free-sdk-1.4.0-win-x64\include;
         generated;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
@@ -285,6 +289,7 @@
       <AdditionalIncludeDirectories>
         $(VcpkgInstalledDir)\include\luajit;
         $(VcpkgInstalledDir)\include\;
+        C:\Users\matz\Music\ultralight-free-sdk-1.4.0-win-x64\include;
         generated;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
@@ -314,6 +319,7 @@
       <AdditionalIncludeDirectories>
         $(VcpkgInstalledDir)\include\luajit;
         $(VcpkgInstalledDir)\include\;
+        C:\Users\matz\Music\ultralight-free-sdk-1.4.0-win-x64\include;
         generated;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
@@ -390,6 +396,7 @@
     <ClCompile Include="..\src\client\uimissile.cpp" />
     <ClCompile Include="..\src\client\uiprogressrect.cpp" />
     <ClCompile Include="..\src\client\uisprite.cpp" />
+    <ClCompile Include="..\src\client\uiultralight.cpp" />
     <ClCompile Include="..\src\framework\core\adaptativeframecounter.cpp" />
     <ClCompile Include="..\src\framework\core\application.cpp" />
     <ClCompile Include="..\src\framework\core\asyncdispatcher.cpp" />
@@ -409,6 +416,9 @@
     <ClCompile Include="..\src\framework\core\scheduledevent.cpp" />
     <ClCompile Include="..\src\framework\core\timer.cpp" />
     <ClCompile Include="..\src\framework\discord\discord.cpp" />
+    <ClCompile Include="..\src\framework\ultralight\ultralightmanager.cpp">
+      <IncludeInUnityFile>false</IncludeInUnityFile>
+    </ClCompile>
     <ClCompile Include="..\src\framework\graphics\animatedtexture.cpp" />
     <ClCompile Include="..\src\framework\graphics\apngloader.cpp" />
     <ClCompile Include="..\src\framework\graphics\bitmapfont.cpp" />
@@ -565,6 +575,7 @@
     <ClInclude Include="..\src\client\uimissile.h" />
     <ClInclude Include="..\src\client\uiprogressrect.h" />
     <ClInclude Include="..\src\client\uisprite.h" />
+    <ClInclude Include="..\src\client\uiultralight.h" />
     <ClInclude Include="..\src\framework\config.h" />
     <ClInclude Include="..\src\framework\const.h" />
     <ClInclude Include="..\src\framework\core\adaptativeframecounter.h" />
@@ -588,6 +599,7 @@
     <ClInclude Include="..\src\framework\core\scheduledevent.h" />
     <ClInclude Include="..\src\framework\core\timer.h" />
     <ClInclude Include="..\src\framework\discord\discord.h" />
+    <ClInclude Include="..\src\framework\ultralight\ultralightmanager.h" />
     <ClInclude Include="..\src\framework\global.h" />
     <ClInclude Include="..\src\framework\graphics\animatedtexture.h" />
     <ClInclude Include="..\src\framework\graphics\apngloader.h" />

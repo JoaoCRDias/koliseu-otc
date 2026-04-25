@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
@@ -12,6 +12,7 @@
         FRAMEWORK_NET;
         FRAMEWORK_SOUND;
         FRAMEWORK_PROTOBUF;
+        OTCLIENT_HAS_ULTRALIGHT;
         BUILD_TYPE="RelWithDebInfo";
         NOMINMAX;
     </PREPROCESSOR_DEFS>
@@ -42,6 +43,10 @@
         vorbisfile.lib;
         pugixml.lib;
         zlib.lib;
+        Ultralight.lib;
+        UltralightCore.lib;
+        WebCore.lib;
+        AppCore.lib;
     </OTCLIENT_LIBDEPS>
 
     <OTCLIENT_LIBDEPS_D>
@@ -90,6 +95,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>$(OTCLIENT_LIBDEPS)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\matz\Music\ultralight-free-sdk-1.4.0-win-x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <LargeAddressAware>true</LargeAddressAware>
       <SubSystem>Windows</SubSystem>
