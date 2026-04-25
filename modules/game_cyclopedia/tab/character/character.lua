@@ -1825,8 +1825,11 @@ function Cyclopedia.loadOutfitMountBonuses()
     local data = modules.game_skills and modules.game_skills.getOutfitMountBonusData()
     if not data then return end
 
-    local outfitGrid = UI.OutfitMountBonuses.outfitGrid
-    local mountGrid = UI.OutfitMountBonuses.mountGrid
+    local panel = UI.OutfitMountBonuses
+    local outfitGrid = panel:recursiveGetChildById('outfitGrid')
+    local mountGrid = panel:recursiveGetChildById('mountGrid')
+    if not outfitGrid or not mountGrid then return end
+
     outfitGrid:destroyChildren()
     mountGrid:destroyChildren()
 
@@ -1927,6 +1930,8 @@ function Cyclopedia.loadOutfitMountBonuses()
     UI.OutfitMountBonuses.bonusListFilter.mounts:setChecked(false)
     outfitGrid:setVisible(true)
     mountGrid:setVisible(false)
-    UI.OutfitMountBonuses.outfitScrollbar:setVisible(true)
-    UI.OutfitMountBonuses.mountScrollbar:setVisible(false)
+    local osb = panel:recursiveGetChildById('outfitScrollbar')
+    local msb = panel:recursiveGetChildById('mountScrollbar')
+    if osb then osb:setVisible(true) end
+    if msb then msb:setVisible(false) end
 end

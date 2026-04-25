@@ -598,10 +598,10 @@ UIWidget
         margin-left: 10
         @onClick: |
           local p = self:getParent():getParent()
-          p.outfitGrid:setVisible(true)
-          p.mountGrid:setVisible(false)
-          p.outfitScrollbar:setVisible(true)
-          p.mountScrollbar:setVisible(false)
+          p:recursiveGetChildById('outfitGrid'):setVisible(true)
+          p:recursiveGetChildById('mountGrid'):setVisible(false)
+          p:recursiveGetChildById('outfitScrollbar'):setVisible(true)
+          p:recursiveGetChildById('mountScrollbar'):setVisible(false)
           self:setChecked(true)
           self:getParent().mounts:setChecked(false)
       CheckBoxCircle
@@ -614,10 +614,10 @@ UIWidget
         anchors.left: outfits.right
         @onClick: |
           local p = self:getParent():getParent()
-          p.outfitGrid:setVisible(false)
-          p.mountGrid:setVisible(true)
-          p.outfitScrollbar:setVisible(false)
-          p.mountScrollbar:setVisible(true)
+          p:recursiveGetChildById('outfitGrid'):setVisible(false)
+          p:recursiveGetChildById('mountGrid'):setVisible(true)
+          p:recursiveGetChildById('outfitScrollbar'):setVisible(false)
+          p:recursiveGetChildById('mountScrollbar'):setVisible(true)
           self:setChecked(true)
           self:getParent().outfits:setChecked(false)
     BorderBox
