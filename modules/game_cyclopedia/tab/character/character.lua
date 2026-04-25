@@ -1008,6 +1008,11 @@ function Cyclopedia.configureCharacterCategories()
                         icon = "/game_cyclopedia/images/character_icons/icon-character-generalstats-misc",
                         open = "MiscStats"
                     })
+                    table.insert(categories, {
+                        text = "Outfit & Mount Bonuses",
+                        icon = "/game_cyclopedia/images/character_icons/icon_outfitsmounts",
+                        open = "OutfitMountBonuses"
+                    })
                 end
                 
                 return categories
@@ -1109,6 +1114,8 @@ function Cyclopedia.configureCharacterCategories()
                         g_game.requestCharacterInfo(0, CyclopediaCharacterInfoTypes.RecentDeaths, 23, 1)
                     elseif subWidget.open == "RecentKills" then
                         g_game.requestCharacterInfo(0, CyclopediaCharacterInfoTypes.RecentPVPKills, 23, 1)
+                    elseif subWidget.open == "OutfitMountBonuses" then
+                        Cyclopedia.loadOutfitMountBonuses()
                     end
 
                     UI.selectedOption = subWidget.open
@@ -1813,3 +1820,114 @@ local function getElementName(id)
             end
         end
     end
+
+function Cyclopedia.loadOutfitMountBonuses()
+    local data = modules.game_skills and modules.game_skills.getOutfitMountBonusData()
+    if not data then return end
+    
+    local leftPanel = UI.OutfitMountBonuses.leftPanel
+    local rightPanel = UI.OutfitMountBonuses.rightPanel
+    leftPanel:destroyChildren()
+    rightPanel:destroyChildren()
+    
+    local function renderSectionHeader(parent, text)
+        local widget = g_ui.createWidget("CharacterSkillBase", parent)
+        local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
+        nameLabel:setText(text)
+        nameLabel:setColor("#FFD700")
+        nameLabel:setFont("verdana-11px-monochrome")
+        return widget
+    end
+    
+    local function renderStat(parent, name, value, color, tooltip)
+        local widget = g_ui.createWidget("CharacterSkillBase", parent)
+        local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
+        nameLabel:setText(name .. ":")
+        nameLabel:setColor(color or "#C0C0C0")
+        local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
+        valueLabel:setText(tostring(value))
+        valueLabel:setColor(color or "#C0C0C0")
+        if tooltip then widget:setTooltip(tooltip) end
+        return widget
+    end
+    
+    local function renderEntry(parent, entry)
+        local widget = g_ui.createWidget("CharacterSkillBase", parent)
+        local nameLabel = g_ui.createWidget("SkillNameLabel", widget)
+        local typeTag = entry.passive and " [Passive]" or ""
+        nameLabel:setText(entry.name .. typeTag)
+        nameLabel:setColor(entry.owned and "#44AD25" or "#666666")
+        local valueLabel = g_ui.createWidget("SkillValueLabel", widget)
+        valueLabel:setText(entry.bonusText or "")
+        valueLabel:setColor(entry.owned and "#44AD25" or "#666666")
+        local tooltip = entry.name .. "\n"
+        if entry.passive then
+            tooltip = tooltip .. "Type: Passive (applied when owned)\n"
+        else
+            tooltip = tooltip .. "Type: Equipped (requires full addon)\n"
+        end
+        if entry.owned then
+            tooltip = tooltip .. "Status: Owned"
+        else
+            tooltip = tooltip .. "Status: Not owned"
+        end
+        widget:setTooltip(tooltip)
+        return widget
+    end
+    
+    local function renderTotalSection(parent, title, totals)
+        local hasAny = false
+        for k, v in pairs(totals) do
+            if tonumber(v) and tonumber(v) ~= 0 then hasAny = true break end
+        end
+        if not hasAny then return end
+        
+        renderSectionHeader(parent, title)
+        
+        local statMap = {
+            { key = "hp", name = "Max HP", fmt = function(v) return "+" .. tostring(v) end },
+            { key = "mp", name = "Max MP", fmt = function(v) return "+" .. tostring(v) end },
+            { key = "exp", name = "EXP Bonus", fmt = function(v) return "+" .. string.format("%.1f", v) .. "%" end },
+            { key = "cap", name = "Capacity", fmt = function(v) return "+" .. tostring(v) end },
+            { key = "ml", name = "Magic Level", fmt = function(v) return "+" .. tostring(v) end },
+            { key = "melee", name = "Melee", fmt = function(v) return "+" .. tostring(v) end },
+            { key = "distance", name = "Distance", fmt = function(v) return "+" .. tostring(v) end },
+            { key = "shielding", name = "Shielding", fmt = function(v) return "+" .. tostring(v) end },
+            { key = "critChance", name = "Crit Chance", fmt = function(v) return "+" .. string.format("%.1f", v / 100) .. "%" end },
+            { key = "critDamage", name = "Crit Damage", fmt = function(v) return "+" .. string.format("%.1f", v / 100) .. "%" end },
+            { key = "lifeLeech", name = "Life Leech", fmt = function(v) return "+" .. string.format("%.1f", v / 100) .. "%" end },
+            { key = "manaLeech", name = "Mana Leech", fmt = function(v) return "+" .. string.format("%.1f", v / 100) .. "%" end },
+        }
+        
+        for _, stat in ipairs(statMap) do
+            local v = tonumber(totals[stat.key]) or 0
+            if v ~= 0 then
+                renderStat(parent, stat.name, stat.fmt(v), "#44AD25")
+            end
+        end
+    end
+    
+    -- OUTFITS section (left panel)
+    renderSectionHeader(leftPanel, "OUTFITS (" .. (data.outfitsOwned or 0) .. "/" .. (data.outfitsTotal or 0) .. " owned)")
+    
+    if data.outfitDetails then
+        for _, entry in ipairs(data.outfitDetails) do
+            renderEntry(leftPanel, entry)
+        end
+    end
+    
+    renderTotalSection(leftPanel, "Passive Bonus Total", data.outfitPassive or {})
+    renderTotalSection(leftPanel, "Equipped Bonus", data.outfitEquipped or {})
+    
+    -- MOUNTS section (right panel)
+    renderSectionHeader(rightPanel, "MOUNTS (" .. (data.mountsOwned or 0) .. "/" .. (data.mountsTotal or 0) .. " owned)")
+    
+    if data.mountDetails then
+        for _, entry in ipairs(data.mountDetails) do
+            renderEntry(rightPanel, entry)
+        end
+    end
+    
+    renderTotalSection(rightPanel, "Passive Mount Total", data.mountPassive or {})
+    renderTotalSection(rightPanel, "Mounted Bonus", data.mountEquipped or {})
+end

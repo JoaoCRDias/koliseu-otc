@@ -43,6 +43,130 @@ local statsCache = {
 
 local OPCODE_OUTFIT_BONUS = 64
 
+local storeBoostTickEvent = nil
+local storeBoostDisplaySeconds = 0
+
+local function formatStoreBoostCountdown(totalSeconds)
+    totalSeconds = math.max(0, math.floor(tonumber(totalSeconds) or 0))
+    local minutes = math.floor(totalSeconds / 60)
+    local seconds = totalSeconds % 60
+    if minutes <= 99 then
+        return string.format('%02d:%02d', minutes, seconds)
+    end
+    return string.format('%d:%02d', minutes, seconds)
+end
+
+local function storeBoostShouldConsumeSecond(lp)
+    if not lp then return false end
+    if lp.isInProtectionZone and lp:isInProtectionZone() then return false end
+    local st = lp:getStamina() or 0
+    if st <= 0 then return false end
+    return true
+end
+
+local function getStoreBoostValueWidget()
+    local sec = skillsWindow and skillsWindow:recursiveGetChildById('storeBoostSection')
+    return sec and sec:getChildById('value')
+end
+
+local function applyStoreBoostInactiveDisplay(row, valueWidget)
+    if valueWidget then
+        valueWidget:setText('--')
+        valueWidget:setColor('#C0C0C0')
+    end
+    if row then
+        row:setTooltip(tr('No active Store XP Boost.\nClick to open the Store to purchase.'))
+    end
+end
+
+local function applyStoreBoostActiveDisplay(row, valueWidget, seconds)
+    if valueWidget then
+        valueWidget:setText(formatStoreBoostCountdown(seconds))
+        valueWidget:setColor('#00FF00')
+    end
+    if row then
+        local pct = ExpRating[ExperienceRate.XP_BOOST] or 0
+        row:setTooltip(tr('Store XP Boost: +%d%% bonus experience while active.\nClick to open the Store.', pct))
+    end
+end
+
+local function cancelStoreBoostTick()
+    if storeBoostTickEvent then
+        storeBoostTickEvent:cancel()
+        storeBoostTickEvent = nil
+    end
+end
+
+local function onStoreBoostTick()
+    storeBoostTickEvent = nil
+    if not g_game.isOnline() or not skillsWindow or not g_game.getFeature(GameExperienceBonus) then
+        cancelStoreBoostTick()
+        return
+    end
+    local row = skillsWindow:recursiveGetChildById('storeBoostSection')
+    if not row or not row:isVisible() then
+        return
+    end
+    local lp = g_game.getLocalPlayer()
+    if not storeBoostShouldConsumeSecond(lp) then
+        storeBoostTickEvent = scheduleEvent(onStoreBoostTick, 1000)
+        return
+    end
+    if storeBoostDisplaySeconds > 0 then
+        storeBoostDisplaySeconds = storeBoostDisplaySeconds - 1
+    end
+    local valueWidget = getStoreBoostValueWidget()
+    if storeBoostDisplaySeconds <= 0 then
+        cancelStoreBoostTick()
+        applyStoreBoostInactiveDisplay(row, valueWidget)
+        return
+    end
+    if valueWidget then
+        valueWidget:setText(formatStoreBoostCountdown(storeBoostDisplaySeconds))
+        valueWidget:setColor('#00FF00')
+    end
+    storeBoostTickEvent = scheduleEvent(onStoreBoostTick, 1000)
+end
+
+local function syncStoreBoostFromServer(localPlayer)
+    if not skillsWindow then return end
+    local row = skillsWindow:recursiveGetChildById('storeBoostSection')
+    if not row then return end
+    if not g_game.getFeature(GameExperienceBonus) then
+        cancelStoreBoostTick()
+        row:setVisible(false)
+        local sepTop = skillsWindow:recursiveGetChildById('storeBoostSeparatorTop')
+        local sepBottom = skillsWindow:recursiveGetChildById('storeBoostSeparatorBottom')
+        if sepTop then sepTop:setVisible(false) end
+        if sepBottom then sepBottom:setVisible(false) end
+        return
+    end
+    local lp = localPlayer or g_game.getLocalPlayer()
+    if not lp then return end
+    cancelStoreBoostTick()
+    storeBoostDisplaySeconds = lp:getStoreExpBoostTime() or 0
+    local valueWidget = getStoreBoostValueWidget()
+    if not valueWidget then return end
+    row:setVisible(true)
+    local sepTop = skillsWindow:recursiveGetChildById('storeBoostSeparatorTop')
+    local sepBottom = skillsWindow:recursiveGetChildById('storeBoostSeparatorBottom')
+    if sepTop then sepTop:setVisible(true) end
+    if sepBottom then sepBottom:setVisible(true) end
+    if storeBoostDisplaySeconds <= 0 then
+        applyStoreBoostInactiveDisplay(row, valueWidget)
+        return
+    end
+    applyStoreBoostActiveDisplay(row, valueWidget, storeBoostDisplaySeconds)
+    storeBoostTickEvent = scheduleEvent(onStoreBoostTick, 1000)
+end
+
+local function onStoreBoostStatesChange(player, states, oldStates)
+    local mask = PlayerStates.Pz
+    if bit.band(states, mask) ~= bit.band(oldStates or 0, mask) then
+        syncStoreBoostFromServer(player)
+    end
+end
+
 local function formatBonusFlat(n)
     local v = math.floor(tonumber(n) or 0)
     if v == 0 then return "0" end
@@ -77,156 +201,94 @@ local function setBonusRow(widgetId, visible, valueText, tooltip)
     if tooltip then w:setTooltip(tooltip) end
 end
 
+local cachedOutfitMountData = nil
+
 local function applyOutfitBonusDisplay(data)
     if not skillsWindow or type(data) ~= "table" then return end
     if g_game.getClientVersion() < 1410 then return end
 
+    cachedOutfitMountData = data
+
     local sep = skillsWindow:recursiveGetChildById("separadorOutfitAddonBonus")
     if not sep then return end
 
-    local outfitsUnlocked = tonumber(data.outfitsUnlocked) or 0
-    local outfitHp = tonumber(data.outfitHp) or 0
-    local outfitMp = tonumber(data.outfitMp) or 0
-    local outfitMl = tonumber(data.outfitMl) or 0
-    local outfitCap = tonumber(data.outfitCap) or 0
-    local outfitExp = tonumber(data.outfitExp) or 0
-    local outfitMelee = tonumber(data.outfitMelee) or 0
-    local outfitFist = tonumber(data.outfitFist) or 0
-    local outfitClub = tonumber(data.outfitClub) or 0
-    local outfitSword = tonumber(data.outfitSword) or 0
-    local outfitAxe = tonumber(data.outfitAxe) or 0
-    local outfitDistance = tonumber(data.outfitDistance) or 0
-    local outfitShielding = tonumber(data.outfitShielding) or 0
-    local outfitFishing = tonumber(data.outfitFishing) or 0
-    local outfitCritChance = tonumber(data.outfitCritChance) or 0
-    local outfitCritDamage = tonumber(data.outfitCritDamage) or 0
-    local outfitLifeLeech = tonumber(data.outfitLifeLeech) or 0
-    local outfitManaLeech = tonumber(data.outfitManaLeech) or 0
-
-    local mountCount = tonumber(data.mountCount) or 0
-    local mountHp = tonumber(data.mountHp) or 0
-    local mountMp = tonumber(data.mountMp) or 0
-    local mountMl = tonumber(data.mountMl) or 0
-    local mountCap = tonumber(data.mountCap) or 0
-    local mountExp = tonumber(data.mountExp) or 0
-    local mountMelee = tonumber(data.mountMelee) or 0
-    local mountDistance = tonumber(data.mountDistance) or 0
-    local mountShielding = tonumber(data.mountShielding) or 0
-    local mountCritChance = tonumber(data.mountCritChance) or 0
-    local mountCritDamage = tonumber(data.mountCritDamage) or 0
-    local mountLifeLeech = tonumber(data.mountLifeLeech) or 0
-    local mountManaLeech = tonumber(data.mountManaLeech) or 0
-
-    local hasOutfits = outfitsUnlocked > 0
-        or outfitHp ~= 0 or outfitMp ~= 0 or outfitMl ~= 0
-        or outfitCap ~= 0 or outfitExp ~= 0
-        or outfitMelee ~= 0 or outfitFist ~= 0 or outfitClub ~= 0
-        or outfitSword ~= 0 or outfitAxe ~= 0 or outfitDistance ~= 0
-        or outfitShielding ~= 0 or outfitFishing ~= 0
-        or outfitCritChance ~= 0 or outfitCritDamage ~= 0
-        or outfitLifeLeech ~= 0 or outfitManaLeech ~= 0
-
-    local hasMounts = mountCount > 0
-        or mountHp ~= 0 or mountMp ~= 0 or mountMl ~= 0
-        or mountCap ~= 0 or mountExp ~= 0
-        or mountMelee ~= 0 or mountDistance ~= 0 or mountShielding ~= 0
-        or mountCritChance ~= 0 or mountCritDamage ~= 0
-        or mountLifeLeech ~= 0 or mountManaLeech ~= 0
-
-    local show = hasOutfits or hasMounts
-
-    local function hideAll()
-        local ids = {
-            "labelSectionOutfits", "outfitRowUnlocked", "outfitRowHp", "outfitRowMp",
-            "outfitRowExp", "outfitRowCap", "outfitRowMl", "outfitRowMelee",
-            "outfitRowDistance", "outfitRowShielding", "outfitRowCritChance",
-            "outfitRowCritDamage", "outfitRowLifeLeech", "outfitRowManaLeech",
-            "labelSectionMounts", "mountRowCount", "mountRowHp", "mountRowMp",
-            "mountRowExp", "mountRowCap", "mountRowMl", "mountRowMelee",
-            "mountRowDistance", "mountRowShielding", "mountRowCritChance",
-            "mountRowCritDamage", "mountRowLifeLeech", "mountRowManaLeech"
-        }
-        for _, id in ipairs(ids) do
-            local w = skillsWindow:recursiveGetChildById(id)
-            if w then w:setVisible(false) end
-        end
-    end
-
-    if not show then
-        sep:setVisible(false)
-        hideAll()
-        updateHeight()
-        return
-    end
-
     sep:setVisible(true)
-    hideAll()
 
-    if hasOutfits then
-        local lbl = skillsWindow:recursiveGetChildById("labelSectionOutfits")
-        if lbl then lbl:setVisible(true) end
+    local outfitsOwned = tonumber(data.outfitsOwned) or 0
+    local outfitsTotal = tonumber(data.outfitsTotal) or 0
+    local passive = data.outfitPassive or {}
+    local equipped = data.outfitEquipped or {}
 
-        setBonusRow("outfitRowUnlocked", true, tostring(math.max(0, outfitsUnlocked)),
-            tr("Outfits com addon completo desbloqueadas."))
-        setBonusRow("outfitRowHp", outfitHp ~= 0, formatBonusFlat(outfitHp),
-            tr("Bonus de HP max de outfits."))
-        setBonusRow("outfitRowMp", outfitMp ~= 0, formatBonusFlat(outfitMp),
-            tr("Bonus de Mana max de outfits."))
-        setBonusRow("outfitRowExp", outfitExp ~= 0, formatBonusPercent(outfitExp),
-            tr("Bonus de EXP de outfits."))
-        setBonusRow("outfitRowCap", outfitCap ~= 0, formatBonusFlat(outfitCap),
-            tr("Bonus de Cap de outfits."))
-        setBonusRow("outfitRowMl", outfitMl ~= 0, formatBonusSkill(outfitMl),
-            tr("Bonus de Magic Level de outfits."))
-        setBonusRow("outfitRowMelee", outfitMelee ~= 0, formatBonusSkill(outfitMelee),
-            tr("Bonus de Melee de outfits."))
-        setBonusRow("outfitRowDistance", outfitDistance ~= 0, formatBonusSkill(outfitDistance),
-            tr("Bonus de Distance de outfits."))
-        setBonusRow("outfitRowShielding", outfitShielding ~= 0, formatBonusSkill(outfitShielding),
-            tr("Bonus de Shielding de outfits."))
-        setBonusRow("outfitRowCritChance", outfitCritChance ~= 0, formatBonusPercent(outfitCritChance / 100),
-            tr("Bonus de Critical Hit Chance de outfits."))
-        setBonusRow("outfitRowCritDamage", outfitCritDamage ~= 0, formatBonusPercent(outfitCritDamage / 100),
-            tr("Bonus de Critical Hit Damage de outfits."))
-        setBonusRow("outfitRowLifeLeech", outfitLifeLeech ~= 0, formatBonusPercent(outfitLifeLeech / 100),
-            tr("Bonus de Life Leech de outfits."))
-        setBonusRow("outfitRowManaLeech", outfitManaLeech ~= 0, formatBonusPercent(outfitManaLeech / 100),
-            tr("Bonus de Mana Leech de outfits."))
-    end
+    local lblOutfits = skillsWindow:recursiveGetChildById("labelSectionOutfits")
+    if lblOutfits then lblOutfits:setVisible(true) end
 
-    if hasMounts then
-        local lbl = skillsWindow:recursiveGetChildById("labelSectionMounts")
-        if lbl then lbl:setVisible(true) end
+    setBonusRow("outfitRowUnlocked", true, outfitsOwned .. "/" .. outfitsTotal,
+        tr("Outfits com bonus desbloqueadas."))
+    setBonusRow("outfitRowHp", (tonumber(passive.hp) or 0) ~= 0, formatBonusFlat(passive.hp or 0),
+        tr("Bonus passivo de HP max."))
+    setBonusRow("outfitRowMp", (tonumber(passive.mp) or 0) ~= 0, formatBonusFlat(passive.mp or 0),
+        tr("Bonus passivo de Mana max."))
+    setBonusRow("outfitRowExp", (tonumber(passive.exp) or 0) ~= 0, formatBonusPercent(passive.exp or 0),
+        tr("Bonus passivo de EXP."))
+    setBonusRow("outfitRowCap", (tonumber(passive.cap) or 0) ~= 0, formatBonusFlat(passive.cap or 0),
+        tr("Bonus passivo de Cap."))
+    setBonusRow("outfitRowMl", (tonumber(passive.ml) or 0) ~= 0, formatBonusSkill(passive.ml or 0),
+        tr("Bonus passivo de Magic Level."))
+    setBonusRow("outfitRowMelee", (tonumber(passive.melee) or 0) ~= 0, formatBonusSkill(passive.melee or 0),
+        tr("Bonus passivo de Melee."))
+    setBonusRow("outfitRowDistance", (tonumber(passive.distance) or 0) ~= 0, formatBonusSkill(passive.distance or 0),
+        tr("Bonus passivo de Distance."))
+    setBonusRow("outfitRowShielding", (tonumber(passive.shielding) or 0) ~= 0, formatBonusSkill(passive.shielding or 0),
+        tr("Bonus passivo de Shielding."))
+    setBonusRow("outfitRowCritChance", (tonumber(passive.critChance) or 0) ~= 0, formatBonusPercent((passive.critChance or 0) / 100),
+        tr("Bonus passivo de Critical Hit Chance."))
+    setBonusRow("outfitRowCritDamage", (tonumber(passive.critDamage) or 0) ~= 0, formatBonusPercent((passive.critDamage or 0) / 100),
+        tr("Bonus passivo de Critical Hit Damage."))
+    setBonusRow("outfitRowLifeLeech", (tonumber(passive.lifeLeech) or 0) ~= 0, formatBonusPercent((passive.lifeLeech or 0) / 100),
+        tr("Bonus passivo de Life Leech."))
+    setBonusRow("outfitRowManaLeech", (tonumber(passive.manaLeech) or 0) ~= 0, formatBonusPercent((passive.manaLeech or 0) / 100),
+        tr("Bonus passivo de Mana Leech."))
 
-        setBonusRow("mountRowCount", true, tostring(math.max(0, mountCount)),
-            tr("Montarias desbloqueadas."))
-        setBonusRow("mountRowHp", mountHp ~= 0, formatBonusFlat(mountHp),
-            tr("Bonus de HP max de montarias."))
-        setBonusRow("mountRowMp", mountMp ~= 0, formatBonusFlat(mountMp),
-            tr("Bonus de Mana max de montarias."))
-        setBonusRow("mountRowExp", mountExp ~= 0, formatBonusPercent(mountExp),
-            tr("Bonus de EXP de montarias."))
-        setBonusRow("mountRowCap", mountCap ~= 0, formatBonusFlat(mountCap),
-            tr("Bonus de Cap de montarias."))
-        setBonusRow("mountRowMl", mountMl ~= 0, formatBonusSkill(mountMl),
-            tr("Bonus de Magic Level de montarias."))
-        setBonusRow("mountRowMelee", mountMelee ~= 0, formatBonusSkill(mountMelee),
-            tr("Bonus de Melee de montarias."))
-        setBonusRow("mountRowDistance", mountDistance ~= 0, formatBonusSkill(mountDistance),
-            tr("Bonus de Distance de montarias."))
-        setBonusRow("mountRowShielding", mountShielding ~= 0, formatBonusSkill(mountShielding),
-            tr("Bonus de Shielding de montarias."))
-        setBonusRow("mountRowCritChance", mountCritChance ~= 0, formatBonusPercent(mountCritChance / 100),
-            tr("Bonus de Critical Hit Chance de montarias."))
-        setBonusRow("mountRowCritDamage", mountCritDamage ~= 0, formatBonusPercent(mountCritDamage / 100),
-            tr("Bonus de Critical Hit Damage de montarias."))
-        setBonusRow("mountRowLifeLeech", mountLifeLeech ~= 0, formatBonusPercent(mountLifeLeech / 100),
-            tr("Bonus de Life Leech de montarias."))
-        setBonusRow("mountRowManaLeech", mountManaLeech ~= 0, formatBonusPercent(mountManaLeech / 100),
-            tr("Bonus de Mana Leech de montarias."))
-    end
+    local mountsOwned = tonumber(data.mountsOwned) or 0
+    local mountsTotal = tonumber(data.mountsTotal) or 0
+    local mPassive = data.mountPassive or {}
+    local mEquipped = data.mountEquipped or {}
+
+    local lblMounts = skillsWindow:recursiveGetChildById("labelSectionMounts")
+    if lblMounts then lblMounts:setVisible(true) end
+
+    setBonusRow("mountRowCount", true, mountsOwned .. "/" .. mountsTotal,
+        tr("Montarias com bonus desbloqueadas."))
+    setBonusRow("mountRowHp", (tonumber(mPassive.hp) or 0) ~= 0, formatBonusFlat(mPassive.hp or 0),
+        tr("Bonus passivo de HP max de montarias."))
+    setBonusRow("mountRowMp", (tonumber(mPassive.mp) or 0) ~= 0, formatBonusFlat(mPassive.mp or 0),
+        tr("Bonus passivo de Mana max de montarias."))
+    setBonusRow("mountRowExp", (tonumber(mPassive.exp) or 0) ~= 0, formatBonusPercent(mPassive.exp or 0),
+        tr("Bonus passivo de EXP de montarias."))
+    setBonusRow("mountRowCap", (tonumber(mPassive.cap) or 0) ~= 0, formatBonusFlat(mPassive.cap or 0),
+        tr("Bonus passivo de Cap de montarias."))
+    setBonusRow("mountRowMl", (tonumber(mPassive.ml) or 0) ~= 0, formatBonusSkill(mPassive.ml or 0),
+        tr("Bonus passivo de Magic Level de montarias."))
+    setBonusRow("mountRowMelee", (tonumber(mPassive.melee) or 0) ~= 0, formatBonusSkill(mPassive.melee or 0),
+        tr("Bonus passivo de Melee de montarias."))
+    setBonusRow("mountRowDistance", (tonumber(mPassive.distance) or 0) ~= 0, formatBonusSkill(mPassive.distance or 0),
+        tr("Bonus passivo de Distance de montarias."))
+    setBonusRow("mountRowShielding", (tonumber(mPassive.shielding) or 0) ~= 0, formatBonusSkill(mPassive.shielding or 0),
+        tr("Bonus passivo de Shielding de montarias."))
+    setBonusRow("mountRowCritChance", (tonumber(mPassive.critChance) or 0) ~= 0, formatBonusPercent((mPassive.critChance or 0) / 100),
+        tr("Bonus passivo de Critical Hit Chance de montarias."))
+    setBonusRow("mountRowCritDamage", (tonumber(mPassive.critDamage) or 0) ~= 0, formatBonusPercent((mPassive.critDamage or 0) / 100),
+        tr("Bonus passivo de Critical Hit Damage de montarias."))
+    setBonusRow("mountRowLifeLeech", (tonumber(mPassive.lifeLeech) or 0) ~= 0, formatBonusPercent((mPassive.lifeLeech or 0) / 100),
+        tr("Bonus passivo de Life Leech de montarias."))
+    setBonusRow("mountRowManaLeech", (tonumber(mPassive.manaLeech) or 0) ~= 0, formatBonusPercent((mPassive.manaLeech or 0) / 100),
+        tr("Bonus passivo de Mana Leech de montarias."))
 
     updateHeight()
+end
+
+function getOutfitMountBonusData()
+    return cachedOutfitMountData
 end
 
 local function sendOutfitBonusOpcode(payload)
@@ -299,6 +361,7 @@ function skillController:onInit()
         onForgeBonusesChange = onForgeBonusesChange,
         onExperienceRateChange = onExperienceRateChange,
         onStoreExpBoostTimeChange = onStoreExpBoostTimeChange,
+        onStatesChange = onStoreBoostStatesChange,
         -- 15.24
         onMultiOfflineTrainingDialog = onMultiOfflineTrainingDialog
     })
@@ -935,13 +998,10 @@ function update()
     else
         regenerationTime:show()
     end
-    local xpBoostButton = skillsWindow:recursiveGetChildById('xpBoostButton')
     local xpGainRate = skillsWindow:recursiveGetChildById('xpGainRate')
     if g_game.getFeature(GameExperienceBonus) then
-        xpBoostButton:show()
         xpGainRate:show()
     else
-        xpBoostButton:setVisible(false)
         xpGainRate:setVisible(false)
     end
 end
@@ -1017,6 +1077,7 @@ function refresh()
     for i = Skill.Fist, Skill.Transcendence do
         onSkillChange(player, i, player:getSkillLevel(i), player:getSkillLevelPercent(i))
     end
+    syncStoreBoostFromServer(player)
     update()
     updateHeight()
     if g_game.getClientVersion() >= 1410 then
@@ -1127,6 +1188,8 @@ function skillController:onGameEnd()
         expSpeedEvent:cancel()
         expSpeedEvent = nil
     end
+    cancelStoreBoostTick()
+    storeBoostDisplaySeconds = 0
     
     local allGroups = {'offence', 'defence', 'misc', 'GameAdditionalSkills', 'GameForgeSkillStats', 'GameForgeSkillStats1332'}
     for _, groupName in pairs(allGroups) do
@@ -1146,16 +1209,24 @@ function skillController:onGameEnd()
             end
         end
     end
+    cachedOutfitMountData = nil
     applyOutfitBonusDisplay({
-        outfitsUnlocked = 0, outfitHp = 0, outfitMp = 0, outfitMl = 0,
-        outfitCap = 0, outfitExp = 0, outfitMelee = 0, outfitFist = 0,
-        outfitClub = 0, outfitSword = 0, outfitAxe = 0, outfitDistance = 0,
-        outfitShielding = 0, outfitFishing = 0, outfitCritChance = 0,
-        outfitCritDamage = 0, outfitLifeLeech = 0, outfitManaLeech = 0,
-        mountCount = 0, mountHp = 0, mountMp = 0, mountMl = 0,
-        mountCap = 0, mountExp = 0, mountMelee = 0, mountDistance = 0,
-        mountShielding = 0, mountCritChance = 0, mountCritDamage = 0,
-        mountLifeLeech = 0, mountManaLeech = 0,
+        outfitsOwned = 0, outfitsTotal = 0,
+        mountsOwned = 0, mountsTotal = 0,
+        outfitPassive = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
+            distance = 0, shielding = 0, critChance = 0, critDamage = 0,
+            lifeLeech = 0, manaLeech = 0 },
+        outfitEquipped = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
+            distance = 0, shielding = 0, critChance = 0, critDamage = 0,
+            lifeLeech = 0, manaLeech = 0 },
+        mountPassive = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
+            distance = 0, shielding = 0, critChance = 0, critDamage = 0,
+            lifeLeech = 0, manaLeech = 0 },
+        mountEquipped = { hp = 0, mp = 0, ml = 0, cap = 0, exp = 0, melee = 0,
+            distance = 0, shielding = 0, critChance = 0, critDamage = 0,
+            lifeLeech = 0, manaLeech = 0 },
+        outfitDetails = {},
+        mountDetails = {},
     })
     resetTable(statsCache)
     g_settings.setNode('skills-hide', skillSettings)
@@ -1218,6 +1289,13 @@ function onMiniWindowClose()
 end
 
 function onSkillButtonClick(button)
+    if button:getId() == 'storeBoostSection' then
+        if modules.game_store and modules.game_store.toggle then
+            modules.game_store.toggle()
+            g_game.sendRequestStorePremiumBoost()
+        end
+        return
+    end
     local percentBar = button:getChildById('percent')
     local skillIcon = button:getChildById('icon')
     if percentBar and skillIcon then
@@ -1509,6 +1587,17 @@ local function updateExperienceRate(localPlayer)
                       (expRateTotal < 100 and "less" or "equal"))
 
     widget:setColor(colors[colorKey])
+
+    local storeBoostSec = skillsWindow:recursiveGetChildById('storeBoostSection')
+    if storeBoostSec and storeBoostSec:isVisible() then
+        local hasBoost = localPlayer:getStoreExpBoostTime() > 0
+        if hasBoost then
+            local boostPct = ExpRating[ExperienceRate.XP_BOOST] or 0
+            storeBoostSec:setTooltip(tr('Store XP Boost: +%d%% bonus experience while active.\nClick to open the Store.', boostPct))
+        else
+            storeBoostSec:setTooltip(tr('No active Store XP Boost.\nClick to open the Store to purchase.'))
+        end
+    end
 end
 
 function onExperienceRateChange(localPlayer, type, value)
@@ -1517,9 +1606,13 @@ function onExperienceRateChange(localPlayer, type, value)
 end
 
 function onStoreExpBoostTimeChange(localPlayer, newTime, oldTime)
-    -- Update the experience rate display when XP boost time changes
-    -- This handles cases when boost is activated, expires, or time is updated
+    syncStoreBoostFromServer(localPlayer)
     updateExperienceRate(localPlayer)
+    if oldTime == 0 and newTime > 0 then
+        modules.game_textmessage.displayStatusMessage(tr("Your XP Boost has been activated!"))
+    elseif oldTime > 0 and newTime == 0 then
+        modules.game_textmessage.displayStatusMessage(tr("Your XP Boost has expired."))
+    end
 end
 
 local function setSkillValueWithTooltips(id, value, tooltip, showPercentage, color)

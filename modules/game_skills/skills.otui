@@ -64,27 +64,6 @@ SkillPercentPanel < ProgressBar
   anchors.top: parent.top
   phantom: false
 
-XpBoostButton < UIWidget
-  height: 30
-  HorizontalSeparator
-    id: leftSeparator
-    anchors.top: parent.bottom
-    anchors.left: parent.left
-    anchors.right: parent.right
-    margin-top: -23
-    margin-left: 5
-  UIWidget
-    id: xpBoostButton
-    image-source: /images/ui/button-storexp
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.top: prev.bottom
-    margin-top : -7
-    @onClick: |
-      modules.game_store.toggle()
-      g_game.sendRequestStorePremiumBoost()
-    $pressed:
-      image-source: /images/ui/button-storexp-pressed
-
 MiniWindow
   id: skillWindow
   height: 150
@@ -142,11 +121,39 @@ MiniWindow
         !text: tr('XP Gain Rate')
       SkillValueLabel
 
-    XpBoostButton
-      id: xpBoos
+    HorizontalSeparator
+      id: storeBoostSeparatorTop
+      visible: false
+      margin-top: 5
+      margin-bottom: 5
 
     SkillButton
-      margin-top: -12
+      id: storeBoostSection
+      height: 15
+      visible: false
+      SkillNameLabel
+        !text: tr('Store Boost')
+      SkillValueLabel
+        margin-right: 14
+        color: #C0C0C0
+        !text: '--'
+      UIWidget
+        id: storeBoostIcon
+        size: 12 12
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        image-source: /images/icons/xp_boost
+        image-smooth: false
+        phantom: true
+
+    HorizontalSeparator
+      id: storeBoostSeparatorBottom
+      visible: false
+      margin-top: 5
+      margin-bottom: 5
+
+    SkillButton
+      margin-top: 5
       id: health
       height: 15
       SkillNameLabel
