@@ -1824,89 +1824,47 @@ local function getElementName(id)
             bonusPanel:destroyChildren()
             local bonusData = modules.game_skills and modules.game_skills.getOutfitMountBonusData()
             if bonusData then
-                local player = g_game.getLocalPlayer()
-                local playerOutfit = player and player:getOutfit() or {}
-                local color = {
-                    head = playerOutfit.head or 0,
-                    body = playerOutfit.body or 0,
-                    legs = playerOutfit.legs or 0,
-                    feet = playerOutfit.feet or 0,
-                }
-
                 local function renderBonusEntry(entry, isMount)
-                    local row = g_ui.createWidget("UIWidget", bonusPanel)
-                    row:setHeight(16)
-                    row:setWidth(bonusPanel:getWidth())
+                    local row = g_ui.createWidget("Label", bonusPanel)
+                    row:setFont("verdana-11px-monochrome")
+                    row:setHeight(14)
+                    row:setMarginTop(1)
 
-                    local spriteWidget = g_ui.createWidget("UICreature", row)
-                    spriteWidget:setId("creature")
-                    spriteWidget:setSize({width = 14, height = 14})
-                    spriteWidget:setAnchors({left = {widget = row, edge = "left"}, top = {widget = row, edge = "top"}})
-                    spriteWidget:setMarginTop(1)
-                    spriteWidget:setPhantom(true)
-
-                    if isMount then
-                        local mountLookType = entry.clientId or entry.lookType or 0
-                        spriteWidget:setOutfit({
-                            type = mountLookType,
-                            auxType = 0,
-                            head = color.head,
-                            body = color.body,
-                            legs = color.legs,
-                            feet = color.feet,
-                        })
-                    else
-                        spriteWidget:setOutfit({
-                            type = entry.lookType or 0,
-                            auxType = 0,
-                            head = color.head,
-                            body = color.body,
-                            legs = color.legs,
-                            feet = color.feet,
-                            addon = entry.owned and 3 or 0,
-                        })
-                    end
-                    local c = spriteWidget:getCreature()
-                    if c then c:setStaticWalking(1000) end
-
-                    local label = g_ui.createWidget("Label", row)
-                    label:setAnchors({left = {widget = spriteWidget, edge = "right"}, right = {widget = row, edge = "right"}, top = {widget = row, edge = "top"}})
-                    label:setMarginLeft(4)
-                    label:setFont("verdana-11px-monochrome")
-                    label:setHeight(14)
-
-                    local text = entry.name
+                    local tag = ""
                     if entry.passive then
-                        text = text .. "  [P]"
+                        tag = " [P]"
                     elseif entry.equipped or entry.mounted then
-                        text = text .. "  \226\156\148"
+                        tag = " \226\156\148"
                     end
+                    local text = entry.name .. tag
                     if entry.bonusText and entry.bonusText ~= "" then
                         text = text .. "  " .. entry.bonusText
                     end
-                    label:setText(text)
+                    row:setText(text)
 
                     if not entry.owned then
-                        label:setColor("#666666")
+                        row:setColor("#666666")
                         row:setOpacity(0.5)
                     elseif entry.equipped or entry.mounted then
-                        label:setColor("#00FF00")
+                        row:setColor("#00FF00")
                     elseif entry.passive then
-                        label:setColor("#44AD25")
+                        row:setColor("#44AD25")
                     else
-                        label:setColor("#C0C0C0")
+                        row:setColor("#C0C0C0")
                     end
 
-                    if entry.owned then
-                        local tooltip = entry.name
-                        if entry.passive then tooltip = tooltip .. " [Passive]" end
-                        if entry.equipped then tooltip = tooltip .. " [Equipped]" end
-                        if entry.mounted then tooltip = tooltip .. " [Mounted]" end
-                        if entry.bonusText and entry.bonusText ~= "" then
-                            tooltip = tooltip .. "\n" .. entry.bonusText
-                        end
-                        row:setTooltip(tooltip)
+                    local tooltip = entry.name
+                    if entry.passive then tooltip = tooltip .. " [Passive]" end
+                    if entry.equipped then tooltip = tooltip .. " [Equipped]" end
+                    if entry.mounted then tooltip = tooltip .. " [Mounted]" end
+                    if not entry.owned then tooltip = tooltip .. " [Not owned]" end
+                    if entry.bonusText and entry.bonusText ~= "" then
+                        tooltip = tooltip .. "\n" .. entry.bonusText
                     end
+                    if entry.costText and entry.costText ~= "" then
+                        tooltip = tooltip .. "\nUnlock: " .. entry.costText
+                    end
+                    row:setTooltip(tooltip)
                 end
 
                 local outfitsOwned = tonumber(bonusData.outfitsOwned) or 0

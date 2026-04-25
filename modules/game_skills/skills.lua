@@ -218,10 +218,10 @@ local function applyBonusRows(prefix, totals, showUnlocked, countOwned, countTot
         { key = "melee",       suffix = "Melee",       fmt = formatBonusSkill,  tip = "Melee" },
         { key = "distance",    suffix = "Distance",    fmt = formatBonusSkill,  tip = "Distance" },
         { key = "shielding",   suffix = "Shielding",   fmt = formatBonusSkill,  tip = "Shielding" },
-        { key = "critChance",  suffix = "CritChance",  fmt = function(v) return formatBonusPercent(v / 100) end, tip = "Crit Chance" },
-        { key = "critDamage",  suffix = "CritDamage",  fmt = function(v) return formatBonusPercent(v / 100) end, tip = "Crit Damage" },
-        { key = "lifeLeech",   suffix = "LifeLeech",   fmt = function(v) return formatBonusPercent(v / 100) end, tip = "Life Leech" },
-        { key = "manaLeech",   suffix = "ManaLeech",   fmt = function(v) return formatBonusPercent(v / 100) end, tip = "Mana Leech" },
+        { key = "critChance",  suffix = "CritChance",  fmt = formatBonusPercent, tip = "Crit Chance" },
+        { key = "critDamage",  suffix = "CritDamage",  fmt = formatBonusPercent, tip = "Crit Damage" },
+        { key = "lifeLeech",   suffix = "LifeLeech",   fmt = formatBonusPercent, tip = "Life Leech" },
+        { key = "manaLeech",   suffix = "ManaLeech",   fmt = formatBonusPercent, tip = "Mana Leech" },
     }
 
     for _, def in ipairs(statDefs) do
@@ -1923,5 +1923,5 @@ function getBaseExpRate()
     return ExpRating[ExperienceRate.BASE] or 100
 end
 
-ProtocolGame.unregisterExtendedOpcode(OPCODE_OUTFIT_BONUS)
+pcall(function() ProtocolGame.unregisterExtendedOpcode(OPCODE_OUTFIT_BONUS) end)
 ProtocolGame.registerExtendedOpcode(OPCODE_OUTFIT_BONUS, onOutfitBonusExtendedOpcode)
