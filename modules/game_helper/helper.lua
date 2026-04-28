@@ -2130,12 +2130,11 @@ function loadMenu(menuId)
     if cavebotPanel then cavebotPanel:hide() end
     if toolsPanelContainer then toolsPanelContainer:show(true) end
 
-    -- Update vocation-specific panels visibility
+    helper:setSize(tosize("450 760"))
+
     if modules.game_helper and modules.game_helper.tools and modules.game_helper.tools.updateVocationPanels then
       modules.game_helper.tools.updateVocationPanels()
     end
-
-    helper:setSize(tosize("450 560"))
   elseif menuId == 'scriptsMenu' then
     if healingPanel then healingPanel:hide() end
     if toolsPanelContainer then toolsPanelContainer:hide() end

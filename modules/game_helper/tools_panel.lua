@@ -1071,14 +1071,45 @@ function tools.updateVocationPanels()
   local magPanel = getMagePanel()
 
   if palPanel then
-    -- Show paladin panel only for Paladin (vocation 2)
     palPanel:setVisible(vocationId == 2)
   end
 
   if magPanel then
-    -- Show mage panel for Sorcerer (3) and Druid (4)
     magPanel:setVisible(vocationId == 3 or vocationId == 4)
   end
+
+  tools.adjustToolsHeight()
+end
+
+function tools.adjustToolsHeight()
+  scheduleEvent(function()
+    local helperWindow = getHelperWindow()
+    if not helperWindow or not helperWindow:isVisible() then return end
+
+    local container = helperWindow:recursiveGetChildById('toolsPanelContainer')
+    if not container or not container:isVisible() then return end
+
+    local tp = container:recursiveGetChildById('toolsPanel')
+    if not tp then return end
+
+    local neededH = tp:getHeight()
+    local pp = container:recursiveGetChildById('paladinPanel')
+    local mp = container:recursiveGetChildById('magePanel')
+
+    if pp and pp:isVisible() then
+      neededH = neededH + pp:getMarginTop() + pp:getHeight()
+    elseif mp and mp:isVisible() then
+      neededH = neededH + mp:getMarginTop() + mp:getHeight()
+    end
+
+    local containerH = container:getHeight()
+    local diff = neededH - containerH
+    if math.abs(diff) < 2 then return end
+
+    local w = helperWindow:getWidth()
+    local h = helperWindow:getHeight()
+    helperWindow:setSize(tosize(w .. " " .. (h + diff)))
+  end, 50)
 end
 
 -- ============================================================

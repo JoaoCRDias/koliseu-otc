@@ -2,10 +2,10 @@ ToolsPanel < Panel
   anchors.fill: parent
   Panel
     id: toolsPanel
+    height: 540
     anchors.top: parent.top
     anchors.left: parent.left
     anchors.right: parent.right
-    anchors.bottom: parent.bottom
     image-source: /images/ui/t2pixel-up-frame-borderimage
     image-border: 18
     Label
@@ -779,7 +779,7 @@ ToolsPanel < Panel
   // Third Panel - Paladin Only (Quiver Refill)
   Panel
     id: paladinPanel
-    height: 135
+    height: 95
     anchors.top: toolsPanel.bottom
     anchors.left: parent.left
     anchors.right: parent.right
@@ -877,7 +877,7 @@ ToolsPanel < Panel
   // Fourth Panel - Sorcerer/Druid Only (Magic Shield)
   Panel
     id: magePanel
-    height: 135
+    height: 130
     anchors.top: toolsPanel.bottom
     anchors.left: parent.left
     anchors.right: parent.right
