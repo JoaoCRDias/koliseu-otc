@@ -42,6 +42,7 @@ public:
     void drawLight(const Point& dest, LightView* lightView);
 
     void clean();
+    void cleanExpiredEffects();
 
     void addWalkingCreature(const CreaturePtr& creature);
     void removeWalkingCreature(const CreaturePtr& creature);

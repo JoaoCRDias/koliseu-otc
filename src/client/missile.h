@@ -35,6 +35,7 @@ public:
     void setSource(Otc::MagicEffectSources source) { m_source = source; }
 
     bool isMissile() const override { return true; }
+    bool isExpired() const { return m_duration > 0 && m_animationTimer.ticksElapsed() >= m_duration; }
 
     MissilePtr asMissile() { return static_self_cast<Missile>(); }
 

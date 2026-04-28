@@ -232,6 +232,8 @@ public:
 
     const auto& getCreatures() const { return m_knownCreatures; }
 
+    void cleanExpiredMissiles(uint8_t z);
+
 private:
     struct FloorData
     {

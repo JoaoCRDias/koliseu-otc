@@ -82,9 +82,6 @@ void Missile::setPath(const Position& fromPosition, const Position& toPosition)
     m_delta *= g_gameConfig.getSpriteSize();
     m_animationTimer.restart();
     m_distance = fromPosition.distance(toPosition);
-
-    // schedule removal
-    g_dispatcher.scheduleEvent([self = asMissile()] { g_map.removeThing(self); }, m_duration);
 }
 
 void Missile::setDirection(const Otc::Direction dir) {

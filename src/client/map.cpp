@@ -545,6 +545,19 @@ void Map::removeCreatureById(const uint32_t  id)
         m_knownCreatures.erase(it);
 }
 
+void Map::cleanExpiredMissiles(uint8_t z)
+{
+    if (z >= m_floors.size())
+        return;
+
+    auto& missiles = m_floors[z].missiles;
+    missiles.erase(
+        std::remove_if(missiles.begin(), missiles.end(),
+            [](const MissilePtr& missile) { return missile->isExpired(); }),
+        missiles.end()
+    );
+}
+
 void Map::removeUnawareThings()
 {
     // remove creatures from tiles that we are not aware of anymore
