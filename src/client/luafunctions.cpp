@@ -56,6 +56,7 @@
 #include "uimap.h"
 #include "uimapanchorlayout.h"
 #include "uiminimap.h"
+#include "uiultralight.h"
 #include "uiprogressrect.h"
 #include "uisprite.h"
 #include "paperdoll.h"
@@ -1185,6 +1186,14 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<UISprite>("getSpriteId", &UISprite::getSpriteId);
     g_lua.bindClassMemberFunction<UISprite>("setSpriteColor", &UISprite::setSpriteColor);
     g_lua.bindClassMemberFunction<UISprite>("hasSprite", &UISprite::hasSprite);
+
+    // UIUltralight
+    g_lua.registerClass<UIUltralight, UIWidget>();
+    g_lua.bindClassStaticFunction<UIUltralight>("create", [] { return std::make_shared<UIUltralight>(); });
+    g_lua.bindClassMemberFunction<UIUltralight>("setSource", &UIUltralight::setSource);
+    g_lua.bindClassMemberFunction<UIUltralight>("getSource", &UIUltralight::getSource);
+    g_lua.bindClassMemberFunction<UIUltralight>("callJSFunction", &UIUltralight::callJSFunction);
+    g_lua.bindClassMemberFunction<UIUltralight>("executeJavaScript", &UIUltralight::executeJavaScript);
 
     g_lua.registerClass<UICreature, UIWidget>();
     g_lua.bindClassStaticFunction<UICreature>("create", [] { return std::make_shared<UICreature>(); });

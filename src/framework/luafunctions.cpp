@@ -46,6 +46,7 @@
 #include "framework/input/mouse.h"
 #include "framework/platform/platformwindow.h"
 #include "framework/ui/ui.h"
+#include "framework/ultralight/ultralightmanager.h"
 #endif
 
 #ifdef FRAMEWORK_SOUND
@@ -498,6 +499,30 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_html", "addGlobalStyle", &HtmlManager::addGlobalStyle, &g_html);
     g_lua.bindSingletonFunction("g_html", "getRootWidget", &HtmlManager::getRootWidget, &g_html);
     g_lua.bindSingletonFunction("g_html", "createWidgetFromHTML", &HtmlManager::createWidgetFromHTML, &g_html);
+
+    // Ultralight
+    g_lua.registerSingletonClass("g_ultralight");
+    g_lua.bindSingletonFunction("g_ultralight", "initialize", &UltraLightManager::initialize, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "isInitialized", &UltraLightManager::isInitialized, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "createView", &UltraLightManager::createView, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "removeView", &UltraLightManager::removeView, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "hasView", &UltraLightManager::hasView, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "loadURL", &UltraLightManager::loadURL, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "loadFile", &UltraLightManager::loadFile, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "reload", &UltraLightManager::reload, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "setViewVisible", &UltraLightManager::setViewVisible, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "isViewVisible", &UltraLightManager::isViewVisible, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "setViewPosition", &UltraLightManager::setViewPosition, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "setViewFocus", &UltraLightManager::setViewFocus, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "setViewSize", &UltraLightManager::setViewSize, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "resizeView", &UltraLightManager::resizeView, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "getViewWidth", &UltraLightManager::getViewWidth, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "getViewHeight", &UltraLightManager::getViewHeight, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "getViewNames", &UltraLightManager::getViewNames, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "callJSFunction", &UltraLightManager::callJSFunction, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "executeJavaScript", &UltraLightManager::executeJavaScript, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "getItemSpriteDataUri", &UltraLightManager::getItemSpriteDataUri, &g_ultralightManager);
+    g_lua.bindSingletonFunction("g_ultralight", "shutdown", &UltraLightManager::shutdown, &g_ultralightManager);
 
     // FontManager
     g_lua.registerSingletonClass("g_fonts");
