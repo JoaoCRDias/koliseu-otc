@@ -120,8 +120,10 @@ void Tile::drawLight(const Point& dest, LightView* lightView) {
     drawCreature(dest, Otc::DrawLights, true, drawElevation, lightView);
 
     if (m_effects) {
-        for (const auto& effect : *m_effects)
+        for (const auto& effect : *m_effects) {
+            if (effect->isExpired()) continue;
             effect->draw(dest - drawElevation * g_drawPool.getScaleFactor(), false, lightView);
+        }
     }
 
     drawAttachedLightEffect(dest, lightView);
@@ -176,8 +178,10 @@ void Tile::drawTop(const Point& dest, const int flags, const bool forceDraw, uin
     drawElevation = 0;
 
     if (m_effects) {
-        for (const auto& effect : *m_effects)
+        for (const auto& effect : *m_effects) {
+            if (effect->isExpired()) continue;
             drawThing(effect, dest, flags & Otc::DrawThings, drawElevation);
+        }
     }
 
     if (hasTopItem()) {
@@ -205,6 +209,9 @@ void Tile::clean()
     while (!m_things.empty())
         removeThing(m_things.front());
 
+    if (m_effects)
+        m_effects->clear();
+
     m_tilesRedraw = nullptr;
 
     m_thingTypeFlag = 0;
@@ -215,6 +222,18 @@ void Tile::clean()
 #ifdef FRAMEWORK_EDITOR
     m_flags = 0;
 #endif
+}
+
+void Tile::cleanExpiredEffects()
+{
+    if (!m_effects)
+        return;
+
+    m_effects->erase(
+        std::remove_if(m_effects->begin(), m_effects->end(),
+            [](const EffectPtr& effect) { return effect->isExpired(); }),
+        m_effects->end()
+    );
 }
 
 void Tile::addWalkingCreature(const CreaturePtr& creature)

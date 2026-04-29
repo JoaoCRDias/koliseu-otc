@@ -158,6 +158,11 @@ void MapView::drawFloor()
         for (const auto& missile : g_map.getFloorMissiles(z))
             missile->draw(transformPositionTo2D(missile->getPosition()), true);
 
+        for (const auto& tile : map.tiles)
+            tile->cleanExpiredEffects();
+
+        g_map.cleanExpiredMissiles(z);
+
         if (m_shadowFloorIntensity > 0 && z == cameraPosition.z + 1) {
             g_drawPool.setOpacity(m_shadowFloorIntensity, true);
             g_drawPool.setDrawOrder(DrawOrder::FIFTH);

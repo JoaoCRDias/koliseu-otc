@@ -161,6 +161,8 @@ void Application::poll()
 {
     g_clock.update();
 
+    g_dispatcher.poll();
+
 #ifdef FRAMEWORK_NET
 #ifdef __EMSCRIPTEN__
     WebConnection::poll();
@@ -171,7 +173,6 @@ void Application::poll()
 
     g_dispatcher.poll();
 
-    // poll connection again to flush pending write
 #ifdef FRAMEWORK_NET
 #ifdef __EMSCRIPTEN__
     WebConnection::poll();

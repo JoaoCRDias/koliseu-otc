@@ -122,9 +122,6 @@ void Effect::onAppear()
     }
 
     m_animationTimer.restart();
-
-    // schedule removal
-    g_dispatcher.scheduleEvent([self = asEffect()] { g_map.removeThing(self); }, m_duration);
 }
 
 bool Effect::waitFor(const EffectPtr& effect)
