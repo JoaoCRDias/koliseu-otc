@@ -37,7 +37,7 @@ CharacterWidget < UIWidget
     color: #bbbbbb
     anchors.top: parent.top
     anchors.left: parent.left
-    font: verdana-11px-monochrome
+    font: Verdana Bold-11px
     text-auto-resize: true
     background-color: alpha
     text-offset: 2 0
@@ -64,40 +64,12 @@ CharacterWidget < UIWidget
       end
 
   Label
-    id: statusDailyReward
-    size: 11 19
-    anchors.top: parent.top
-    anchors.left: parent.left
-    margin-left: 252
-    margin-top: 2
-    image-source: /images/game/entergame/dailyreward_collected
-    image-clip: 0 0 11 19
-    @onSetup: |
-      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
-        self:hide()
-      end
-
-  Label
-    id: statusHidden
-    size: 11 19
-    anchors.top: parent.top
-    anchors.left: parent.left
-    margin-left: 267
-    margin-top: 2
-    image-source: /images/game/entergame/hidden
-    image-clip: 0 0 11 19
-    @onSetup: |
-      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
-        self:hide()
-      end
-
-  Label
     id: level
     color: #bbbbbb
     anchors.top: parent.top
     anchors.left: parent.left
-    margin-left: 350
-    font: verdana-11px-monochrome
+    margin-left: 250
+    font: Verdana Bold-11px
     text-auto-resize: true
     background-color: alpha
     text-offset: 2 0
@@ -114,8 +86,8 @@ CharacterWidget < UIWidget
     color: #bbbbbb
     anchors.top: parent.top
     anchors.left: parent.left
-    margin-left: 410
-    font: verdana-11px-monochrome
+    margin-left: 350
+    font: Verdana Bold-11px
     text-auto-resize: true
     background-color: alpha
     text-offset: 2 0
@@ -131,14 +103,14 @@ CharacterWidget < UIWidget
     id: worldName
     color: #bbbbbb
     anchors.top: parent.top
-    font: verdana-11px-monochrome
+    font: Verdana Bold-11px
     text-auto-resize: true
     background-color: alpha
     &baseText: '(%s)'
     @onSetup: |
       if g_game.getFeature(GameEnterGameShowAppearance) then
         self:addAnchor(AnchorLeft, 'parent', AnchorLeft)
-        self:setMarginLeft(502)
+        self:setMarginLeft(560)
         self.baseText = '%s'
       else
         self:addAnchor(AnchorRight, 'parent', AnchorRight)
@@ -203,17 +175,6 @@ MainWindow
     anchors.left: parent.left
     anchors.top: characters.top
     margin-left: 250
-    !text: tr('Status') .. ''
-    @onSetup: |
-      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
-        self:hide()
-      end
-
-  FlatLabel
-    width: 60
-    anchors.left: parent.left
-    anchors.top: characters.top
-    margin-left: 350
     !text: tr('Level') .. ''
     @onSetup: |
       if not(g_game.getFeature(GameEnterGameShowAppearance)) then
@@ -221,10 +182,10 @@ MainWindow
       end
 
   FlatLabel
-    width: 150
+    width: 210
     anchors.left: parent.left
     anchors.top: characters.top
-    margin-left: 410
+    margin-left: 350
     !text: tr('Vocation') .. ''
     @onSetup: |
       if not(g_game.getFeature(GameEnterGameShowAppearance)) then
@@ -232,10 +193,10 @@ MainWindow
       end
 
   FlatLabel
-    width: 200
+    anchors.left: parent.left
     anchors.right: characters.right
     anchors.top: characters.top
-    margin-left: 550
+    margin-left: 560
     !text: tr('World') .. ''
     @onSetup: |
       if not(g_game.getFeature(GameEnterGameShowAppearance)) then
@@ -275,17 +236,7 @@ MainWindow
     anchors.left: parent.left
     anchors.top: parent.top
     anchors.bottom: prev.bottom
-    margin-left: 409
-    @onSetup: |
-      if not(g_game.getFeature(GameEnterGameShowAppearance)) then
-        self:hide()
-      end
-
-  VerticalSeparator
-    anchors.left: parent.left
-    anchors.top: parent.top
-    anchors.bottom: prev.bottom
-    margin-left: 500
+    margin-left: 559
     @onSetup: |
       if not(g_game.getFeature(GameEnterGameShowAppearance)) then
         self:hide()
@@ -343,21 +294,14 @@ MainWindow
     anchors.bottom: next.top
     margin-bottom: 10
 
-  Button
+  CheckBox
     id: autoReconnect
+    !text: tr('Auto reconnect')
     anchors.left: parent.left
     anchors.bottom: parent.bottom
-    @onSetup: |
-      if g_game.getFeature(GameEnterGameShowAppearance) then
-        self:setWidth(140)
-      else
-        self:setWidth(75)
-        self:setFont('small-9px')
-      end
-    $!on:
-      image-color: red    
-    $on:
-      image-color: green
+    margin-bottom: 6
+    text-auto-resize: true
+    font: Verdana Bold-11px
 
   Button
     id: buttonOk

@@ -330,19 +330,6 @@ function CharacterList.create(characters, account, otui)
                 mainCharacter:setImageSource('')
             end
 
-            local statusDailyReward = widget:getChildById('statusDailyReward', characterList)
-            if characterInfo.dailyreward == 0 then
-                statusDailyReward:setImageSource('/images/game/entergame/dailyreward_collected')
-            else
-                statusDailyReward:setImageSource('/images/game/entergame/dailyreward_notcollected')
-            end
-
-            local statusHidden = widget:getChildById('statusHidden', characterList)
-            if characterInfo.hidden then
-                statusHidden:setImageSource('/images/game/entergame/hidden')
-            else
-                statusHidden:setImageSource('')
-            end
         end
 
         -- these are used by login
@@ -405,16 +392,8 @@ function CharacterList.create(characters, account, otui)
         accountStatusLabel:setOn(false)
     end
 
-    autoReconnectButton.onClick = function(widget)
-        local autoReconnect = not g_settings.getBoolean('autoReconnect', false)
-        autoReconnectButton:setOn(autoReconnect)
-        g_settings.set('autoReconnect', autoReconnect)
-        local statusText = autoReconnect and 'Auto reconnect: On' or 'Auto reconnect: off'
-        if not g_game.getFeature(GameEnterGameShowAppearance) then
-            statusText = autoReconnect and 'Auto reconnect:\n On' or 'Auto reconnect:\n off'
-        end
-        
-        autoReconnectButton:setText(statusText)
+    autoReconnectButton.onCheckChange = function(widget, checked)
+        g_settings.set('autoReconnect', checked)
     end
 end
 
@@ -436,14 +415,7 @@ function CharacterList.show()
     charactersWindow:raise()
     charactersWindow:focus()
 
-    local autoReconnect = g_settings.getBoolean('autoReconnect', false)
-    autoReconnectButton:setOn(autoReconnect)
-    local reconnectStatus = autoReconnect and "On" or "Off"
-    if not g_game.getFeature(GameEnterGameShowAppearance) then
-        autoReconnectButton:setText('Auto reconnect:\n ' .. reconnectStatus)
-    else
-        autoReconnectButton:setText('Auto reconnect: ' .. reconnectStatus)
-    end
+    autoReconnectButton:setChecked(g_settings.getBoolean('autoReconnect', false))
 end
 
 function CharacterList.hide(showLogin)
